@@ -1,0 +1,72 @@
+<%- include('layout/header') %>
+
+<style>
+   form{
+    width: 29vw;
+  }
+  section{
+    display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
+  }
+  @media only screen and (max-width: 600px){
+  form {
+    width: 100%;
+  }
+  section{
+    margin-top: 20px;
+    width: 100%;
+    padding: 10px;
+  }
+  #fullName{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
+  @media only screen and (min-width: 600px) and (max-width: 768px){
+  form {
+    width: 100%;
+    padding: 2pc;
+  }
+  section{
+    margin-top: 20px;
+    width: 100%;
+    padding: 10px;
+  }
+  }
+</style>
+</head>
+<body>
+
+   <!--Main Navigation-->
+ <header>
+  <!-- Sidebar -->
+  <%- include('layout/notification') -%>
+
+      <!-- Navbar -->
+      <%- include('layout/navbar') -%>
+</header>
+ <section >
+  <h2 style="margin-top: 5rem;">Create Notification</h2>
+  <form action="/create/notification" method="post">
+   <div class="col-12">
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" name="title" id="title" placeholder="Message Title" required>
+      <label for="title" class="form-label">Message Title</label>
+    </div>
+    <div class="form-floating mb-3">
+     <textarea class="form-control" name="message" id="message" placeholder="Leave a message here" style="height: 200px;"></textarea>
+     <label for="message">Notification to be sent</label>
+   </div>
+   
+</div>
+
+  <!-- Submit button -->
+  <div class="col-12">
+      <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create</button>
+  </div>
+  </form>
+</section>
+<%- include('layout/footer') %>

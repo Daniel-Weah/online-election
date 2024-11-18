@@ -1,0 +1,20 @@
+<%- include('layout/header') -%>
+</head>
+
+<body>
+    <!-- Main Navigation -->
+
+    <!-- Main layout -->
+    <main style="margin-top: 70px">
+        <h1 class="mb-4" style="text-align: center;">Edit Election</h1>
+        <div class="container pt-2">
+            <form action="/edit/election/<%= election.id %>" method="POST">
+                <input type="text" name="electionName" value="<%= election.election %>">
+                <button type="submit">Update Election</button>
+              </form>
+              
+              
+        </div>
+    </main>
+</body>
+</html>

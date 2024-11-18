@@ -1,0 +1,138 @@
+<%- include('layout/header') %>    
+
+<style>
+    #table{
+        margin: 0 auto;
+        width: 60%;
+    }
+    form{
+    width: 29vw;
+  }
+ #form-section{
+    display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
+  }
+
+  @media only screen and (max-width: 600px){
+  form {
+    width: 100%;
+  }
+  #form-section{
+    margin-top: 20px;
+    width: 100%;
+    padding: 0;
+  }
+  #table-section {
+            width: 100%;
+            padding-left: 0;
+            padding-right: 0;
+        }
+       
+
+        #table {
+            width: 100%;
+        }
+        #fullName{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
+  @media only screen and (min-width: 600px) and (max-width: 768px){
+  form {
+    width: 100%;
+  }
+  #form-section{
+    margin-top: 20px;
+    width: 100%;
+    padding: 0;
+  }
+  #table-section {
+            width: 100%;
+            padding-left: 0;
+            padding-right: 0;
+        }
+       
+
+        #table {
+            width: 100%;
+        }
+  }
+</style>
+</head>
+
+<body class="">
+    <header>
+        <!-- Sidebar -->
+        <%- include('./layout/positions') -%>
+
+            <!-- Navbar -->
+            <%- include('./layout/navbar') -%>
+    </header>
+    <!--Main layout-->
+    <main style="margin-top: 50px; padding-left: 0" >
+        
+        <div class="container pt-2 ">
+            <!--Section: Statistics with subtitles-->
+            <section id="form-section">
+                <h1 class="mb-4" style="text-align: center;margin-top: 10px;">Party Position</h1>
+                <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">My Position</h3>
+
+                <form method="post" action="/add/position" >
+                    <div class="col-12">
+                        <div class="form-floating mb-3">
+                          <input type="text" class="form-control" name="Position" id="position" placeholder="Positon" required>
+                          <label for="userName" class="form-label">Position </label>
+                        </div>
+                      </div>
+
+                    <!-- Submit button -->
+                    <div class="mb-3">
+                       
+
+                        <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Add Position</button>
+                    </div>
+
+                </form>
+             
+            </section>
+            <section id="table-section">
+                <h2 class="mb-4" style="text-align: center;">View Positions</h2>
+                
+                    <select class="custom-select" id="elections-dropdown2">
+                        <option value="">Select Election</option>
+                    </select>
+                  
+
+                        <table class="table table-responsive" id="table">
+                            <thead>
+                                <th>#</th>
+                                <th scope="col">Position</th>
+                                <th scope="col">Action</th>
+                            </thead>
+                            <tbody>
+                                <% positions.forEach(position => {%>
+                                <tr>
+                                    <td><%= position.id %></td>
+                                    <td><%= position.position %></td>
+                                    <td><button class="action-btn edit btn outline btn-outline-primary btn-floating">
+                                        <i class="edit fas fa-pencil-alt"></i>
+                                    </button>
+                                    <form action="/delete/position/<%=position.id %>" method="post" style="display:inline;">
+                                    <button type="submit" 
+                                    class="action-btn delete btn btn-outline-danger btn-floating">
+                                        <i class="delete fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                                </td>
+                                </tr>
+                                <%})%>
+                            </tbody>
+                        </table>
+            </section>
+        </div>
+    </main>
+
+<%- include('layout/footer') %>

@@ -1,0 +1,191 @@
+<%- include('layout/header') %>
+<!-- Added this style.css which has the style for bootstrap 4 select because Bootstrap 5 select has a bug -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    #parties-tab {
+        width: 60%;
+        margin: 0 auto;
+    }
+
+    #logo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+    form{
+    width: 29vw;
+  }
+  section{
+    display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
+  }
+    @media only screen and (max-width: 600px) {
+        #parties-tab {
+            width: 100%;
+            padding-left: 0;
+            padding-right: 0;
+        }
+       
+
+        table {
+            width: 100%;
+        }
+        form {
+            width: 100%;
+        }
+
+        .form-floating input, .form-floating label {
+            width: 100%;
+        }
+        form {
+    width: 100%;
+  }
+  section{
+    margin-top: 20px;
+    width: 100%;
+    padding: 0;
+  }
+  #fullName{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    }
+    @media only screen and (min-width: 600px) and (max-width: 768px) {
+        #parties-tab {
+            width: 100%;
+            padding-left: 0;
+            padding-right: 0;
+        }
+       
+
+        table {
+            width: 100%;
+        }
+        form {
+            width: 100%;
+        }
+
+        .form-floating input, .form-floating label {
+            width: 100%;
+        }
+        form {
+    width: 100%;
+  }
+  section{
+    margin-top: 20px;
+    width: 100%;
+    padding: 0;
+  }
+    }
+</style>
+</head>
+
+<body>
+    <header>
+        <!-- Sidebar -->
+        <%- include('./layout/parties') -%>
+
+        <!-- Navbar -->
+        <%- include('./layout/navbar') -%>
+    </header>
+    <!-- Main layout -->
+    <main style="margin-top: 70px; padding-left: 0">
+        <div class="container pt-2">
+            <!-- Tabs navs -->
+            <ul class="nav nav-tabs nav-fill mb-3" id="ex1" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" id="ex2-tab-1" data-bs-toggle="tab" href="#parties-tab" role="tab">Parties</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="ex2-tab-2" data-bs-toggle="tab" href="#create-party-tab" role="tab">Create Party</a>
+                </li>
+            </ul>
+            <!-- Tabs navs -->
+
+            <!-- Tabs content -->
+            <div class="tab-content" id="ex2-content">
+                <!-- Voters List Tab -->
+                <div class="tab-pane fade show active" id="parties-tab" role="tabpanel">
+                    <h1 class="mb-4" style="text-align: center;">List Of Parties</h1>
+
+                    <select class="custom-select" id="elections-dropdown2">
+                        <option value="">Select Election</option>
+                    </select>
+
+                    <table class="table table-responsive">
+                        <thead>
+                            <tr>
+                                <th scope="col">Party</th>
+                                <th scope="col">Logo</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% parties.forEach(party => {%>
+                            <tr>
+                                <td><%= party.party %></td>
+                                <td><img src="data:image/png;base64,<%= party.logo %>" alt="party logo" id="logo"></td>
+                                <td><!-- Edit Button -->
+                                    <a href="" class="btn btn-outline-primary btn-floating">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    
+                                    <!-- Delete Button -->
+                                    <form action="/delete/party/<%= party.id %>" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-outline-danger btn-floating">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Voters Registration Tab -->
+                <div class="tab-pane fade" id="create-party-tab" role="tabpanel">
+                    <div class="container pt-2">
+                        <!-- Section: Statistics with subtitles -->
+                        <section >
+                            <h1 class="mb-4" style="text-align: center;">Party Registration</h1>
+                            <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">Register your desired party</h3>
+
+                            <form action="/create/party" method="post" id="partyRegistrationForm" enctype="multipart/form-data">
+                                <div class="col-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" name="party" id="party" placeholder="Party Name" required>
+                                        <label for="party" class="form-label">Party Name</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="file" class="form-control" name="logo" id="partyLogo" required accept=".jpg, .jpeg, .png">
+                                        <label for="logo" class="form-label">Party Logo (.jpg, .jpeg, .png)</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="photoPreview" class="form-label">Photo Preview:</label>
+                                    <div class="d-flex justify-content-center">
+                                        <img id="photoPreview" src="" alt="Profile Picture Preview" class="img-fluid rounded" style="max-width: 200px; display: none;">
+                                    </div>
+                                </div>
+                                <!-- Submit button -->
+                                <div class="mb-3">
+                                    <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Register Party</button>
+                                </div>
+                            </form>
+                        </section>
+                    </div>
+                </div>
+            </div>
+            <!-- Tabs content -->
+        </div>
+    </main>
+
+    <script src="/js/party.js"></script>
+    <%- include('layout/footer') %>

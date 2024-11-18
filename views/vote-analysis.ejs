@@ -1,0 +1,102 @@
+<%- include('layout/header') %>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+<style>
+  #positionTabs {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .tab-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: scroll;
+  }
+
+  .tab-pane > div {
+    margin: 0 auto;
+    width: 900px;
+    height: 500px;
+  }
+  
+  /* Media Query for Medium Devices */
+  
+  /* Media Query for Small Devices */
+  @media only screen and (max-width: 600px) {
+    
+    .tab-pane > div {
+      margin: 0 auto;
+      width: 350px;
+      height: 400px;
+  }
+  #fullName{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
+
+</style>
+</head>
+<body>
+  <header>
+    <!-- Sidebar -->
+    <%- include('./layout/analysis') -%>
+
+    <!-- Navbar -->
+    <%- include('./layout/navbar') -%>
+  </header>
+  <div class="container mt-5">
+    <h1 class="text-center" style="margin-top: 80px;">Voter Analysis</h1>
+    <ul class="nav nav-tabs" id="positionTabs" role="tablist">
+      <% Object.keys(groupedCandidates).forEach((position, index) => { %>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link <%= index === 0 ? 'active' : '' %>" id="<%= position %>-tab" data-bs-toggle="tab" href="#<%= position %>" role="tab" aria-controls="<%= position %>" aria-selected="<%= index === 0 %>"><%= position %></a>
+        </li>
+      <% }); %>
+    </ul>
+    <div class="tab-content" id="positionTabsContent">
+      <% Object.keys(groupedCandidates).forEach((position, index) => { %>
+        <div class="tab-pane fade <%= index === 0 ? 'show active' : '' %>" id="<%= position.replace(/\s+/g, '-') %>" role="tabpanel" aria-labelledby="<%= position.replace(/\s+/g, '-') %>-tab">
+          <div id="chart_<%= position.replace(/\s+/g, '-') %>"></div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+
+  <script>
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawCharts);
+
+    function drawCharts() {
+      <% Object.keys(groupedCandidates).forEach((position) => { %>
+        var data_<%= position.replace(/\s+/g, '-') %> = google.visualization.arrayToDataTable([
+          ['Candidate', 'Votes'],
+          <% groupedCandidates[position].forEach(candidate => { %>
+            ['<%= candidate.first_name + ' ' + (candidate.middle_name ? candidate.middle_name + ' ' : '') + candidate.last_name %>', <%= candidate.vote %>],
+          <% }); %>
+        ]);
+
+        var options_<%= position.replace(/\s+/g, '-') %> = {
+          title: '<%= position %> Candidates',
+          pieHole: 0.4,
+          pieSliceText: 'value'
+        };
+
+        var chart_<%= position.replace(/\s+/g, '-') %> = new google.visualization.ColumnChart(document.getElementById('chart_<%= position.replace(/\s+/g, '-') %>'));
+        chart_<%= position.replace(/\s+/g, '-') %>.draw(data_<%= position.replace(/\s+/g, '-') %>, options_<%= position.replace(/\s+/g, '-') %>);
+
+        // Redraw chart on tab change
+        document.getElementById('<%= position.replace(/\s+/g, '-') %>-tab').addEventListener('shown.bs.tab', function () {
+          chart_<%= position.replace(/\s+/g, '-') %>.draw(data_<%= position.replace(/\s+/g, '-') %>, options_<%= position.replace(/\s+/g, '-') %>);
+        });
+      <% }); %>
+    }
+  </script>
+
+<%- include('layout/footer') %>

@@ -1,0 +1,17 @@
+#preview-section {
+    height: 160px;
+    width: 160px;
+    border: solid 2px gray;
+    display: grid;
+    position: relative;
+}
+
+#img-preview {
+    object-fit: cover;
+    padding: 1px 4px 4px 0px;
+}
+
+#preview-text {
+    margin: auto;
+    position: absolute;
+}

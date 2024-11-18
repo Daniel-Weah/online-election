@@ -1,0 +1,154 @@
+<%- include('layout/header') %>
+
+<style>
+    .container-setting{
+        width: 40%;
+        margin: 0 auto;
+        margin-top: 50px;
+    }
+.container-setting h2{
+    font-size: 4rem;
+}
+    .info-area{
+        
+        line-height: 2rem;
+    }
+    form{
+    width: 29vw;
+  }
+  section{
+    display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
+  }
+@media only screen and (max-width: 600px){
+  .container-setting{
+        width: 100%;
+        text-align: center;
+        margin-top: 50px;
+    }
+    form {
+    width: 100%;
+  }
+  section{
+    margin-top: 20px;
+    width: 100%;
+    padding: 0;
+  }
+}
+@media only screen and (min-width: 600px)and (max-width: 768px){
+  .container-setting{
+        width: 100%;
+        text-align: center;
+        margin-top: 50px;
+    }
+    form {
+    width: 100%;
+  }
+  section{
+    margin-top: 20px;
+    width: 100%;
+    padding: 0;
+  }
+}
+</style>
+</head>
+<body>
+    <div class="container-setting" id="voter-settting">
+        <h2>Settings</h2>
+        <h6>We only enable you access changing your username and password. Your personal information remains the same from the date of registration.</h6>
+      
+        <div class="info-area">
+           <!-- Tabs navs -->
+<ul class="nav nav-tabs nav-justified mb-3" id="ex1" role="tablist">
+    <li class="nav-item" role="presentation">
+      <a class="nav-link active" id="ex3-tab-1" data-bs-toggle="tab" href="#ex3-tabs-1" role="tab" aria-controls="ex3-tabs-1" aria-selected="true">Username</a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link" id="ex3-tab-2" data-bs-toggle="tab" href="#ex3-tabs-2" role="tab" aria-controls="ex3-tabs-2" aria-selected="false">Password</a>
+    </li>
+  </ul>
+  <!-- Tabs navs -->
+  
+  <!-- Tabs content -->
+  <div class="tab-content" id="ex2-content">
+    <div class="tab-pane fade show active" id="ex3-tabs-1" role="tabpanel" aria-labelledby="ex3-tab-1">
+        <main style="margin-top: 50px; padding-left: 0" >
+        
+            <div class="container pt-2 ">
+                <!--Section: Statistics with subtitles-->
+                <section >
+                    <h1 class="mb-4" style="text-align: center;">Update Username</h1>
+                    
+                    <form action="/setting/change/username" method="post"   id="updateUsernameForm" enctype="multipart/form-data">
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                              <input type="text" class="form-control" name="username" id="username" placeholder="Current User Name" required>
+                              <label for="username" class="form-label">Current User Name</label>
+                            </div>
+                          </div>
+    
+                          <div class="col-12">
+                            <div class="form-floating mb-3">
+                              <input type="text" class="form-control" name="Newusername" id="Newusername" placeholder="username" required>
+                              <label for="Newusername" class="form-label">New Username</label>
+                            </div>
+                          </div>
+    
+                        <!-- Submit button -->
+                        <div class="mb-3">
+                            <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Change Username</button>
+                        </div>
+    
+                    </form>
+                 
+                </section>
+            </div>
+        </main>
+    </div>
+    <div class="tab-pane fade" id="ex3-tabs-2" role="tabpanel" aria-labelledby="ex3-tab-2">
+        <main style="margin-top: 50px; padding-left: 0" >
+        
+            <div class="container pt-2 ">
+                <!--Section: Statistics with subtitles-->
+                <section >
+                    <h1 class="mb-4" style="text-align: center;">Forget Password</h1>
+                    
+                    <form method="post" action="/setting/forget-password"  id="forgetPasswordForm">
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                              <input type="text" class="form-control" name="username" id="userName" placeholder="User Name" required>
+                              <label for="userName" class="form-label">User Name</label>
+                            </div>
+                          </div>
+    
+                          <div class="col-12">
+                            <div class="form-floating mb-3">
+                              <input type="password" class="form-control" name="password" id="password" value="" placeholder="Password" required>
+                              <label for="password" class="form-label">New Password</label>
+                            </div>
+                          </div>
+                          <div class="col-12">
+                            <div class="form-floating mb-3">
+                              <input type="password" class="form-control" name="passwordConfirm" id="password" value="" placeholder="Password" required>
+                              <label for="password" class="form-label">Confirm Password</label>
+                            </div>
+                          </div>
+    
+                        <!-- Submit button -->
+                        <div class="mb-3">
+                            <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Change Password</button>
+                        </div>
+    
+                    </form>
+                 
+                </section>
+            </div>
+        </main>
+    </div>
+   
+  </div>
+  <!-- Tabs content -->
+  
+        </div>
+    </div>
+    <script src="/js/setting.js"></script>
+<%- include('layout/footer') %>

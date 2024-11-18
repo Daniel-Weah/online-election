@@ -1,0 +1,70 @@
+<%- include('layout/header') %>
+<style>
+ .container{
+        text-align: center;
+        /*  */
+    }
+    .container h1{
+        font-family: 'Ubuntu', sans-serif;
+        margin-top: 2pc;
+        font-weight: bold;
+        text-align: center;
+    }
+    .container img{
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+    }
+    .container h6{
+        margin-top: -10px;
+    }
+    .container h4{
+        font-family: sans-serif;
+        font-weight: 400;
+    }
+    #info-title{
+        font-size: 1.5rem;
+        color: rgb(87, 87, 87);
+        margin-bottom: -0.1rem;
+    }
+    .info{
+        background-color: #f1efef;
+        padding: 1rem;
+        border-radius: 20px;
+        margin: 0 auto;
+        width: 70%;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    }
+    .info span{
+        font-size: 1.3rem;
+        line-height: 2rem;
+      
+    }
+    @media only screen and (max-width: 600px){
+        .info{
+            width: 100%;
+        }
+    }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Voter's Profile</h1>
+    <img src="data:image/png;base64,<%= user.profile_picture %>" alt="user profile" />
+    <h4><%= user.first_name %> <%= user.middle_name %> <%= user.last_name %></h4>
+    <h6>@<%= user.username %></h6>
+    <span style="font-size: 1rem;font-weight: bold;">Role:</span>
+    <span><button id="role-btn" class="btn btn-primary"><%= user.role %></button></span>
+    <span style="font-size: 1rem;font-weight: bold;">Status:</span>
+    <span><button id="role-btn" class="btn btn-<%= voteStatus === 'Voted' ? 'success' : 'danger' %>"><%= voteStatus %></button></span>
+    <hr>
+    <div class="info">
+      <p id="info-title">Personal Info:</p>
+      <hr>
+      <span>First Name: </span> <span><%= user.first_name %></span> <br>
+      <span>Middle Name: </span> <span><%= user.middle_name %></span> <br>
+      <span>Last Name: </span> <span><%= user.last_name %></span>  <br>
+      <span>Date of Birth: </span> <span><%= user.DOB %></span>
+    </div>
+  </div>
+<%- include('layout/footer') %>

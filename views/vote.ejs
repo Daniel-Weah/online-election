@@ -1,0 +1,191 @@
+<%- include('layout/header') %>
+<style>
+  .candidate-name{
+    font-weight: bold;
+    font-family: 'Ubuntu', sans-serif;
+  }
+  label p{
+    font-family: 'Roboto';
+    font-size: 1.2rem;
+  }
+    form{
+        margin: 60px 25pc;
+        width: 60%;
+    }
+    
+    form ul li{
+        list-style-type: none;
+    }
+    form ul li label{
+        font-size: 1.3rem;
+        font-weight: 500;
+        font-family: 'Ubuntu', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        line-height: -4pc;
+    }
+    form ul li label:hover{
+        background-color: #e1e0e0;
+    }
+    form ul li label img{
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+    label p {
+        margin-top: -20px;
+        margin-left: 4.4rem;
+    }
+  
+   @media only screen and (max-width: 600px){
+    form{
+        margin: 0 auto;
+        width: 100%;
+    }
+    
+    form ul li{
+        list-style-type: none;
+    }
+    form ul li label{
+        font-size: 1rem;
+        font-weight: 500;
+        font-family: 'Ubuntu', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        line-height: -25pc;
+    }
+  
+    form ul li label:hover{
+        background-color: #e1e0e0;
+    }
+    form ul li label img{
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+    form button{
+        
+        margin-left: 50px;
+    }
+    h2{
+        margin-left: 20px;
+    }
+    h1{
+        margin-top: 5pc;
+        text-align: center;
+    }
+    #fullName{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+   }
+   @media only screen and (min-width: 600px) and (max-width: 768px){
+    form{
+        margin: 0 auto;
+        width: 100%;
+    }
+    
+    form ul li{
+        list-style-type: none;
+    }
+    form ul li label{
+        font-size: 1rem;
+        font-weight: 500;
+        font-family: 'Ubuntu', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        line-height: -25pc;
+        margin-left: 100px;
+    }
+    form button{
+        
+        margin-left: 100px;
+    }
+  
+    form ul li label:hover{
+        background-color: #e1e0e0;
+    }
+    form ul li label img{
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+    h2{
+        margin-left: 100px;
+    }
+    h1{
+        margin-top: 5pc;
+        text-align: center;
+    }
+   }
+</style>
+</head>
+<body>
+    <header>
+        <!-- Sidebar -->
+        <%- include('./layout/voteCandidate') -%>
+
+            <!-- Navbar -->
+            <%- include('./layout/navbar') -%>
+    </header>
+
+    <hr>
+    <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
+        <h1 >Vote Candidate</h1>
+        <h2>Chairman</h2>
+        <ul>
+            <% candidates.forEach(candidate => { %>
+                <% if (candidate.position == 'Chairman') { %>
+                <li>
+                    <label>
+                        <img src="data:image/png;base64,<%= candidate.photo %>" alt="candidate photo">
+                        <input type="radio" name="candidateId" value="<%= candidate.id %>">
+                       <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %> </span>
+                        <p>(<%= candidate.party %>)</p>
+                    </label>
+                </li>
+                <%}%>
+            <% }); %>
+        </ul>
+        <h2>Chairlady</h2>
+        <ul>
+            <% candidates.forEach(candidate => { %>
+                <% if (candidate.position == 'Chairlady') { %>
+                <li>
+                    <label>
+                        <img src="data:image/png;base64,<%= candidate.photo %>" alt="candidate photo">
+                        <input type="radio" name="candidateId2" value="<%= candidate.id %>">
+                        <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %> </span>
+                        <p>(<%= candidate.party %>)</p>
+                       
+                    </label>
+                </li>
+                <%}%>
+            <% }); %>
+        </ul>
+        <h2>Youth</h2>
+        <ul>
+            <% candidates.forEach(candidate => { %>
+                <% if (candidate.position == 'Youth') { %>
+                <li>
+                    <label>
+                        <img src="data:image/png;base64,<%= candidate.photo %>" alt="candidate photo">
+                        <input type="radio" name="candidateId3" value="<%= candidate.id %>">
+                        <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %> </span>
+                        <p>(<%= candidate.party %>)</p>
+                        
+                    </label>
+                </li>
+                <%}%>
+            <% }); %>
+        </ul>
+        
+        <button type="submit" class="btn btn-primary">Submit Vote</button>
+    </form>
+
+ <script src="/js/vote.js"></script>
+<%- include('layout/footer') %>

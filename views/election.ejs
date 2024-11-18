@@ -1,0 +1,85 @@
+<%- include('layout/header') -%>
+
+<style>
+   @media only screen and (max-width: 600px){
+    #fullName{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+   }
+    @media only screen and (min-width: 600px) and (max-width: 768px){
+        form input{
+            width: 100%;
+        }
+    }
+</style>
+    </head>
+
+    <body>
+        <!--Main Navigation-->
+        <header>
+            <!-- Sidebar -->
+            <%- include('layout/election') -%>
+
+                <!-- Navbar -->
+                <%- include('layout/navbar') -%>
+        </header>
+
+        <!--Main layout-->
+        <main style="margin-top: 70px ">
+            <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Create Election</h1>
+            <div class="container pt-2">
+                <section >
+                    <form action="/create/election" method="post">
+                     <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="election" id="election" placeholder="Election Title" required>
+                        <label for="title" class="form-label">Election Title</label>
+                      </div>
+                  </div>
+
+                    <!-- Submit button -->
+                    <div class="col-12">
+                        <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create</button>
+                    </div>
+                    </form>
+                </section>
+
+                <table class="table responsive">
+                    <thead>
+                        
+                        <th scope="col">Election</th>
+                        <th scope="col">Date Created</th>
+                        <th scope="col">Action</th>
+                    </thead>
+                    <% elections.forEach(election => { %>
+                     <tbody>
+                      <tr>
+                       
+                       <td><%=election.election%></td>
+                       <td><%=election.created_at%></td>
+                       <td><!-- Edit Button -->
+                        <a href="/edit/election/<%= election.id %>" class="btn btn-outline-primary btn-floating">
+                            <i class="fas fa-pencil-alt"></i>
+                        </a>
+                        
+                        <!-- Delete Button -->
+                        <form action="/delete/election/<%= election.id %>" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-outline-danger btn-floating">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </td>
+                      </tr>
+                     </tbody>
+                     <% }) %>
+                </table>
+            </div>
+        </main>
+
+        
+    <%- include('layout/footer') -%>

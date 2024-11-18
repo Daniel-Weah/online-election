@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Online Election Application</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" />
+    <!-- Google Fonts Roboto -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
+    <!-- Bootstrap CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="/css/style.css" />
+    <!-- Additional Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+ #container{
+  text-align: center;
+  margin-top: 5px;
+ }
+ h1{
+  margin-top: 3pc;
+ }
+ ul{
+  width: 40%;
+  margin: 0 auto;
+  padding-top: 2rem;
+  background-color: rgb(251, 251, 251);
+  text-align: justify;
+ }
+ ul li{
+  list-style: none;
+ }
+ ul li #title{
+  font-size: 1.2rem;
+  font-weight: bold;
+ }
+ ul li img{
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+ }
+ @media only screen and (max-width: 600px){
+  #container{
+  text-align: center;
+  margin-top: 5px;
+ }
+ ul{
+  width: 100%;
+  padding-right: 20px;
+ }
+#no-notification{
+  margin: 0 auto;
+  width: 100%;
+}
+ }
+ @media only screen and (min-width: 600px) and (max-width: 768px){
+  #container{
+  text-align: center;
+  margin-top: 5px;
+ }
+ ul{
+  width: 100%;
+  padding-right: 20px;
+ }
+#no-notification{
+  margin: 0 auto;
+  width: 100%;
+}
+ }
+</style>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const socket = io();
+    
+    // Ensure userId is properly set
+    const userId = '<%= userId %>'; 
+    socket.emit('join', userId);
+    
+    socket.on('new-notification', function(notification) {
+      alert(`New notification: ${notification.message}`);
+      
+      const notificationList = document.getElementById('notification-list');
+      const newNotification = document.createElement('li');
+      newNotification.textContent = `${notification.title}: ${notification.message}`;
+      notificationList.appendChild(newNotification);
+    });
+  });
+</script>
+
+
+
+</head>
+<body>
+ <main id="container">
+  <h1>Welcome, <%= username %>!</h1>
+  <h3>Your Notifications</h3>
+  <ul id="notification-list">
+    <% if (notifications.length > 0) { %>
+      <% notifications.forEach(notification => { %>
+        <li><img src="/images/message.png" alt="notification-icon"> <span id="title"><%= notification.title %></span> <br> <span><%= notification.message %></span><span ><img src="/images/double-check.png" alt="" style="width: 20px;height: 20px;"></span></li>
+        <li><span style="color: green;">Sent: </span><%= new Date(notification.created_at).toLocaleString() %></li>
+        <hr>
+      <% }) %>
+    <% } else { %>
+     <img src="/images/no-notification.png" alt="no notification img" id="no-notification">
+      <p>No notifications available.</p>
+    <% } %>
+  </ul>
+</main>
+
+</body>
+</html>
