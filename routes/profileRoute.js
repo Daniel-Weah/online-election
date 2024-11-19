@@ -27,7 +27,7 @@ router.get("/my/profile", (req, res) => {
   
       const voteStatus = user.has_voted ? "Voted" : "Not Voted";
   
-      res.render("Profile", { user, voteStatus });
+      res.render("profile", { user, voteStatus });
     });
   });
 

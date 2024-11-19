@@ -1,3 +1,42 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0c7b5b5bc5d38372bf20962f4ca1efd5f9734126fdf5758dd5e4ff012d3f575c
-size 1263
+document.getElementById('registrationForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+
+    fetch('/voters', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json()) // Convert to JSON
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Registration Successful',
+                text: data.message,
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 2000
+            }).then(() => {
+                document.getElementById('registrationForm').reset();
+            });
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: data.message,
+                icon: 'error',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            title: 'Error',
+            text: 'There was a problem sending your information. Please try again later.',
+            icon: 'error',
+            showConfirmButton: false,
+            timer: 2000
+        });
+        console.error('Error:', error);
+    });
+});

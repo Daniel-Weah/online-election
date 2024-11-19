@@ -1,3 +1,43 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2a75261728fd1a251fda646bc958fb0ca75563333f7c63ff346d669a75462157
-size 1183
+document.getElementById("voteForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    console.log('Vote form submitting');
+    
+    const formData = new FormData(e.target);
+    
+    fetch("/vote", {
+      method: "POST",
+      body: formData, // Send as FormData, not JSON
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          Swal.fire({
+            title: "Your Vote Counted",
+            text: data.message,
+            icon: "success",
+            showConfirmButton: false,
+            timer: 2000,
+          }).then(() => {
+            window.location.href = "/dashboard"; // Redirect after the alert
+          });
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: data.message,
+            icon: 'error',
+            showConfirmButton: false,
+            timer: 2000,
+          });
+        }
+      })
+      .catch((error) => {
+        Swal.fire({
+          title: 'Error',
+          text: 'There was an error making your vote count. Please try again later.',
+          icon: 'error',
+          showConfirmButton: false,
+          timer: 2000,
+        });
+        console.error('Error:', error);
+      });
+  });

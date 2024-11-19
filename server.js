@@ -225,7 +225,7 @@ app.get("/create/election", (req, res) => {
                   if(err) {
                     return res.status(500).send('Error fetching user from the user table')
                   }
-                res.render("Election", {
+                res.render("election", {
                   profilePicture,
                   role: userRole.role,
                   elections,
@@ -576,7 +576,7 @@ app.get("/notifications", (req, res) => {
               }
 
               // Render the Notification.ejs page with notifications
-              res.render("Notification", {
+              res.render("notification", {
                 username: user.username,
                 userId: req.session.userId,
                 notifications,
@@ -624,8 +624,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Listen for new notifications and emit them to the specific user
-// Server-side socket.io configuration
+
 
 // Logout route
 app.get("/logout", (req, res) => {

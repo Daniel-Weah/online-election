@@ -78,7 +78,7 @@ router.get("/candidate/registration", (req, res) => {
                           if(err) {
                             return res.status(500).send('Error fetching user from the user table')
                           }
-                        res.render("Candidate-Registration", {
+                        res.render("candidate-registration", {
                           parties,
                           positions,
                           profilePicture,

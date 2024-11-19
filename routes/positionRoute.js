@@ -45,7 +45,7 @@ router.get("/add/position", (req, res) => {
                     if(err) {
                       return res.status(500).send('Error fetching user from the user table')
                     }
-                  res.render("Position.ejs", {
+                  res.render("position.ejs", {
                     positions,
                     profilePicture,
                     role: userRole.role,

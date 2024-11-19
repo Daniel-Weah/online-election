@@ -58,7 +58,7 @@ router.get("/create/party", (req, res) => {
                     if(err) {
                       return res.status(500).send('Error fetching user from the user table')
                     }
-                  res.render("Party-Registration", {
+                  res.render("party-registration", {
                     parties,
                     role: userRole.role,
                     profilePicture,
