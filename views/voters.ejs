@@ -183,7 +183,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="col-12 mb-3">
-                                                            <label for="role" class="form-label">Role:</label>
+                                                            <label for="role" class="form-label">Select Role:</label>
                                                             <select id="role" name="role" class="form-select" required>
                                                                 <% roles.forEach(role => { %>
                                                                     <option value="<%= role.id %>"><%= role.role %></option>
@@ -191,6 +191,14 @@
                                                             </select>
                                                         </div>
 
+                                                        <div class="col-12 mb-3">
+                                                            <label for="role" class="form-label">Select Election:</label>
+                                                            <select id="election" name="election" class="form-select" required>
+                                                                <% elections.forEach(election => { %>
+                                                                    <option value="<%= election.id %>"><%= election.election %></option>
+                                                                <% }); %>
+                                                            </select>
+                                                        </div>
                                                         
                                                         <div class="col-12">
                                                             <div class="form-floating mb-3">

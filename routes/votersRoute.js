@@ -1,12 +1,20 @@
 const express = require('express');
 const db = require('../model/db');
 const multer = require("multer");
+const http = require("http");
+const socketIo = require("socket.io");
+const bcrypt = require("bcrypt");
+const router = express.Router();
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+const server = http.createServer(router);
+const io = socketIo(server);
 
-const router = express.Router();
-
+router.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 router.get("/voters", (req, res) => {
     if (!req.session.userId) {
       return res.redirect("/login");
@@ -95,6 +103,12 @@ router.get("/voters", (req, res) => {
                         if(err) {
                           return res.status(500).send('Error fetching user from the user table')
                         }
+
+                        db.all('SELECT * FROM elections', (err, elections) => {
+                            if (err) {
+                              return res.status(500).send('Internal server error');
+                            }
+                        
                       res.render("voters", {
                         users,
                         currentUser: user,
@@ -103,7 +117,8 @@ router.get("/voters", (req, res) => {
                         role: userRole.role,
                         roles,
                         unreadCount: countResult.unreadCount,
-                        user
+                        user,
+                        elections
                       });
                     }
                   );
@@ -115,11 +130,11 @@ router.get("/voters", (req, res) => {
       });
       });
     });
-  });
+  }); });
   
   
   router.post("/voters", upload.single("photo"), (req, res) => {
-    const { firstname, middlename, lastname, dob, username, role, password } =
+    const { firstname, middlename, lastname, dob, username, role, election, password } =
       req.body;
     const photo = req.file ? req.file.buffer : null;
   
@@ -130,8 +145,8 @@ router.get("/voters", (req, res) => {
       }
   
       db.run(
-        "INSERT INTO users(first_name, middle_name, last_name, DOB, profile_picture, role_id) VALUES (?,?,?,?,?,?)",
-        [firstname, middlename, lastname, dob, photo, role],
+        "INSERT INTO users(first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) VALUES (?,?,?,?,?,?,?)",
+        [firstname, middlename, lastname, dob, photo, role, election],
         function (err) {
           if (err) {
             console.error(err.message);
