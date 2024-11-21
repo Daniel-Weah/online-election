@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create User without being login</title>
+</head>
+<body>
+    <section id="registration" class="py-3 py-md-5 py-xl-5" style="background-color: aliceblue;">
+        <div class="container">
+            <div class="row gy-2 align-items-center">
+                <div class="col-12 col-md-6 col-xl-7">
+                    <div class="d-flex justify-content-center">
+                        <div class="col-12 col-xl-9">
+                            <img class="img-fluid rounded mb-4" loading="lazy" src="/images/election-icon.png" width="245" height="80" alt="BootstrapBrain Logo">
+                            <hr class="border-primary-subtle mb-4">
+                            <h2 class="h1 mb-4" style="color: black;">ONLINE ELECTION</h2>
+                            <p class="lead mb-5" style="color: black;">
+                                Welcome to our online election platform, where every voice matters and every vote counts. Together, we can shape the future and build a better tomorrow. Your participation is not just a right but a powerful tool to drive change. Let your voice be heard, let your vision be seen, and let your vote make a difference. Engage, empower, and elevate our community by participating in this election. The future is in your hands. Vote with confidence, vote with hope, and vote for progress.
+                            </p>
+                            <div class="text-end">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-grip-horizontal" viewBox="0 0 16 16">
+                                    <path d="M2 8a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+                                </svg>
+                            </div>
+                            <button class="btn btn-danger">Powered by</button>
+                            <p class="lead mb-4">
+                                <a href="https://innovativetechsolution.expert" style="color: rgb(0, 0, 0); text-decoration: none; font-size: 16px;">Innovative Tech Solution</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-5">
+                    <div class="card border-0 rounded-4">
+                        <div class="card-body p-3 p-md-4 p-xl-5">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mb-4">
+                                        <h2 class="h3">Voter's Registration</h2>
+                                        <h3 class="fs-6 fw-normal text-secondary m-0">Enter your details to register</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <form action="/create/user" method="post" id="registrationForm" enctype="multipart/form-data">
+                                <div class="row gy-3 overflow-hidden">
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="firstname" id="firstname" placeholder="First Name" required>
+                                            <label for="firstname" class="form-label">First Name</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="middlename" id="middlename" placeholder="Middle Name">
+                                            <label for="middlename" class="form-label">Middle Name</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="lastname" id="lastname" placeholder="Last Name" required>
+                                            <label for="lastname" class="form-label">Last Name</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="username" id="username" placeholder="User Name" required>
+                                            <label for="username" class="form-label">User Name</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="date" class="form-control" name="dob" id="dob" required>
+                                            <label for="dob" class="form-label">DOB</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label for="role" class="form-label">Role:</label>
+                                        <select id="role" name="role" class="form-select" required>
+                                            <% roles.forEach(role => { %>
+                                                <option value="<%= role.id %>"><%= role.role %></option>
+                                            <% }); %>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label for="election" class="form-label">Election:</label>
+                                        <select id="election" name="election" class="form-select" required>
+                                            <% elections.forEach(election => { %>
+                                                <option value="<%= election.id %>"><%= election.election %></option>
+                                            <% }); %>
+                                        </select>
+                                    </div>
+
+                                    
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="file" class="form-control" name="photo" id="photo" accept=".jpg, .jpeg, .png" required>
+                                            <label for="photo" class="form-label">Photo (.jpg, .jpeg, .png)</label>
+                                        </div>
+                                    </div>
+                            
+                                    <!-- Preview Image -->
+                                    <div class="col-12 mb-3">
+                                        <label for="photoPreview" class="form-label">Photo Preview:</label>
+                                        <div class="d-flex justify-content-center">
+                                            <img id="photoPreview" src="" alt="Profile Picture Preview" class="img-fluid rounded" style="max-width: 200px; display: none;">
+                                        </div>
+                                    </div>
+                            
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                                            <label for="password" class="form-label">Password</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-grid">
+                                            <button class="btn btn-primary btn-lg" type="submit">Register</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+</body>
+</html>

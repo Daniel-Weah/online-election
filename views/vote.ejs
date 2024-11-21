@@ -36,7 +36,18 @@
         margin-top: -20px;
         margin-left: 4.4rem;
     }
-  
+    #notification-box {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50; /* Green */
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
    @media only screen and (max-width: 600px){
     form{
         margin: 0 auto;
@@ -133,59 +144,54 @@
             <%- include('./layout/navbar') -%>
     </header>
 
+    <div id="notification-box" style="display: none;">
+        <p id="notification-message"></p>
+      </div>
+
     <hr>
     <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
-        <h1 >Vote Candidate</h1>
-        <h2>Chairman</h2>
+        <h1>Vote Candidate</h1>
         <ul>
-            <% candidates.forEach(candidate => { %>
-                <% if (candidate.position == 'Chairman') { %>
-                <li>
-                    <label>
-                        <img src="data:image/png;base64,<%= candidate.photo %>" alt="candidate photo">
-                        <input type="radio" name="candidateId" value="<%= candidate.id %>">
-                       <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %> </span>
-                        <p>(<%= candidate.party %>)</p>
-                    </label>
-                </li>
-                <%}%>
+            <% Object.keys(groupedCandidates).forEach(position => { %>
+                <h2><%= position %></h2>
+                <% groupedCandidates[position].forEach(candidate => { %>
+                    <li>
+                        <label>
+                            <img src="data:image/png;base64,<%= candidate.photo %>" alt="candidate photo">
+                            <input type="radio" name="<%= position %>" value="<%= candidate.id %>" required>
+                            <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %> </span>
+                            <p>(<%= candidate.party %>)</p>
+                        </label>
+                    </li>
+                <% }) %>
             <% }); %>
         </ul>
-        <h2>Chairlady</h2>
-        <ul>
-            <% candidates.forEach(candidate => { %>
-                <% if (candidate.position == 'Chairlady') { %>
-                <li>
-                    <label>
-                        <img src="data:image/png;base64,<%= candidate.photo %>" alt="candidate photo">
-                        <input type="radio" name="candidateId2" value="<%= candidate.id %>">
-                        <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %> </span>
-                        <p>(<%= candidate.party %>)</p>
-                       
-                    </label>
-                </li>
-                <%}%>
-            <% }); %>
-        </ul>
-        <h2>Youth</h2>
-        <ul>
-            <% candidates.forEach(candidate => { %>
-                <% if (candidate.position == 'Youth') { %>
-                <li>
-                    <label>
-                        <img src="data:image/png;base64,<%= candidate.photo %>" alt="candidate photo">
-                        <input type="radio" name="candidateId3" value="<%= candidate.id %>">
-                        <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %> </span>
-                        <p>(<%= candidate.party %>)</p>
-                        
-                    </label>
-                </li>
-                <%}%>
-            <% }); %>
-        </ul>
-        
         <button type="submit" class="btn btn-primary">Submit Vote</button>
     </form>
+    
+    <script>
+      document.addEventListener('DOMContentLoaded', (e) => {
+        const unreadCount = <%=unreadCount%>;
 
+        if (unreadCount > 0) {
+            const notificationBox = document.getElementById('notification-box');
+
+            const notificationMessage = document.getElementById('notification-message');
+
+          
+
+                notificationMessage.textContent = `You have ${unreadCount} new notification(s).`;
+    
+                notificationBox.style.display = 'block';
+          
+
+
+            setTimeout(function(){
+                notificationBox.style.display = 'none';
+            }, 5000);
+
+        }
+      })
+      </script>
  <script src="/js/vote.js"></script>
 <%- include('layout/footer') %>

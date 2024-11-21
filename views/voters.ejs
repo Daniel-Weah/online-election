@@ -9,6 +9,18 @@
     #voters-registration-tab{
         margin-left: -4pc;
     }
+    #notification-box {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50; /* Green */
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
     @media only screen and (max-width: 600px){
         #voters-registration-tab{
             margin-left: 0;
@@ -32,6 +44,10 @@
             <!-- Navbar -->
             <%- include('./layout/navbar') -%>
     </header>
+
+    <div id="notification-box" style="display: none;">
+        <p id="notification-message"></p>
+      </div>
     
     <main style="margin-top: 70px;">
         <div class="container pt-2">
@@ -183,22 +199,22 @@
                                                             </div>
                                                         </div>
                                                         <div class="col-12 mb-3">
-                                                            <label for="role" class="form-label">Select Role:</label>
+                                                            <label for="role" class="form-label">Role:</label>
                                                             <select id="role" name="role" class="form-select" required>
                                                                 <% roles.forEach(role => { %>
                                                                     <option value="<%= role.id %>"><%= role.role %></option>
                                                                 <% }); %>
                                                             </select>
                                                         </div>
-
                                                         <div class="col-12 mb-3">
-                                                            <label for="role" class="form-label">Select Election:</label>
+                                                            <label for="election" class="form-label">Election:</label>
                                                             <select id="election" name="election" class="form-select" required>
                                                                 <% elections.forEach(election => { %>
                                                                     <option value="<%= election.id %>"><%= election.election %></option>
                                                                 <% }); %>
                                                             </select>
                                                         </div>
+
                                                         
                                                         <div class="col-12">
                                                             <div class="form-floating mb-3">
@@ -242,22 +258,25 @@
     </main>
 
     <script>
-        document.getElementById('photo').addEventListener('change', function(event) {
-            const preview = document.getElementById('photoPreview');
-            const file = event.target.files[0];
-    
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                preview.src = '';
-                preview.style.display = 'none';
-            }
-        });
+        // =============== SHOW NEW NOTIFICATION ALERT =======================
+
+document.addEventListener('DOMContentLoaded', (e) => {
+    const unreadCount = <%=unreadCount%>;
+
+    if (unreadCount > 0) {
+        const notificationBox = document.getElementById('notification-box');
+
+        const notificationMessage = document.getElementById('notification-message');
+
+        notificationMessage.textContent = `You have ${unreadCount} new notification(s).`;
+
+        notificationBox.style.display = 'block';
+        
+        setTimeout(function(){
+            notificationBox.style.display = 'none';
+        }, 5000)
+    }
+})
     </script>
     
     <script src="/js/registration.js"></script>

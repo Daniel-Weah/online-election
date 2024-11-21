@@ -50,11 +50,11 @@
 </header>
  <section >
   <h2 style="margin-top: 5rem;">Create Notification</h2>
-  <form action="/create/notification" method="post">
+  <form action="/create/notification" method="post" id="notificationForm">
    <div class="col-12">
     <div class="form-floating mb-3">
       <input type="text" class="form-control" name="title" id="title" placeholder="Message Title" required>
-      <label for="title" class="form-label">Message Title</label>
+      <label for="title" class="form-label">Notification Title</label>
     </div>
     <div class="form-floating mb-3">
      <textarea class="form-control" name="message" id="message" placeholder="Leave a message here" style="height: 200px;"></textarea>
@@ -69,4 +69,56 @@
   </div>
   </form>
 </section>
+
+<script>
+      
+
+  document.getElementById('notificationForm').addEventListener('submit', (e) => {
+   e.preventDefault();
+  
+   const formData = new FormData(e.target);
+   const formObject = Object.fromEntries(formData.entries());
+  
+   fetch('/create/notification', {
+     method: 'POST',
+       headers: {
+           'Content-Type': 'application/json'
+       },
+       body: JSON.stringify(formObject)
+   })
+   .then(response => response.json())
+   .then((data) => {
+    if (data.success) {
+     Swal.fire({
+      title: data.message,
+      text: "Your notification was delivered successfully",
+      icon: 'success',
+      showConfirmButton: false,
+      timer: 2000
+  }).then(() => {
+      document.getElementById('notificationForm').reset();
+  });
+    } else {
+     Swal.fire({
+         title: 'Error',
+         text: data.message,
+         icon: 'error',
+         showConfirmButton: false,
+         timer: 2000
+     });
+  }
+  })
+  .catch(error => {
+  Swal.fire({
+     title: 'Error',
+     text: 'There was a problem sending your notification. Please try again later.',
+     icon: 'error',
+     showConfirmButton: false,
+     timer: 2000
+  });
+  console.error('Error:', error);
+  });
+   })
+  
+     </script>
 <%- include('layout/footer') %>

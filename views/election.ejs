@@ -34,7 +34,7 @@
             <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Create Election</h1>
             <div class="container pt-2">
                 <section >
-                    <form action="/create/election" method="post">
+                    <form action="/create/election" method="post" id="electionForm">
                      <div class="col-12">
                       <div class="form-floating mb-3">
                         <input type="text" class="form-control" name="election" id="election" placeholder="Election Title" required>
@@ -80,6 +80,57 @@
                 </table>
             </div>
         </main>
+        <script>
+      
 
+            document.getElementById('electionForm').addEventListener('submit', (e) => {
+             e.preventDefault();
+            
+             const formData = new FormData(e.target);
+             const formObject = Object.fromEntries(formData.entries());
+            
+             fetch('/create/election', {
+               method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/json'
+                 },
+                 body: JSON.stringify(formObject)
+             })
+             .then(response => response.json())
+             .then((data) => {
+              if (data.success) {
+               Swal.fire({
+                title: "Election Created Successfully",
+                text: data.message,
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 2000
+            }).then(() => {
+                document.getElementById('forget-password').reset();
+            });
+              } else {
+               Swal.fire({
+                   title: 'Error',
+                   text: data.message,
+                   icon: 'error',
+                   showConfirmButton: false,
+                   timer: 2000
+               });
+            }
+            })
+            .catch(error => {
+            Swal.fire({
+               title: 'Error',
+               text: 'There was a problem updating your information. Please try again later.',
+               icon: 'error',
+               showConfirmButton: false,
+               timer: 2000
+            });
+            console.error('Error:', error);
+            });
+             })
+            
+               </script>
+           
         
     <%- include('layout/footer') -%>

@@ -1,4 +1,3 @@
-
 <%- include('layout/header') %>  
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -106,6 +105,14 @@
                         <select id="position" name="position" class="form-select" required>
                             <% positions.forEach(position => { %>
                                 <option value="<%= position.id %>"><%= position.position %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label for="election" class="form-label">Election:</label>
+                        <select id="election" name="election" class="form-select" required>
+                            <% elections.forEach(election => { %>
+                                <option value="<%= election.id %>"><%= election.election %></option>
                             <% }); %>
                         </select>
                     </div>

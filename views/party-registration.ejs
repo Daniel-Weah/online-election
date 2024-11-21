@@ -18,6 +18,18 @@
   section{
     display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
   }
+  #notification-box {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50; /* Green */
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
     @media only screen and (max-width: 600px) {
         #parties-tab {
             width: 100%;
@@ -91,6 +103,10 @@
         <!-- Navbar -->
         <%- include('./layout/navbar') -%>
     </header>
+
+    <div id="notification-box" style="display: none;">
+        <p id="notification-message"></p>
+      </div>
     <!-- Main layout -->
     <main style="margin-top: 70px; padding-left: 0">
         <div class="container pt-2">
@@ -186,6 +202,24 @@
             <!-- Tabs content -->
         </div>
     </main>
+<script>
+    document.addEventListener('DOMContentLoaded', (e) => {
+        const unreadCount = <%=unreadCount%>;
 
+        if (unreadCount > 0) {
+            const notificationBox = document.getElementById('notification-box');
+
+            const notificationMessage = document.getElementById('notification-message');
+
+            notificationMessage.textContent = `You have ${unreadCount} new notification(s).`;
+
+            notificationBox.style.display = 'block';
+
+            setTimeout(function(){
+                notificationBox.style.display = 'none';
+            }, 5000);
+        }
+    })
+</script>
     <script src="/js/party.js"></script>
     <%- include('layout/footer') %>
