@@ -48,8 +48,11 @@
           <div class="mb-3" style="margin: 20px;">
             <label class="visually-hidden" for="elections-dropdown">Preference</label>
             <% if (role === 'Admin') { %> 
-            <select class="form-select" name="elections-dropdown" id="elections-dropdown" required>
-                <option value="">Select Election</option>
+            <select class="form-select" name="elections-dropdown" id="elections-dropdown" required style="cursor: pointer;">
+                <option value="" selected disabled>Select Election</option>
+                <% elections.forEach(election => { %> 
+                <option value="<%= election.id %>"><%= election.election %></option>
+                <% }) %>
             </select>
             <% } %>
         </div>

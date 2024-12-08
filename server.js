@@ -71,7 +71,7 @@ db.serialize(() => {
   );
 
   db.run(
-    "CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, username VARCHAR(50) NOT NULL, message VARCHAR(2000) NOT NULL, title VARCHAR(50) NOT NULL, is_read INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(username) REFERENCES auth (username))"
+    "CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, username VARCHAR(50) NOT NULL, election INTEGER NOT NULL, message VARCHAR(2000) NOT NULL, title VARCHAR(50) NOT NULL, is_read INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(username) REFERENCES auth (username))"
   );
 
   // db.run("DELETE FROM auth WHERE id IN (27, 28)");
@@ -257,6 +257,11 @@ app.get("/dashboard", (req, res) => {
                                     );
                                 }
 
+                                db.all('SELECT * FROM elections', (err, elections) => {
+                                  if (err) {
+                                    return res.status(500).send('There was an error getting the elections data');
+                                  }
+                                
                                 res.render("dashboard", {
                                   totalUsers,
                                   profilePicture,
@@ -265,7 +270,8 @@ app.get("/dashboard", (req, res) => {
                                   role: userRole.role,
                                   unreadCount: countResult.unreadCount,
                                   user,
-                                  groupedCandidates
+                                  groupedCandidates,
+                                  elections
                                 });
                               }
                             );
@@ -282,6 +288,7 @@ app.get("/dashboard", (req, res) => {
       );
     }
   );
+});
 });
 
 // Route to render login form
@@ -923,15 +930,24 @@ app.get("/vote", (req, res) => {
     return res.redirect("/login");
   }
 
+  db.get(`SELECT * FROM users WHERE id = ?`, [req.session.userId], (err, user) => {
+
+    if (err) {
+      return res.status(500).send('There was an error getting the login users data');
+    }
+
+   const ElectionId = user.election_id;
+
   const sql = `
     SELECT candidates.id, candidates.first_name, candidates.last_name, candidates.middle_name, candidates.photo, positions.position, parties.party, IFNULL(votes.vote, 0) AS vote
     FROM candidates
     JOIN positions ON candidates.position_id = positions.id
     JOIN parties ON candidates.party_id = parties.id
     LEFT JOIN votes ON candidates.id = votes.candidate_id
+    WHERE candidates.election_id = ?
   `;
 
-  db.all(sql, [], (err, candidates) => {
+  db.all(sql, [ElectionId], (err, candidates) => {
     if (err) {
       return res.status(500).send("Error fetching candidates data");
     }
@@ -1033,6 +1049,7 @@ app.get("/vote", (req, res) => {
       }
     );
   });
+});
 });
 });
 
@@ -1648,6 +1665,12 @@ app.get("/create/notification", (req, res) => {
                             .status(500)
                             .send("Error fetching user from the user table");
                         }
+
+                        db.all('SELECT * FROM elections', (err, elections) => {
+                          if (err) {
+                            return res.status(500).send('There was an error getting the elections data');
+                          }
+
                         res.render("create-notification", {
                           users,
                           currentUser: user,
@@ -1657,6 +1680,7 @@ app.get("/create/notification", (req, res) => {
                           roles,
                           unreadCount: countResult.unreadCount,
                           user,
+                          elections
                         });
                       }
                     );
@@ -1670,24 +1694,30 @@ app.get("/create/notification", (req, res) => {
     });
   });
 });
+});
 
 app.post("/create/notification", (req, res) => {
-  const { message, title } = req.body;
+  const { election, message, title } = req.body;
 
-  db.all("SELECT username FROM auth", [], (err, users) => {
+  db.all(`SELECT users.*, auth.username
+          FROM users
+          JOIN auth ON users.id = auth.user_id
+          WHERE users.election_id = ?
+    `, [election], (err, users) => {
     if (err) {
       return res
         .status(500)
         .json({ success: false, message: "Error fetching username" });
     }
 
+
     const insertPromises = users.map((user) => {
       return new Promise((resolve, reject) => {
         const currentTime = new Date();
 
         db.run(
-          `INSERT INTO notifications (username, message, title, created_at) VALUES (?,?,?,?)`,
-          [user.username, message, title, currentTime],
+          `INSERT INTO notifications (username, election, message, title, created_at) VALUES (?,?,?,?,?)`,
+          [user.username, election, message, title, currentTime],
           function (err) {
             if (err) {
               return reject(err);

@@ -52,6 +52,13 @@
   <h2 style="margin-top: 5rem;">Create Notification</h2>
   <form action="/create/notification" method="post" id="notificationForm">
    <div class="col-12">
+    <select class="form-select mb-3" name="election" id="election" required style="cursor: pointer;">
+      <option value="" selected disabled>Select Election</option>
+      <% elections.forEach(election => { %> 
+      <option value="<%= election.id %>"><%= election.election %></option>
+      <% }) %>
+  </select>
+
     <div class="form-floating mb-3">
       <input type="text" class="form-control" name="title" id="title" placeholder="Message Title" required>
       <label for="title" class="form-label">Notification Title</label>
