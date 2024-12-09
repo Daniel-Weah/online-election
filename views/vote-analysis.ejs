@@ -69,34 +69,37 @@
     </div>
   </div>
 
-  <script>
-    google.charts.load('current', {'packages':['corechart']});
-    google.charts.setOnLoadCallback(drawCharts);
+<script>
+  google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(drawCharts);
 
-    function drawCharts() {
-      <% Object.keys(groupedCandidates).forEach((position) => { %>
-        var data_<%= position.replace(/\s+/g, '-') %> = google.visualization.arrayToDataTable([
-          ['Candidate', 'Votes'],
-          <% groupedCandidates[position].forEach(candidate => { %>
-            ['<%= candidate.first_name + ' ' + (candidate.middle_name ? candidate.middle_name + ' ' : '') + candidate.last_name %>', <%= candidate.vote %>],
-          <% }); %>
-        ]);
-
-        var options_<%= position.replace(/\s+/g, '-') %> = {
-          title: '<%= position %> Candidates',
-          pieHole: 0.4,
-          pieSliceText: 'value'
-        };
-
-        var chart_<%= position.replace(/\s+/g, '-') %> = new google.visualization.ColumnChart(document.getElementById('chart_<%= position.replace(/\s+/g, '-') %>'));
-        chart_<%= position.replace(/\s+/g, '-') %>.draw(data_<%= position.replace(/\s+/g, '-') %>, options_<%= position.replace(/\s+/g, '-') %>);
-
-        // Redraw chart on tab change
-        document.getElementById('<%= position.replace(/\s+/g, '-') %>-tab').addEventListener('shown.bs.tab', function () {
-          chart_<%= position.replace(/\s+/g, '-') %>.draw(data_<%= position.replace(/\s+/g, '-') %>, options_<%= position.replace(/\s+/g, '-') %>);
-        });
+function drawCharts() {
+  <% Object.keys(groupedCandidates).forEach((position) => { %>
+    var data_<%= position.replace(/\s+/g, '-') %> = google.visualization.arrayToDataTable([
+      ['Candidate', 'Votes'],
+      <% groupedCandidates[position].forEach(candidate => { %>
+        ['<%= candidate.first_name + ' ' + (candidate.middle_name ? candidate.middle_name + ' ' : '') + candidate.last_name %>', <%= candidate.vote %>],
       <% }); %>
-    }
-  </script>
+    ]);
+
+    var options_<%= position.replace(/\s+/g, '-') %> = {
+      title: '<%= position %> Candidates',
+      pieHole: 0.4,
+      pieSliceText: 'value'
+    };
+
+    var chart_<%= position.replace(/\s+/g, '-') %> = new google.visualization.PieChart(document.getElementById('chart_<%= position.replace(/\s+/g, '-') %>'));
+    chart_<%= position.replace(/\s+/g, '-') %>.draw(data_<%= position.replace(/\s+/g, '-') %>, options_<%= position.replace(/\s+/g, '-') %>);
+
+    // Redraw chart on tab change
+    document.getElementById('<%= position.replace(/\s+/g, '-') %>-tab').addEventListener('shown.bs.tab', function () {
+      setTimeout(function() {
+        chart_<%= position.replace(/\s+/g, '-') %>.draw(data_<%= position.replace(/\s+/g, '-') %>, options_<%= position.replace(/\s+/g, '-') %>);
+      }, 100);
+    });
+  <% }); %>
+}
+
+</script>
 
 <%- include('layout/footer') %>

@@ -67,60 +67,66 @@
                 <!-- Voters List Tab -->
                 <div class="tab-pane fade show active" id="voters-tab" role="tabpanel">
                     <div class="mb-3" style="margin: 20px;">
-                        <div class="col-12" >
+                        <div class="col-12">
                             <div>
-                                <input type="search" class="form-control" name="search" id="search" placeholder="Search voters" style="width: 100%;height: 3pc;">
+                                <input type="search" class="form-control" name="search" id="searchInput" placeholder="Search voters" style="width: 100%;height: 3pc;">
                             </div>
                         </div>
-                </select>
                     </div>
+                    
                     <table class="table responsive">
                         <thead>
-                            
+                            <th>No.</th>
                             <th scope="col">Name</th>
                             <th scope="col">Role</th>
                             <th scope="col">Status</th>
-                            <th scope="col">Photo</th>
+                            <th scope="col">Register Election</th>
                             <th scope="col">Action</th>
                         </thead>
-                        <tbody>
-                            <% users.forEach(user => { %>
-
-                           
-                                <tr>
-                                    
-                                    <td><%= user.first_name %> <%= user.middle_name %> <%= user.last_name %></td>
-                                     
-                                    <td>
-                                        <span class="badge bg-primary"><%= user.role ? user.role : 'No Role' %></span>
-                                    </td>
-                                    <td>
-                                        <% if (user.has_voted) { %> 
-                                       <button id="role-btn" class="btn btn-success">
+                        <tbody id="votersTable">
+                            <% users.forEach((user, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><img src="data:image/png;base64,<%= user.profile_picture %>" alt="profile_picture" id="profile_picture"> <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %></td>
+                                <td>
+                                    <span class="badge bg-primary"><%= user.role ? user.role : 'No Role' %></span>
+                                </td>
+                                <td>
+                                    <% if (user.has_voted) { %> 
+                                    <button id="role-btn" class="btn btn-success">
                                         Voted
                                     </button>
                                     <%} else {%>
-                                        <button id="role-btn" class="btn btn-danger">
-                                            Not Voted
-                                        </button>
+                                    <button id="role-btn" class="btn btn-danger">
+                                        Not Voted
+                                    </button>
                                     <%}%>
-                                    <td><img src="data:image/png;base64,<%= user.profile_picture %>" alt="profile_picture" id="profile_picture"></td>
-                                    <td><!-- Edit Button -->
-                                        <a href="" class="btn btn-outline-primary btn-floating">
-                                            <i class="fas fa-pencil-alt"></i>
-                                        </a>
-                                        
-                                        <!-- Delete Button -->
-                                        <form action="/delete/user/<%= user.id %>" method="POST" style="display:inline;">
-                                            <button type="submit" class="btn btn-outline-danger btn-floating">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                              
-                                <% }) %>
-                            
+                                </td>
+                                <td><%= user.election%></td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= user.id %>">
+                                            <li>
+                                                <a href="/edit/user/<%= user.id %>" class="dropdown-item">
+                                                    <i class="fas fa-pencil-alt me-2"></i>Edit
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <form action="/delete/user/<%= user.id %>" method="POST" style="margin: 0;">
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="fas fa-trash-alt me-2"></i>Delete
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                                
+                            </tr>
+                            <% }) %>
                         </tbody>
                     </table>
                 </div>
@@ -275,9 +281,49 @@ document.addEventListener('DOMContentLoaded', (e) => {
         setTimeout(function(){
             notificationBox.style.display = 'none';
         }, 5000)
-    }
-})
+    };
+
+    
+});
+
+
+
+
+
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const votersTable = document.getElementById('votersTable');
+    
+            searchInput.addEventListener('input', function() {
+                const filter = searchInput.value.toLowerCase();
+                const rows = votersTable.getElementsByTagName('tr');
+                
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    const cells = row.getElementsByTagName('td');
+                    
+                    let matchFound = false;
+                    
+                    for (let j = 0; j < cells.length; j++) {
+                        const cell = cells[j];
+                        if (cell.textContent.toLowerCase().includes(filter)) {
+                            matchFound = true;
+                            break;
+                        }
+                    }
+                    
+                    if (matchFound) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    </script>
+    
     
     <script src="/js/registration.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
