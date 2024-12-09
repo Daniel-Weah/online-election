@@ -1,84 +1,127 @@
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>Vote Wise Online Election Application</title>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" />
-    <!-- Google Fonts Roboto -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
-    <!-- Bootstrap CSS -->
-    <link href="/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom styles -->
-    <link rel="stylesheet" href="/css/style.css" />
-    <!-- Additional Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<%- include('layout/header') %> 
+<link rel="stylesheet" href="/css/style.css" />
+
 <style>
- #container{
-  text-align: center;
-  margin-top: 5px;
- }
- h1{
-  margin-top: 3pc;
- }
- ul{
-  width: 40%;
-  margin: 0 auto;
-  padding-top: 2rem;
-  background-color: rgb(251, 251, 251);
-  text-align: justify;
- }
- ul li{
-  list-style: none;
- }
- ul li #title{
-  font-size: 1.2rem;
+ 
+ #notification-box {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50; 
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+
+/* Style for the notification box */
+#notification-box {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  font-size: 1rem;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Smooth fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Notifications list */
+#notification-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+#notification-list li {
+  /* display: flex; */
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+#notification-list li img {
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+}
+
+#notification-list li span {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+#notification-list li span#title {
   font-weight: bold;
- }
- ul li img{
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
- }
- @media only screen and (max-width: 600px){
-  #container{
-  text-align: center;
-  margin-top: 5px;
- }
- ul{
-  width: 100%;
-  padding-right: 20px;
- }
-#no-notification{
-  margin: 0 auto;
-  width: 100%;
+  color: #000;
 }
- }
- @media only screen and (min-width: 600px) and (max-width: 768px){
-  #container{
-  text-align: center;
-  margin-top: 5px;
- }
- ul{
-  width: 100%;
-  padding-right: 20px;
- }
-#no-notification{
-  margin: 0 auto;
-  width: 100%;
+
+#notification-list li span img {
+  margin-left: 10px;
+  width: 15px;
+  height: 15px;
 }
- }
+
+/* No notification image */
+#no-notification {
+  display: block;
+  margin: 20px auto;
+  max-width: 200px;
+}
+
+
+@media only screen and (max-width: 600px){
+  #fullName{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 55px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  #container{
+    margin-left: 15px;
+  }
+}
+@media only screen and (min-width: 600px){
+  #fullName{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 55px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  #container{
+    margin-left: 15px;
+  }
+}
 </style>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     const socket = io();
     
-    // Ensure userId is properly set
     const userId = '<%= userId %>'; 
     socket.emit('join', userId);
     
@@ -97,8 +140,47 @@
 
 </head>
 <body>
- <main id="container">
-  <h1>Welcome, <%= username %>!</h1>
+  <header>
+    <nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+      <div class="container-fluid">
+         
+          <a class="navbar-brand" href="#">
+              <img src="/images/election.png" height="45"  alt="" loading="lazy" />
+          </a>
+  
+          <ul class="navbar-nav ms-auto d-flex flex-row">
+              <li class="nav-item dropdown">
+                  <a class="nav-link me-3 me-lg-0 dropdown-toggle hidden-arrow" href="#" id="notification" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="fas fa-bell" style="font-size: 1.2rem;margin-top: 10px;"></i>
+                      <span class="badge rounded-pill badge-notification bg-danger"><%= unreadCount %></span>
+                  </a>
+                  <ul style="position: absolute" class="dropdown-menu dropdown-menu-end" aria-labelledby="notification">
+                      <li><a class="dropdown-item" href="/notifications">Notification</a></li>
+                  </ul>
+              </li>
+              
+              </li>
+  
+              <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle hidden-arrow d-flex align-items-center" href="#" id="profile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <img src="data:image/png;base64,<%=profilePicture%>" class="rounded-circle" height="40" width="40" loading="lazy" alt="user" /> &nbsp;
+                      <span id="fullName" title="<%= userData.first_name%> <%= userData.middle_name%> <%= userData.last_name%>"><%= userData.first_name%> <%= userData.middle_name%> <%= userData.last_name%></span>
+                  </a>
+                  <ul style="position: absolute" class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+                      <li><a class="dropdown-item" href="/my/profile">My profile</a></li>
+                      <li><a class="dropdown-item" href="/voter/setting">Settings</a></li>
+                      <li><a class="dropdown-item" href="/logout" style="color: #f00;"> <i class="fas fa-arrow-right"></i> Logout</a></li>
+                  </ul>
+              </li>
+              
+          </ul>
+      </div>
+       
+  </nav>
+  
+  </header>
+ <main id="container" class="shadow-sm mt-4">
+  <h1 style="margin-top: 5pc;">Welcome, <%= username %>! </h1>
   <h3>Your Notifications</h3>
   <ul id="notification-list">
     <% if (notifications.length > 0) { %>
@@ -114,5 +196,4 @@
   </ul>
 </main>
 
-</body>
-</html>
+<%- include('layout/footer') %>
