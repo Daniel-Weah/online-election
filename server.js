@@ -721,9 +721,10 @@ app.post("/voters", upload.single("photo"), (req, res) => {
                 const notificationTitle = "Registration Successful";
 
                 db.run(
-                  `INSERT INTO notifications (username, message, title, created_at) VALUES (?,?,?,?)`,
+                  `INSERT INTO notifications (username, election, message, title, created_at) VALUES (?,?,?,?,?)`,
                   [
                     username,
+                    election,
                     notificationMessage,
                     notificationTitle,
                     currentTime,
