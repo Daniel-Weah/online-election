@@ -152,6 +152,7 @@
     <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
         <h1>Vote Candidate</h1>
         <ul>
+            <input type="hidden" name="electionID" id="electionID" value=" <%= userElectionID %> ">
             <% Object.keys(groupedCandidates).forEach(position => { %>
                 <h2><%= position %></h2>
                 <% groupedCandidates[position].forEach(candidate => { %>

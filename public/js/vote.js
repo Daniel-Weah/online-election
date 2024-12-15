@@ -18,7 +18,7 @@ document.getElementById("voteForm").addEventListener("submit", (e) => {
           showConfirmButton: false,
           timer: 2000,
         }).then(() => {
-          window.location.href = "/dashboard"; // Redirect after the alert
+          window.location.href = "/dashboard"; 
         });
       } else {
         Swal.fire({

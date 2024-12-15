@@ -28,7 +28,7 @@ const upload = multer({ storage: storage });
 
 app.use(
   session({
-    secret: "thisismysecrctekeyfhrgfgrfrty84fwir767",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   })
@@ -74,7 +74,7 @@ db.serialize(() => {
     "CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, username VARCHAR(50) NOT NULL, election INTEGER NOT NULL, message VARCHAR(2000) NOT NULL, title VARCHAR(50) NOT NULL, is_read INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(username) REFERENCES auth (username))"
   );
 
-  // db.run("DELETE FROM auth WHERE id IN (27, 28)");
+  // db.run("DELETE FROM auth WHERE id = 13");
 
   // db.run(
   //   "DROP TABLE auth"
@@ -114,10 +114,56 @@ app.get("/", (req, res) => {
   res.redirect("/login");
 });
 
+
+app.get("/login", (req, res) => {
+  res.render("login.ejs");
+});
+
+// Route to handle login form submission
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  db.get("SELECT * FROM auth WHERE username = ?", [username], (err, user) => {
+    if (err) {
+      return res.status(500).send("Internal Server Error");
+    }
+    if (!user) {
+      return res.render("login", {
+        errorMessage: "Invalid username or password",
+      });
+    }
+
+    bcrypt.compare(password, user.password, (err, result) => {
+      if (result) {
+        db.get(
+          "SELECT * FROM users WHERE id = ?",
+          [user.user_id],
+          (err, userData) => {
+            if (err) {
+              return res.status(500).send("Internal Server Error");
+            }
+            req.session.userId = user.user_id;
+            req.session.profilePicture =
+              userData.profile_picture.toString("base64");
+            res.redirect("/dashboard");
+          }
+        );
+      } else {
+        return res.render("login", {
+          errorMessage: "Invalid username or password",
+        });
+      }
+    });
+  });
+});
+
+
 app.get("/dashboard", (req, res) => {
   if (!req.session.userId) {
     return res.redirect("/login");
   }
+
+  console.log('The session userID', req.session.userId);
 
   const electionId = req.query.electionId || null;
 
@@ -225,7 +271,7 @@ app.get("/dashboard", (req, res) => {
 
                     // Fetch the current user's username
                     db.get(
-                      "SELECT username FROM auth WHERE id = ?",
+                      "SELECT username FROM auth WHERE user_id = ?",
                       [req.session.userId],
                       (err, user) => {
                         if (err) {
@@ -417,7 +463,7 @@ app.get("/dashboard", (req, res) => {
 
 //                     // Fetch the current user's username
 //                     db.get(
-//                       "SELECT username FROM auth WHERE id = ?",
+//                       "SELECT username FROM auth WHERE user_id = ?",
 //                       [req.session.userId],
 //                       (err, user) => {
 //                         if (err) {
@@ -487,47 +533,6 @@ app.get("/dashboard", (req, res) => {
 // });
 
 // Route to render login form
-app.get("/login", (req, res) => {
-  res.render("login.ejs");
-});
-
-// Route to handle login form submission
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-
-  db.get("SELECT * FROM auth WHERE username = ?", [username], (err, user) => {
-    if (err) {
-      return res.status(500).send("Internal Server Error");
-    }
-    if (!user) {
-      return res.render("login", {
-        errorMessage: "Invalid username or password",
-      });
-    }
-
-    bcrypt.compare(password, user.password, (err, result) => {
-      if (result) {
-        db.get(
-          "SELECT * FROM users WHERE id = ?",
-          [user.user_id],
-          (err, userData) => {
-            if (err) {
-              return res.status(500).send("Internal Server Error");
-            }
-            req.session.userId = user.user_id;
-            req.session.profilePicture =
-              userData.profile_picture.toString("base64");
-            res.redirect("/dashboard");
-          }
-        );
-      } else {
-        return res.render("login", {
-          errorMessage: "Invalid username or password",
-        });
-      }
-    });
-  });
-});
 
 // ================================= VOTERS BEGINS =====================================
 
@@ -600,7 +605,7 @@ app.get("/voters", (req, res) => {
                 return res.status(500).send("internal server error");
               }
               db.get(
-                "SELECT username FROM auth WHERE id = ?",
+                "SELECT username FROM auth WHERE user_id = ?",
                 [req.session.userId],
                 (err, user) => {
                   if (err) {
@@ -795,7 +800,7 @@ app.get("/create/party", (req, res) => {
           return res.status(500).send("Error fetching user role");
         }
         db.get(
-          "SELECT username FROM auth WHERE id = ?",
+          "SELECT username FROM auth WHERE user_id = ?",
           [req.session.userId],
           (err, user) => {
             if (err) {
@@ -885,7 +890,7 @@ app.get("/add/position", (req, res) => {
           return res.status(500).send("Error fetching user role");
         }
         db.get(
-          "SELECT username FROM auth WHERE id = ?",
+          "SELECT username FROM auth WHERE user_id = ?",
           [req.session.userId],
           (err, user) => {
             if (err) {
@@ -976,7 +981,7 @@ app.get("/candidate/registration", (req, res) => {
             return res.status(500).send("Error fetching user role");
           }
           db.get(
-            "SELECT username FROM auth WHERE id = ?",
+            "SELECT username FROM auth WHERE user_id = ?",
             [req.session.userId],
             (err, user) => {
               if (err) {
@@ -1167,7 +1172,7 @@ app.get("/vote", (req, res) => {
               return res.status(500).send("Error fetching user role");
             }
             db.get(
-              "SELECT username FROM auth WHERE id = ?",
+              "SELECT username FROM auth WHERE user_id = ?",
               [req.session.userId],
               (err, user) => {
                 if (err) {
@@ -1231,6 +1236,21 @@ app.get("/vote", (req, res) => {
                                   "Error fetching unread notifications count"
                                 );
                             }
+
+                            db.get(
+                              "SELECT * FROM users WHERE id = ?",
+                              [req.session.userId],
+                              (err, users) => {
+                                if (err) {
+                                  return res.status(500).send("error fetching user election id");
+                                }
+                                if (!users) {
+                                  return res.send("user election id found");
+                                }
+      
+                                const userElectionID = users.election_id;
+                                console.log('The is the login user election id', userElectionID);
+
                             db.get(
                               "SELECT * FROM users WHERE id = ?",
                               [req.session.userId],
@@ -1241,6 +1261,8 @@ app.get("/vote", (req, res) => {
                                     .send(
                                       "Error fetching user from the user table"
                                     );
+
+                                    
                                 }
                                 res.render("vote", {
                                   candidates,
@@ -1249,6 +1271,8 @@ app.get("/vote", (req, res) => {
                                   unreadCount: countResult.unreadCount,
                                   user,
                                   groupedCandidates,
+                                  userElectionID
+                                  
                                 });
                               }
                             );
@@ -1266,8 +1290,13 @@ app.get("/vote", (req, res) => {
     }
   );
 });
+});
 
 app.post("/vote", upload.none(), (req, res) => {
+  const { electionID } = req.body;
+
+  console.log('Req Body', req.body);
+
   const userId = req.session.userId;
   const positions = Object.keys(req.body); // Get all positions from the form submission
 
@@ -1287,7 +1316,7 @@ app.post("/vote", upload.none(), (req, res) => {
       if (userVote) {
         return res
           .status(403)
-          .json({ success: false, message: "You have already voted." });
+          .json({ success: false, message: "Sorry! You have already voted." });
       }
 
       const handleVote = (candidateId) => {
@@ -1365,7 +1394,7 @@ app.post("/vote", upload.none(), (req, res) => {
                   }
 
                   db.get(
-                    "SELECT username FROM auth WHERE id = ?",
+                    "SELECT username FROM auth WHERE user_id = ?",
                     [req.session.userId],
                     (err, user) => {
                       if (err) {
@@ -1375,14 +1404,17 @@ app.post("/vote", upload.none(), (req, res) => {
                         return res.send("user not found");
                       }
 
+                     
+
                       const currentTime = new Date();
                       const notificationMessage = `Thank you ${user.username}, for casting your vote. It has been successfully counted.`;
                       const notificationTitle = "Vote Counted";
 
                       db.run(
-                        `INSERT INTO notifications (username, message, title, created_at) VALUES (?,?,?,?)`,
+                        `INSERT INTO notifications (username, election, message, title, created_at) VALUES (?,?,?,?,?)`,
                         [
                           user.username,
+                          electionID,
                           notificationMessage,
                           notificationTitle,
                           currentTime,
@@ -1392,7 +1424,7 @@ app.post("/vote", upload.none(), (req, res) => {
                             console.error("Error inserting notification:", err);
                             return res.status(500).json({
                               success: false,
-                              message: "Database error",
+                              message: "Database error by inserting into the notification",
                             });
                           }
 
@@ -1597,7 +1629,7 @@ app.get("/create/election", (req, res) => {
           return res.status(500).send("Error fetching elections");
         }
         db.get(
-          "SELECT username FROM auth WHERE id = ?",
+          "SELECT username FROM auth WHERE user_id = ?",
           [req.session.userId],
           (err, user) => {
             if (err) {
@@ -1746,7 +1778,7 @@ app.get("/vote/analysis", (req, res) => {
           return res.status(500).send("Error fetching user role");
         }
         db.get(
-          "SELECT username FROM auth WHERE id = ?",
+          "SELECT username FROM auth WHERE user_id = ?",
           [req.session.userId],
           (err, user) => {
             if (err) {
@@ -1856,7 +1888,7 @@ app.get("/create/notification", (req, res) => {
               return res.status(500).send("internal server error");
             }
             db.get(
-              "SELECT username FROM auth WHERE id = ?",
+              "SELECT username FROM auth WHERE user_id = ?",
               [req.session.userId],
               (err, user) => {
                 if (err) {
@@ -1989,7 +2021,7 @@ app.get("/notifications", (req, res) => {
 
   // Fetch the current user's username
   db.get(
-    "SELECT username FROM auth WHERE id = ?",
+    "SELECT username FROM auth WHERE user_id = ?",
     [req.session.userId],
     (err, user) => {
       if (err) {
@@ -2063,7 +2095,7 @@ io.on("connection", (socket) => {
   console.log("A user connected");
 
   socket.on("join", (userId) => {
-    db.get("SELECT username FROM auth WHERE id = ?", [userId], (err, user) => {
+    db.get("SELECT username FROM auth WHERE user_id = ?", [userId], (err, user) => {
       if (err || !user) {
         console.error("Error fetching user:", err);
         return;
