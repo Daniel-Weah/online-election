@@ -28,7 +28,7 @@ const upload = multer({ storage: storage });
 
 app.use(
   session({
-    secret: 'thisismysecrctekeyfhrgfgrfrty84fwir767',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   })
