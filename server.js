@@ -7,6 +7,8 @@ const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const multer = require("multer");
+require('dotenv').config();
+
 
 const app = express();
 const server = http.createServer(app);
