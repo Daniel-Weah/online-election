@@ -47,7 +47,7 @@
         <div class="container pt-2 bg-light">
           <div class="mb-3" style="margin: 20px;">
             <label class="visually-hidden" for="elections-dropdown">Preference</label>
-            <% if (role === 'Admin') { %> 
+            <% if (role === 'Super Admin') { %> 
             <select class="form-select" name="elections-dropdown" id="elections-dropdown" required style="cursor: pointer;">
                 <option value="" selected disabled>Select Election</option>
                 <% elections.forEach(election => { %> 

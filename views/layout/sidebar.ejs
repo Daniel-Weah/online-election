@@ -16,7 +16,55 @@
         >
         <i class="fas fa-person-booth fa-fw me-3"></i><span>Vote Candidate</span></a
         >
+
         <% if (role === 'Admin') { %>
+          <a
+            href="/admin/voters"
+            class="list-group-item list-group-item-action py-2 ripple"
+          >
+            <i class="fas fa-lock fa-fw me-3"></i><span>Voters</span></a
+          >
+  
+  
+        <a
+          href="/create/party" 
+          class="list-group-item list-group-item-action py-2 ripple"
+        >
+          <i class="fas fa-chart-pie fa-fw me-3"></i><span>Parties</span>
+        </a>
+  
+        <a
+        href="/add/position"
+          class="list-group-item list-group-item-action py-2 ripple"
+        >
+          <i class="fas fa-chart-bar fa-fw me-3"></i><span>Positions</span>
+        </a>
+  
+        <a
+        href="/candidate/registration"
+          class="list-group-item list-group-item-action py-2 ripple"
+        >
+          <i class="fas fa-globe fa-fw me-3"></i><span>Candidates</span>
+        </a>
+  
+        <!-- <a
+          href="/vote/analysis"
+          class="list-group-item list-group-item-action py-2 ripple"
+        >
+          <i class="fas fa-chart-bar fa-fw me-3"></i><span>Vote Analysis</span>
+        </a> -->
+
+        <a
+          href="/create/notification"
+          class="list-group-item list-group-item-action py-2 ripple"
+        >
+        <i class="fas fa-bell fa-fw me-3"></i><span>Create Notification</span>
+        </a>
+  
+        <% } %>
+      
+
+        <% if (role === 'Super Admin') { %>
         <a
           href="/voters"
           class="list-group-item list-group-item-action py-2 ripple"

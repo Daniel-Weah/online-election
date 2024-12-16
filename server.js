@@ -30,7 +30,7 @@ const upload = multer({ storage: storage });
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: 'thisismysecrctekeyfhrgfgrfrty84fwir767',
     resave: false,
     saveUninitialized: true,
   })
@@ -666,6 +666,292 @@ app.get("/voters", (req, res) => {
 });
 
 // =============================== VOTERS POST ROUTE ==================================
+app.get("/voters", (req, res) => {
+  if (!req.session.userId) {
+    return res.redirect("login");
+  }
+
+  // Fetch the current user's data
+  const currentUserSql = `
+    SELECT users.*, roles.role, auth.username
+    FROM users
+    JOIN roles ON users.role_id = roles.id
+    JOIN auth ON users.id = auth.user_id
+    WHERE users.id = ?
+  `;
+
+  db.get(currentUserSql, [req.session.userId], (err, user) => {
+    if (err) {
+      console.error("Error fetching current user:", err);
+      return res.status(500).send("An error occurred");
+    }
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    console.log('Login user data:', user);
+
+    user.profile_picture = user.profile_picture.toString("base64");
+
+    // Fetch all users
+    const allUsersSql = `
+      SELECT users.*, roles.role, auth.username, elections.election
+      FROM users 
+      JOIN roles ON users.role_id = roles.id
+      JOIN elections ON users.election_id = elections.id
+      JOIN auth ON users.id = auth.user_id
+      ORDER BY users.id DESC
+    `;
+
+   
+
+    // Ensure adminUsers is passed to the render method
+    db.all(allUsersSql, [], (err, users) => {
+        if (err) {
+            console.error("Error fetching all users:", err);
+            return res.status(500).send("Error fetching users");
+        }
+      // Encode profile pictures for all users
+      users.forEach((user) => {
+        if (user.profile_picture) {
+          user.profile_picture = user.profile_picture.toString("base64");
+        }
+      });
+
+      const voteStatus = user.has_voted ? "Voted" : "Not Voted";
+
+      db.get(
+        "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
+        [req.session.userId],
+        (err, userRole) => {
+          if (err) {
+            return res.status(500).send("Error fetching user role");
+          }
+          db.all("SELECT * FROM elections", [], (err, elections) => {
+            if (err) {
+              return res.status(500).send("Error Fetching elections");
+            }
+            db.all("SELECT * FROM roles", [], (err, roles) => {
+              if (err) {
+                return res.status(500).send("Internal server error");
+              }
+              db.get(
+                "SELECT username FROM auth WHERE user_id = ?",
+                [req.session.userId],
+                (err, user) => {
+                  if (err) {
+                    return res.status(500).send("Error fetching user");
+                  }
+
+                  if (!user) {
+                    return res.status(404).send("User not found");
+                  }
+
+                  // Fetch unread notifications count
+                  db.get(
+                    "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = ? AND is_read = 0",
+                    [user.username],
+                    (err, countResult) => {
+                      if (err) {
+                        return res.status(500).send("Error fetching unread notifications count");
+                      }
+                      const profilePicture = req.session.profilePicture;
+
+                      db.get(
+                        "SELECT * FROM users WHERE id = ?",
+                        [req.session.userId],
+                        (err, user) => {
+                          if (err) {
+                            return res.status(500).send("Error fetching user from the user table");
+                          }
+
+
+
+                          const adminAllUsersSql = `
+                          SELECT users.*, roles.role, auth.username, elections.election
+                          FROM users 
+                          JOIN roles ON users.role_id = roles.id
+                          JOIN elections ON users.election_id = elections.id
+                          JOIN auth ON users.id = auth.user_id
+                          WHERE users.election_id = 1
+                          ORDER BY users.id DESC
+                        `;
+                      
+                      
+                        db.all(adminAllUsersSql, [], (err, adminUsers) => {
+                          if (err) {
+                              console.error("Error fetching admin users:", err);
+                              return res.status(500).send("Error fetching admin users");
+                          }
+                      
+                          console.log("Fetched admin users:", adminUsers);
+                      
+                          adminUsers.forEach((adminUser) => {
+                              if (adminUser.profile_picture) {
+                                  adminUser.profile_picture = adminUser.profile_picture.toString("base64");
+                              }
+                          });
+
+                         
+
+                          res.render("voters", {
+                            users,                            
+                            currentUser: user,
+                            profilePicture,
+                            voteStatus,
+                            role: userRole.role,
+                            roles,
+                            unreadCount: countResult.unreadCount,
+                            user,
+                            elections,
+                          });
+                        }
+                      );
+                    }
+                  );
+                }
+              );
+            });
+          });
+        }
+      );
+    });
+  });
+});
+});
+
+
+app.get("/admin/voters", (req, res) => {
+  if (!req.session.userId) {
+    return res.redirect("login");
+  }
+
+  // Fetch the current user's data
+  const currentUserSql = `
+    SELECT users.*, roles.role, auth.username
+    FROM users
+    JOIN roles ON users.role_id = roles.id
+    JOIN auth ON users.id = auth.user_id
+    WHERE users.id = ?
+  `;
+
+  db.get(currentUserSql, [req.session.userId], (err, user) => {
+    if (err) {
+      console.error("Error fetching current user:", err);
+      return res.status(500).send("An error occurred");
+    }
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    console.log('Login user data:', user);
+
+    user.profile_picture = user.profile_picture.toString("base64");
+
+ 
+
+      const voteStatus = user.has_voted ? "Voted" : "Not Voted";
+
+      db.get(
+        "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
+        [req.session.userId],
+        (err, userRole) => {
+          if (err) {
+            return res.status(500).send("Error fetching user role");
+          }
+          db.all("SELECT * FROM elections", [], (err, elections) => {
+            if (err) {
+              return res.status(500).send("Error Fetching elections");
+            }
+            db.all("SELECT * FROM roles", [], (err, roles) => {
+              if (err) {
+                return res.status(500).send("Internal server error");
+              }
+              db.get(
+                "SELECT username FROM auth WHERE user_id = ?",
+                [req.session.userId],
+                (err, user) => {
+                  if (err) {
+                    return res.status(500).send("Error fetching user");
+                  }
+
+                  if (!user) {
+                    return res.status(404).send("User not found");
+                  }
+
+                  // Fetch unread notifications count
+                  db.get(
+                    "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = ? AND is_read = 0",
+                    [user.username],
+                    (err, countResult) => {
+                      if (err) {
+                        return res.status(500).send("Error fetching unread notifications count");
+                      }
+                      const profilePicture = req.session.profilePicture;
+
+                      db.get(
+                        "SELECT * FROM users WHERE id = ?",
+                        [req.session.userId],
+                        (err, user) => {
+                          if (err) {
+                            return res.status(500).send("Error fetching user from the user table");
+                          }
+
+
+
+                          const adminAllUsersSql = `
+                          SELECT users.*, roles.role, auth.username, elections.election
+                          FROM users 
+                          JOIN roles ON users.role_id = roles.id
+                          JOIN elections ON users.election_id = elections.id
+                          JOIN auth ON users.id = auth.user_id
+                          WHERE users.election_id = ?
+                          ORDER BY users.id DESC
+                        `;
+                      
+                      
+                        db.all(adminAllUsersSql, [user.election_id], (err, adminUsers) => {
+                          if (err) {
+                              console.error("Error fetching admin users:", err);
+                              return res.status(500).send("Error fetching admin users");
+                          }
+                      
+                          console.log("Fetched admin users:", adminUsers);
+                      
+                          adminUsers.forEach((adminUser) => {
+                              if (adminUser.profile_picture) {
+                                  adminUser.profile_picture = adminUser.profile_picture.toString("base64");
+                              }
+                          });
+
+                         
+
+                          res.render("admin-voters", {
+                            adminUsers,                           
+                            currentUser: user,
+                            profilePicture,
+                            voteStatus,
+                            role: userRole.role,
+                            roles,
+                            unreadCount: countResult.unreadCount,
+                            user,
+                            elections,
+                          });
+                        }
+                      );
+                    }
+                  );
+                }
+              );
+            });
+          });
+        }
+      );
+    });
+  });
+});
+
+// =============================== VOTERS POST ROUTE ==================================
 app.post("/voters", upload.single("photo"), (req, res) => {
   const {
     firstname,
@@ -685,16 +971,13 @@ app.post("/voters", upload.single("photo"), (req, res) => {
       return res.status(500).json({ success: false, message: "Server error" });
     }
 
-    // Fetch the election name using the election ID
     db.get(
       "SELECT election FROM elections WHERE id = ?",
       [election],
       (err, row) => {
         if (err) {
           console.error("Error fetching election name:", err);
-          return res
-            .status(500)
-            .json({ success: false, message: "Database error" });
+          return res.status(500).json({ success: false, message: "Database error" });
         }
 
         const electionName = row ? row.election : "the election";
@@ -705,59 +988,62 @@ app.post("/voters", upload.single("photo"), (req, res) => {
           function (err) {
             if (err) {
               console.error(err.message);
-              return res
-                .status(500)
-                .json({ success: false, message: "Database error" });
+              return res.status(500).json({ success: false, message: "Database error" });
             }
 
             const userId = this.lastID;
 
-            db.run(
-              "INSERT INTO auth(username, password, user_id) VALUES (?,?,?)",
-              [username, hashedPassword, userId],
-              function (err) {
+            db.get(
+              "SELECT username FROM auth WHERE username = ?",
+              [username],
+              function (err, row) {
                 if (err) {
                   console.error(err.message);
-                  return res
-                    .status(500)
-                    .json({ success: false, message: "Database error" });
+                  return res.status(500).json({ success: false, message: "Database error" });
                 }
 
-                const currentTime = new Date();
-                const notificationMessage = `Hi ${username}, congratulations on successfully registering for ${electionName} using our online election voting system! Your vote is powerful and can shape the future. Stay tuned for any important updates regarding the election process.`;
-                const notificationTitle = "Registration Successful";
+                if (row) {
+                  return res.status(400).json({ success: false, message: "Username already exists" });
+                } else {
+                  db.run(
+                    "INSERT INTO auth(username, password, user_id) VALUES (?,?,?)",
+                    [username, hashedPassword, userId],
+                    function (err) {
+                      if (err) {
+                        console.error(err.message);
+                        return res.status(500).json({ success: false, message: "Database error" });
+                      }
 
-                db.run(
-                  `INSERT INTO notifications (username, election, message, title, created_at) VALUES (?,?,?,?,?)`,
-                  [
-                    username,
-                    election,
-                    notificationMessage,
-                    notificationTitle,
-                    currentTime,
-                  ],
-                  function (err) {
-                    if (err) {
-                      console.error("Error inserting notification:", err);
-                      return res
-                        .status(500)
-                        .json({ success: false, message: "Database error" });
+                      const currentTime = new Date();
+                      const notificationMessage = `Hi ${username}, congratulations on successfully registering for ${electionName} using our online election voting system! Your vote is powerful and can shape the future. Stay tuned for any important updates regarding the election process.`;
+                      const notificationTitle = "Registration Successful";
+
+                      db.run(
+                        `INSERT INTO notifications (username, election, message, title, created_at) VALUES (?,?,?,?,?)`,
+                        [username, election, notificationMessage, notificationTitle, currentTime],
+                        function (err) {
+                          if (err) {
+                            console.error("Error inserting notification:", err);
+                            return res.status(500).json({ success: false, message: "Database error" });
+                          }
+
+                          // Emit the notification to the user's room
+                          io.to(username).emit("new-notification", {
+                            message: notificationMessage,
+                            title: notificationTitle,
+                            created_at: currentTime,
+                          });
+
+                          console.log(`A row has been inserted with ID ${userId}`);
+                          res.status(201).json({
+                            success: true,
+                            message: `${username} has successfully been registered`,
+                          });
+                        }
+                      );
                     }
-
-                    // Emit the notification to the user's room
-                    io.to(username).emit("new-notification", {
-                      message: notificationMessage,
-                      title: notificationTitle,
-                      created_at: currentTime,
-                    });
-
-                    console.log(`A row has been inserted with ID ${userId}`);
-                    res.status(200).json({
-                      success: true,
-                      message: `${username} has successfully been registered`,
-                    });
-                  }
-                );
+                  );
+                }
               }
             );
           }
@@ -766,6 +1052,132 @@ app.post("/voters", upload.single("photo"), (req, res) => {
     );
   });
 });
+
+// app.post("/voters", upload.single("photo"), (req, res) => {
+//   const {
+//     firstname,
+//     middlename,
+//     lastname,
+//     dob,
+//     username,
+//     role,
+//     election,
+//     password,
+//   } = req.body;
+//   const photo = req.file ? req.file.buffer : null;
+
+//   bcrypt.hash(password, 10, (err, hashedPassword) => {
+//     if (err) {
+//       console.error(err.message);
+//       return res.status(500).json({ success: false, message: "Server error" });
+//     }
+
+//     // Fetch the election name using the election ID
+//     db.get(
+//       "SELECT election FROM elections WHERE id = ?",
+//       [election],
+//       (err, row) => {
+//         if (err) {
+//           console.error("Error fetching election name:", err);
+//           return res
+//             .status(500)
+//             .json({ success: false, message: "Database error" });
+//         }
+
+//         const electionName = row ? row.election : "the election";
+
+//         db.run(
+//           "INSERT INTO users(first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) VALUES (?,?,?,?,?,?,?)",
+//           [firstname, middlename, lastname, dob, photo, role, election],
+//           function (err) {
+//             if (err) {
+//               console.error(err.message);
+//               return res
+//                 .status(500)
+//                 .json({ success: false, message: "Database error" });
+//             }
+
+//             const userId = this.lastID;
+
+//             db.get(
+//               "SELECT username FROM auth WHERE username = ?",
+//               [username],
+//               function (err, row) {
+//                 if (err) {
+//                   console.error(err.message);
+//                   return res
+//                     .status(500)
+//                     .json({ success: false, message: "Database error" });
+//                 }
+            
+//                 if (row) {
+//                   // If the username already exists
+//                   return res
+//                     .status(400)
+//                     .json({ success: false, message: "Username already exists" });
+//                 } else {
+//                   // If the username does not exist, proceed to insert
+//                   db.run(
+//                     "INSERT INTO auth(username, password, user_id) VALUES (?,?,?)",
+//                     [username, hashedPassword, userId],
+//                     function (err) {
+//                       if (err) {
+//                         console.error(err.message);
+//                         return res
+//                           .status(500)
+//                           .json({ success: false, message: "Database error" });
+//                       }
+//                       // If insertion is successful
+//                       return res
+//                         .status(201)
+//                         .json({ success: true, message: "User registered successfully" });
+             
+            
+
+//                 const currentTime = new Date();
+//                 const notificationMessage = `Hi ${username}, congratulations on successfully registering for ${electionName} using our online election voting system! Your vote is powerful and can shape the future. Stay tuned for any important updates regarding the election process.`;
+//                 const notificationTitle = "Registration Successful";
+
+//                 db.run(
+//                   `INSERT INTO notifications (username, election, message, title, created_at) VALUES (?,?,?,?,?)`,
+//                   [
+//                     username,
+//                     election,
+//                     notificationMessage,
+//                     notificationTitle,
+//                     currentTime,
+//                   ],
+//                   function (err) {
+//                     if (err) {
+//                       console.error("Error inserting notification:", err);
+//                       return res
+//                         .status(500)
+//                         .json({ success: false, message: "Database error" });
+//                     }
+
+//                     // Emit the notification to the user's room
+//                     io.to(username).emit("new-notification", {
+//                       message: notificationMessage,
+//                       title: notificationTitle,
+//                       created_at: currentTime,
+//                     });
+
+//                     console.log(`A row has been inserted with ID ${userId}`);
+//                     res.status(200).json({
+//                       success: true,
+//                       message: `${username} has successfully been registered`,
+//                     });
+//                   }
+//                 );
+//               };
+//             );
+//           }
+//         );
+//       }
+//     );
+//   });
+// });
+// });
 
 // Handle delete request
 app.post("/delete/user/:id", (req, res) => {
@@ -2197,7 +2609,7 @@ app.post("/create/user", upload.single("photo"), (req, res) => {
           console.error("Error fetching election name:", err);
           return res
             .status(500)
-            .json({ success: false, message: "Database error" });
+            .json({ success: false, message: "Error fetching election, error" });
         }
 
         const electionName = row ? row.election : "the election";
@@ -2210,7 +2622,7 @@ app.post("/create/user", upload.single("photo"), (req, res) => {
               console.error(err.message);
               return res
                 .status(500)
-                .json({ success: false, message: "Database error" });
+                .json({ success: false, message: "Error inserting into users error" });
             }
 
             const userId = this.lastID;
@@ -2223,7 +2635,7 @@ app.post("/create/user", upload.single("photo"), (req, res) => {
                   console.error(err.message);
                   return res
                     .status(500)
-                    .json({ success: false, message: "Database error" });
+                    .json({ success: false, message: "Error inserting into auth error" });
                 }
 
                 const currentTime = new Date();
@@ -2231,9 +2643,10 @@ app.post("/create/user", upload.single("photo"), (req, res) => {
                 const notificationTitle = "Registration Successful";
 
                 db.run(
-                  `INSERT INTO notifications (username, message, title, created_at) VALUES (?,?,?,?)`,
+                  `INSERT INTO notifications (username, election, message, title, created_at) VALUES (?,?,?,?,?)`,
                   [
                     username,
+                    election,
                     notificationMessage,
                     notificationTitle,
                     currentTime,
@@ -2243,7 +2656,7 @@ app.post("/create/user", upload.single("photo"), (req, res) => {
                       console.error("Error inserting notification:", err);
                       return res
                         .status(500)
-                        .json({ success: false, message: "Database error" });
+                        .json({ success: false, message: "Error inserting notification: error" });
                     }
 
                     // Emit the notification to the user's room
