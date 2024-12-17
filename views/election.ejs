@@ -62,18 +62,29 @@
                        
                        <td><%=election.election%></td>
                        <td><%=election.created_at%></td>
-                       <td><!-- Edit Button -->
-                        <a href="/edit/election/<%= election.id %>" class="btn btn-outline-primary btn-floating">
-                            <i class="fas fa-pencil-alt"></i>
-                        </a>
-                        
-                        <!-- Delete Button -->
-                        <form action="/delete/election/<%= election.id %>" method="POST" style="display:inline;">
-                            <button type="submit" class="btn btn-outline-danger btn-floating">
-                                <i class="fas fa-trash-alt"></i>
+
+                       <td>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= election.id %>" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
                             </button>
-                        </form>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= election.id %>">
+                                <li>
+                                    <a href="/edit/election/<%= election.id %>" class="dropdown-item">
+                                        <i class="fas fa-pencil-alt me-2"></i>Edit
+                                    </a>
+                                </li>
+                                <li>
+                                    <form action="/delete/election/<%= election.id %>" method="POST" style="margin: 0;">
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-trash-alt me-2"></i>Delete
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                     </td>
+                      
                       </tr>
                      </tbody>
                      <% }) %>

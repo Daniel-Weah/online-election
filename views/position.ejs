@@ -111,9 +111,9 @@
             <section id="table-section">
                 <h2 class="mb-4" style="text-align: center;">View Positions</h2>
                 
-                    <select class="custom-select" id="elections-dropdown2">
+                    <!-- <select class="custom-select" id="elections-dropdown2"  style="width: 10%; margin: 20px auto;">
                         <option value="">Select Election</option>
-                    </select>
+                    </select> -->
                   
 
                         <table class="table table-responsive" id="table">
@@ -127,16 +127,27 @@
                                 <tr>
                                     <td><%= position.id %></td>
                                     <td><%= position.position %></td>
-                                    <td><button class="action-btn edit btn outline btn-outline-primary btn-floating">
-                                        <i class="edit fas fa-pencil-alt"></i>
-                                    </button>
-                                    <form action="/delete/position/<%=position.id %>" method="post" style="display:inline;">
-                                    <button type="submit" 
-                                    class="action-btn delete btn btn-outline-danger btn-floating">
-                                        <i class="delete fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
-                                </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= position.id %>">
+                                                <li>
+                                                    <a href="" class="dropdown-item">
+                                                        <i class="fas fa-pencil-alt me-2"></i>Edit
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <form action="/delete/position/<%=position.id %>" method="POST" style="margin: 0;">
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="fas fa-trash-alt me-2"></i>Delete
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <%})%>
                             </tbody>
@@ -183,9 +194,9 @@
                 <section id="table-section">
                     <h2 class="mb-4" style="text-align: center;">View Positions</h2>
                     
-                        <select class="custom-select" id="elections-dropdown2">
+                        <!-- <select class="custom-select" id="elections-dropdown2" style="width: 70%;">
                             <option value="">Select Election</option>
-                        </select>
+                        </select> -->
                       
     
                             <table class="table table-responsive" id="table">
@@ -199,16 +210,29 @@
                                     <tr>
                                         <td><%= position.id %></td>
                                         <td><%= position.position %></td>
-                                        <td><button class="action-btn edit btn outline btn-outline-primary btn-floating">
-                                            <i class="edit fas fa-pencil-alt"></i>
-                                        </button>
-                                        <form action="/delete/position/<%=position.id %>" method="post" style="display:inline;">
-                                        <button type="submit" 
-                                        class="action-btn delete btn btn-outline-danger btn-floating">
-                                            <i class="delete fas fa-trash-alt"></i>
-                                        </button>
-                                    </form>
-                                    </td>
+
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= position.id %>">
+                                                    <li>
+                                                        <a href="" class="dropdown-item">
+                                                            <i class="fas fa-pencil-alt me-2"></i>Edit
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <form action="/delete/position/<%=position.id %>" method="POST" style="margin: 0;">
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <i class="fas fa-trash-alt me-2"></i>Delete
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+
                                     </tr>
                                     <%})%>
                                 </tbody>
