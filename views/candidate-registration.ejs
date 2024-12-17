@@ -70,6 +70,8 @@
     </header>
     <main style="margin-top: 50px; padding-left: 0">
         <div class="container pt-2">
+
+          <% if(role === 'Super Admin') { %> 
             <section >
                 <h1 class="mb-4" style="text-align: center;">Candidate Registration</h1>
                 <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">Register my candidate</h3>
@@ -175,6 +177,117 @@
                <% }) %>
           </table>
         </section>
+        <% } %>
+
+        <% if(role === 'Admin') { %> 
+          <section >
+              <h1 class="mb-4" style="text-align: center;">Candidate Registration</h1>
+              <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">Register my candidate</h3>
+              <form action="/candidate/registration" method="post" id="candidateRegistrationForm" enctype="multipart/form-data">
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="firstname" id="firstname" placeholder="First Name" required>
+                        <label for="firstname" class="form-label">First Name</label>
+                      </div>
+                  </div>
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="middlename" id="middlename" placeholder="Middle Name">
+                        <label for="middlename" class="form-label">Middle Name</label>
+                      </div>
+                  </div>
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="lastname" id="lastname" placeholder="Last Name" required>
+                        <label for="lastname" class="form-label">Last Name</label>
+                      </div>
+                  </div>
+                  <div class="col-12 mb-3">
+                      <label for="party" class="form-label">Party:</label>
+                      <select id="party" name="party" class="form-select" required>
+                          <% Adminparties.forEach(party => { %>
+                              <option value="<%= party.id %>"><%= party.party %></option>
+                          <% }); %>
+                      </select>
+                  </div>
+                  <div class="col-12 mb-3">
+                      <label for="position" class="form-label">Position:</label>
+                      <select id="position" name="position" class="form-select" required>
+                          <% Adminpositions.forEach(position => { %>
+                              <option value="<%= position.id %>"><%= position.position %></option>
+                          <% }); %>
+                      </select>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="electionName" id="election" value="<%= userElectionData.election_name %>" disabled required>
+                        <label for="dob" class="form-label">Election</label>
+                    </div>
+                </div>
+
+
+                        <input type="hidden" class="form-control" name="election" id="election" value="<%= userElectionData.election_id %>">
+                       
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="file" class="form-control" name="photo" id="photo" required accept=".jpg, .jpeg, .png">
+                        <label for="photo" class="form-label">Candidate Photo (.jpg, .jpeg, .png)</label>
+                      </div>
+                  </div>
+                  <div class="col-12 mb-3">
+                    <label for="photoPreview" class="form-label">Photo Preview:</label>
+                    <div class="d-flex justify-content-center">
+                        <img id="photoPreview" src="" alt="Profile Picture Preview" class="img-fluid rounded" style="max-width: 200px; display: none;">
+                    </div>
+                </div>
+                  <div class="mb-3">
+                      <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Register Candidate</button>
+                  </div>
+              </form>
+          </section>
+          <section id="table-section">
+          <table class="table responsive">
+            <thead>
+                
+                <th scope="col">Name</th>
+                <th scope="col">Photo</th>
+                <th scope="col">Position</th>
+                <th scope="col">Party</th>
+                <th scope="col">Votes</th>
+                <th scope="col">Action</th>
+            </thead>
+            <% Admincandidates.forEach(candidate => { %>
+             <tbody>
+              <tr>
+               
+                <td><%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%></td>
+
+                <td><img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /></td>
+
+                <td><%=candidate.position%></td>
+
+                <td><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <%=candidate.party%></td>
+
+                <td><%=candidate.vote%></td>
+             
+               <td><!-- Edit Button -->
+                <a href="" class="btn btn-outline-primary btn-floating">
+                    <i class="fas fa-pencil-alt"></i>
+                </a>
+                
+                <!-- Delete Button -->
+                <form action="" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-outline-danger btn-floating">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            </td>
+              </tr>
+             </tbody>
+             <% }) %>
+        </table>
+      </section>
+      <% } %>
         </div>
 
     </main>

@@ -48,6 +48,7 @@
       <!-- Navbar -->
       <%- include('layout/navbar') -%>
 </header>
+<% if (role === 'Super Admin') { %>
  <section >
   <h2 style="margin-top: 5rem;">Create Notification</h2>
   <form action="/create/notification" method="post" id="notificationForm">
@@ -58,6 +59,7 @@
       <option value="<%= election.id %>"><%= election.election %></option>
       <% }) %>
   </select>
+</div>
 
     <div class="form-floating mb-3">
       <input type="text" class="form-control" name="title" id="title" placeholder="Message Title" required>
@@ -68,7 +70,6 @@
      <label for="message">Notification to be sent</label>
    </div>
    
-</div>
 
   <!-- Submit button -->
   <div class="col-12">
@@ -76,6 +77,42 @@
   </div>
   </form>
 </section>
+<% } %>
+
+
+
+<% if (role === 'Admin') { %>
+  <section >
+   <h2 style="margin-top: 5rem;">Create Notification</h2>
+   <form action="/create/notification" method="post" id="notificationForm">
+    <div class="col-12">
+      <div class="form-floating mb-3">
+          <input type="text" class="form-control" name="electionName" id="election" value="<%= userElectionData.election_name %>" disabled required>
+          <label for="dob" class="form-label">Election</label>
+      </div>
+  </div>
+
+
+          <input type="hidden" class="form-control" name="election" id="election" value="<%= userElectionData.election_id %>">
+         
+ 
+     <div class="form-floating mb-3">
+       <input type="text" class="form-control" name="title" id="title" placeholder="Message Title" required>
+       <label for="title" class="form-label">Notification Title</label>
+     </div>
+     <div class="form-floating mb-3">
+      <textarea class="form-control" name="message" id="message" placeholder="Leave a message here" style="height: 200px;" required></textarea>
+      <label for="message">Notification to be sent</label>
+    </div>
+    
+ 
+   <!-- Submit button -->
+   <div class="col-12">
+       <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create</button>
+   </div>
+   </form>
+ </section>
+ <% } %>
 
 <script>
       

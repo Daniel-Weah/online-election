@@ -47,10 +47,10 @@ db.serialize(() => {
     "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT, first_name VARCHAR(50) NOT NULL, middle_name VARCHAR(50) NULL, last_name VARCHAR(50) NOT NULL, DOB DATE NOT NULL, profile_picture BLOB NOT NULL, role_id INTEGER, election_id INTEGER, has_voted INTEGER)"
   );
   db.run(
-    "CREATE TABLE IF NOT EXISTS parties(id INTEGER PRIMARY KEY AUTOINCREMENT, party VARCHAR(50) NOT NULL, logo BLOB)"
+    "CREATE TABLE IF NOT EXISTS parties(id INTEGER PRIMARY KEY AUTOINCREMENT, election_id INTEGER NOT NULL, party VARCHAR(50) NOT NULL, logo BLOB)"
   );
   db.run(
-    "CREATE TABLE IF NOT EXISTS positions(id INTEGER PRIMARY KEY AUTOINCREMENT, position VARCHAR(50) NOT NULL)"
+    "CREATE TABLE IF NOT EXISTS positions(id INTEGER PRIMARY KEY AUTOINCREMENT, election_id INTEGER NOT NULL, position VARCHAR(50) NOT NULL)"
   );
   db.run(
     "CREATE TABLE IF NOT EXISTS candidates(id INTEGER PRIMARY KEY AUTOINCREMENT, first_name VARCHAR(50) NOT NULL, middle_name VARCHAR(50) NULL, last_name VARCHAR(50) NOT NULL, party_id INTEGER NOT NULL, position_id INTEGER NOT NULL, election_id INTEGER NOT NULL, photo BLOB)"
@@ -642,7 +642,6 @@ app.get("/voters", (req, res) => {
 
                           res.render("voters", {
                             users,
-                            currentUser: user,
                             profilePicture,
                             voteStatus,
                             role: userRole.role,
@@ -665,160 +664,7 @@ app.get("/voters", (req, res) => {
   });
 });
 
-// =============================== VOTERS POST ROUTE ==================================
-app.get("/voters", (req, res) => {
-  if (!req.session.userId) {
-    return res.redirect("login");
-  }
 
-  // Fetch the current user's data
-  const currentUserSql = `
-    SELECT users.*, roles.role, auth.username
-    FROM users
-    JOIN roles ON users.role_id = roles.id
-    JOIN auth ON users.id = auth.user_id
-    WHERE users.id = ?
-  `;
-
-  db.get(currentUserSql, [req.session.userId], (err, user) => {
-    if (err) {
-      console.error("Error fetching current user:", err);
-      return res.status(500).send("An error occurred");
-    }
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
-
-    console.log('Login user data:', user);
-
-    user.profile_picture = user.profile_picture.toString("base64");
-
-    // Fetch all users
-    const allUsersSql = `
-      SELECT users.*, roles.role, auth.username, elections.election
-      FROM users 
-      JOIN roles ON users.role_id = roles.id
-      JOIN elections ON users.election_id = elections.id
-      JOIN auth ON users.id = auth.user_id
-      ORDER BY users.id DESC
-    `;
-
-   
-
-    // Ensure adminUsers is passed to the render method
-    db.all(allUsersSql, [], (err, users) => {
-        if (err) {
-            console.error("Error fetching all users:", err);
-            return res.status(500).send("Error fetching users");
-        }
-      // Encode profile pictures for all users
-      users.forEach((user) => {
-        if (user.profile_picture) {
-          user.profile_picture = user.profile_picture.toString("base64");
-        }
-      });
-
-      const voteStatus = user.has_voted ? "Voted" : "Not Voted";
-
-      db.get(
-        "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
-        [req.session.userId],
-        (err, userRole) => {
-          if (err) {
-            return res.status(500).send("Error fetching user role");
-          }
-          db.all("SELECT * FROM elections", [], (err, elections) => {
-            if (err) {
-              return res.status(500).send("Error Fetching elections");
-            }
-            db.all("SELECT * FROM roles", [], (err, roles) => {
-              if (err) {
-                return res.status(500).send("Internal server error");
-              }
-              db.get(
-                "SELECT username FROM auth WHERE user_id = ?",
-                [req.session.userId],
-                (err, user) => {
-                  if (err) {
-                    return res.status(500).send("Error fetching user");
-                  }
-
-                  if (!user) {
-                    return res.status(404).send("User not found");
-                  }
-
-                  // Fetch unread notifications count
-                  db.get(
-                    "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = ? AND is_read = 0",
-                    [user.username],
-                    (err, countResult) => {
-                      if (err) {
-                        return res.status(500).send("Error fetching unread notifications count");
-                      }
-                      const profilePicture = req.session.profilePicture;
-
-                      db.get(
-                        "SELECT * FROM users WHERE id = ?",
-                        [req.session.userId],
-                        (err, user) => {
-                          if (err) {
-                            return res.status(500).send("Error fetching user from the user table");
-                          }
-
-
-
-                          const adminAllUsersSql = `
-                          SELECT users.*, roles.role, auth.username, elections.election
-                          FROM users 
-                          JOIN roles ON users.role_id = roles.id
-                          JOIN elections ON users.election_id = elections.id
-                          JOIN auth ON users.id = auth.user_id
-                          WHERE users.election_id = 1
-                          ORDER BY users.id DESC
-                        `;
-                      
-                      
-                        db.all(adminAllUsersSql, [], (err, adminUsers) => {
-                          if (err) {
-                              console.error("Error fetching admin users:", err);
-                              return res.status(500).send("Error fetching admin users");
-                          }
-                      
-                          console.log("Fetched admin users:", adminUsers);
-                      
-                          adminUsers.forEach((adminUser) => {
-                              if (adminUser.profile_picture) {
-                                  adminUser.profile_picture = adminUser.profile_picture.toString("base64");
-                              }
-                          });
-
-                         
-
-                          res.render("voters", {
-                            users,                            
-                            currentUser: user,
-                            profilePicture,
-                            voteStatus,
-                            role: userRole.role,
-                            roles,
-                            unreadCount: countResult.unreadCount,
-                            user,
-                            elections,
-                          });
-                        }
-                      );
-                    }
-                  );
-                }
-              );
-            });
-          });
-        }
-      );
-    });
-  });
-});
-});
 
 
 app.get("/admin/voters", (req, res) => {
@@ -828,9 +674,10 @@ app.get("/admin/voters", (req, res) => {
 
   // Fetch the current user's data
   const currentUserSql = `
-    SELECT users.*, roles.role, auth.username
+    SELECT users.*, roles.role, auth.username, elections.election
     FROM users
     JOIN roles ON users.role_id = roles.id
+    JOIN elections ON users.election_id = elections.id
     JOIN auth ON users.id = auth.user_id
     WHERE users.id = ?
   `;
@@ -924,19 +771,32 @@ app.get("/admin/voters", (req, res) => {
                               }
                           });
 
-                         
+                          db.get(
+                            `SELECT users.*, elections.election AS election_name
+                             FROM users
+                             JOIN elections ON users.election_id = elections.id
+                             WHERE users.id = ?`,
+                            [req.session.userId],
+                            (err, userElectionData) => {
+                              if (err) {
+                                console.error("Error getting the user election name:", err);
+                                return res.send("Error getting the userElectionName");
+                              }
+                          
+                              console.log("userElectionData", userElectionData);
 
                           res.render("admin-voters", {
-                            adminUsers,                           
-                            currentUser: user,
+                            adminUsers,
+                            currentUser: user, // Rename one of the keys
                             profilePicture,
                             voteStatus,
                             role: userRole.role,
                             roles,
                             unreadCount: countResult.unreadCount,
-                            user,
                             elections,
-                          });
+                            userElectionData
+                        });
+                        
                         }
                       );
                     }
@@ -949,6 +809,7 @@ app.get("/admin/voters", (req, res) => {
       );
     });
   });
+});
 });
 
 // =============================== VOTERS POST ROUTE ==================================
@@ -1205,6 +1066,8 @@ app.get("/create/party", (req, res) => {
       }
     });
 
+    
+
     const profilePicture = req.session.profilePicture;
     db.get(
       "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
@@ -1244,12 +1107,47 @@ app.get("/create/party", (req, res) => {
                         .status(500)
                         .send("Error fetching user from the user table");
                     }
+
+
+                    db.all("SELECT * FROM parties WHERE election_id = ?", [user.election_id], (err, Adminparties) => {
+                      if (err) {
+                        return res.status(500).send("Internal server error");
+                      }
+                  
+                      Adminparties.forEach((party) => {
+                        if (party.logo) {
+                          party.logo = party.logo.toString("base64");
+                        }
+                      });
+
+                    db.get(
+                      `SELECT users.*, elections.election AS election_name
+                       FROM users
+                       JOIN elections ON users.election_id = elections.id
+                       WHERE users.id = ?`,
+                      [req.session.userId],
+                      (err, userElectionData) => {
+                        if (err) {
+                          console.error("Error getting the user election name:", err);
+                          return res.send("Error getting the userElectionName");
+                        }
+                    
+                        console.log("userElectionData", userElectionData);
+
+                        db.all('SELECT * FROM elections', [], (err, elections) => {
+                          if (err) {
+                            res.send('There was an error getting election data')
+                          }
+
                     res.render("party-registration", {
                       parties,
                       role: userRole.role,
                       profilePicture,
                       unreadCount: countResult.unreadCount,
                       user,
+                      userElectionData,
+                      elections,
+                      Adminparties
                     });
                   }
                 );
@@ -1261,14 +1159,110 @@ app.get("/create/party", (req, res) => {
     );
   });
 });
+});
+});
+});
+
+// app.get("/admin/create/party", (req, res) => {
+//   if (!req.session.userId) {
+//     return res.redirect("/login");
+//   }
+//   db.all("SELECT * FROM parties", [], (err, parties) => {
+//     if (err) {
+//       return res.status(500).send("Internal server error");
+//     }
+
+//     parties.forEach((party) => {
+//       if (party.logo) {
+//         party.logo = party.logo.toString("base64");
+//       }
+//     });
+
+//     const profilePicture = req.session.profilePicture;
+//     db.get(
+//       "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
+//       [req.session.userId],
+//       (err, userRole) => {
+//         if (err) {
+//           return res.status(500).send("Error fetching user role");
+//         }
+//         db.get(
+//           "SELECT username FROM auth WHERE user_id = ?",
+//           [req.session.userId],
+//           (err, user) => {
+//             if (err) {
+//               return res.status(500).send("Error fetching user");
+//             }
+
+//             if (!user) {
+//               return res.status(404).send("User not found");
+//             }
+
+//             // Fetch unread notifications count
+//             db.get(
+//               "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = ? AND is_read = 0",
+//               [user.username],
+//               (err, countResult) => {
+//                 if (err) {
+//                   return res
+//                     .status(500)
+//                     .send("Error fetching unread notifications count");
+//                 }
+//                 db.get(
+//                   "SELECT * FROM users WHERE id = ?",
+//                   [req.session.userId],
+//                   (err, user) => {
+//                     if (err) {
+//                       return res
+//                         .status(500)
+//                         .send("Error fetching user from the user table");
+//                     }
+
+
+
+//                     db.get(
+//                       `SELECT users.*, elections.election AS election_name
+//                        FROM users
+//                        JOIN elections ON users.election_id = elections.id
+//                        WHERE users.id = ?`,
+//                       [req.session.userId],
+//                       (err, userElectionData) => {
+//                         if (err) {
+//                           console.error("Error getting the user election name:", err);
+//                           return res.send("Error getting the userElectionName");
+//                         }
+                    
+//                         console.log("userElectionData", userElectionData);
+
+
+
+//                     res.render("admin-party-registration", {
+//                       parties,
+//                       role: userRole.role,
+//                       profilePicture,
+//                       unreadCount: countResult.unreadCount,
+//                       user,
+//                       userElectionData
+//                     });
+//                   }
+//                 );
+//               }
+//             );
+//           }
+//         );
+//       }
+//     );
+//   });
+// });
+// });
 
 app.post("/create/party", upload.single("logo"), (req, res) => {
-  const { party } = req.body;
+  const { election, party } = req.body;
   const logo = req.file ? req.file.buffer : null;
 
   db.run(
-    "INSERT INTO parties (party, logo) VALUES (?, ?)",
-    [party, logo],
+    "INSERT INTO parties (election_id, party, logo) VALUES (?, ?, ?)",
+    [election, party, logo],
     function (err) {
       if (err) {
         console.error(err.message);
@@ -1334,12 +1328,40 @@ app.get("/add/position", (req, res) => {
                         .status(500)
                         .send("Error fetching user from the user table");
                     }
+
+                    db.all("SELECT * FROM positions WHERE election_id = ?", [user.election_id], (err, Adminpositions) => {
+                      if (err) {
+                        return res.status.send("Internal server error");
+                      }
+
+                    db.get(
+                      `SELECT users.*, elections.election AS election_name
+                       FROM users
+                       JOIN elections ON users.election_id = elections.id
+                       WHERE users.id = ?`,
+                      [req.session.userId],
+                      (err, userElectionData) => {
+                        if (err) {
+                          console.error("Error getting the user election name:", err);
+                          return res.send("Error getting the userElectionName");
+                        }
+                    
+                        console.log("userElectionData", userElectionData);
+
+                        db.all('SELECT * FROM elections', [], (err, elections) => {
+                          if (err) {
+                            res.send('There was an error getting election data')
+                          }
+
                     res.render("position.ejs", {
                       positions,
                       profilePicture,
                       role: userRole.role,
                       unreadCount: countResult.unreadCount,
                       user,
+                      elections,
+                      userElectionData,
+                      Adminpositions
                     });
                   }
                 );
@@ -1351,16 +1373,20 @@ app.get("/add/position", (req, res) => {
     );
   });
 });
+});
+});
+});
 
 app.post("/add/position", (req, res) => {
-  const { Position } = req.body;
+  const { election, Position } = req.body;
 
-  db.run("INSERT INTO positions (position) VALUES (?)", [Position], (err) => {
+  
+  db.run("INSERT INTO positions (election_id, position) VALUES (?,?)", [election, Position], (err) => {
     if (err) {
       return console.log(err.message);
     }
     console.log("New record has been added");
-    res.send("Position has been successfully added");
+    res.status(200).send("Position created successfully");
   });
 });
 
@@ -1422,7 +1448,7 @@ app.get("/candidate/registration", (req, res) => {
                   JOIN parties ON candidates.party_id = parties.id 
                   JOIN positions ON candidates.position_id = positions.id
                   LEFT JOIN votes ON candidates.id = votes.candidate_id
-                  ORDER BY candidates.id
+                  ORDER BY candidates.id DESC
                   `,
                     [],
                     (err, candidates) => {
@@ -1447,6 +1473,16 @@ app.get("/candidate/registration", (req, res) => {
                               .status(500)
                               .send("Error fetching user from the user table");
                           }
+
+                          db.all("SELECT * FROM parties WHERE election_id = ?", [user.election_id], (err, Adminparties) => {
+                            if (err) {
+                              return res.status(500).send("Error fetching parties information");
+                            }
+                        
+                            db.all("SELECT * FROM positions WHERE election_id = ?", [user.election_id], (err, Adminpositions) => {
+                              if (err) {
+                                return res.status(500).send("Error fetching positions information");
+                              }
                           db.all(
                             "SELECT * FROM elections",
                             [],
@@ -1456,6 +1492,43 @@ app.get("/candidate/registration", (req, res) => {
                                   .status(500)
                                   .send("Error Fetching elections");
                               }
+
+                              db.get(
+                                `SELECT users.*, elections.election AS election_name
+                                 FROM users
+                                 JOIN elections ON users.election_id = elections.id
+                                 WHERE users.id = ?`,
+                                [req.session.userId],
+                                (err, userElectionData) => {
+                                  if (err) {
+                                    console.error("Error getting the user election name:", err);
+                                    return res.send("Error getting the userElectionName");
+                                  }
+
+                                  db.all(
+                                    `SELECT candidates.*, parties.party, parties.logo, positions.position,votes.vote AS vote 
+                                  FROM candidates
+                                  JOIN parties ON candidates.party_id = parties.id 
+                                  JOIN positions ON candidates.position_id = positions.id
+                                  LEFT JOIN votes ON candidates.id = votes.candidate_id
+                                  WHERE candidates.election_id = ?
+                                  ORDER BY candidates.id DESC
+                                  `,
+                                    [user.election_id],
+                                    (err, Admincandidates) => {
+                                      if (err) {
+                                        return res
+                                          .status(500)
+                                          .send("error fetching candidates");
+                                      }
+                                      Admincandidates = Admincandidates.map((candidate) => {
+                                        return {
+                                          ...candidate,
+                                          photo: candidate.photo.toString("base64"),
+                                          logo: candidate.logo.toString("base64"),
+                                        };
+                                      });
+
                               res.render("candidate-registration", {
                                 parties,
                                 positions,
@@ -1465,6 +1538,10 @@ app.get("/candidate/registration", (req, res) => {
                                 candidates,
                                 user,
                                 elections,
+                                userElectionData,
+                                Adminparties,
+                                Adminpositions,
+                                Admincandidates
                               });
                             }
                           );
@@ -1480,6 +1557,10 @@ app.get("/candidate/registration", (req, res) => {
       );
     });
   });
+});
+});
+});
+});
 });
 
 app.post("/candidate/registration", upload.single("photo"), (req, res) => {
@@ -2343,6 +2424,19 @@ app.get("/create/notification", (req, res) => {
                               );
                           }
 
+                          db.get(
+                            `SELECT users.*, elections.election AS election_name
+                             FROM users
+                             JOIN elections ON users.election_id = elections.id
+                             WHERE users.id = ?`,
+                            [req.session.userId],
+                            (err, userElectionData) => {
+                              if (err) {
+                                console.error("Error getting the user election name:", err);
+                                return res.send("Error getting the userElectionName");
+                              }
+
+
                           res.render("create-notification", {
                             users,
                             currentUser: user,
@@ -2353,6 +2447,7 @@ app.get("/create/notification", (req, res) => {
                             unreadCount: countResult.unreadCount,
                             user,
                             elections,
+                            userElectionData
                           });
                         });
                       }
@@ -2366,6 +2461,7 @@ app.get("/create/notification", (req, res) => {
       );
     });
   });
+});
 });
 
 app.post("/create/notification", (req, res) => {

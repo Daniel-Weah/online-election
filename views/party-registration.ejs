@@ -123,7 +123,8 @@
 
             <!-- Tabs content -->
             <div class="tab-content" id="ex2-content">
-                <!-- Voters List Tab -->
+
+                <% if (role === 'Super Admin') { %>
                 <div class="tab-pane fade show active" id="parties-tab" role="tabpanel">
                     <h1 class="mb-4" style="text-align: center;">List Of Parties</h1>
 
@@ -162,7 +163,6 @@
                     </table>
                 </div>
 
-                <!-- Voters Registration Tab -->
                 <div class="tab-pane fade" id="create-party-tab" role="tabpanel">
                     <div class="container pt-2">
                         <!-- Section: Statistics with subtitles -->
@@ -171,6 +171,15 @@
                             <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">Register your desired party</h3>
 
                             <form action="/create/party" method="post" id="partyRegistrationForm" enctype="multipart/form-data">
+                                <div class="col-12 mb-3">
+                                    <label for="role" class="form-label">Election:</label>
+                                    <select id="election" name="election" class="form-select" required>
+                                        <% elections.forEach(election => { %>
+                                            <option value="<%= election.id %>"><%= election.election %></option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+
                                 <div class="col-12">
                                     <div class="form-floating mb-3">
                                         <input type="text" class="form-control" name="party" id="party" placeholder="Party Name" required>
@@ -198,8 +207,96 @@
                         </section>
                     </div>
                 </div>
+
+                <% } %>
+
+                <% if (role === 'Admin') { %>
+                    <div class="tab-pane fade show active" id="parties-tab" role="tabpanel">
+                        <h1 class="mb-4" style="text-align: center;">List Of Parties</h1>
+    
+                        
+    
+                        <table class="table table-responsive">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Party</th>
+                                    <th scope="col">Logo</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% Adminparties.forEach(party => {%>
+                                <tr>
+                                    <td><%= party.party %></td>
+                                    <td><img src="data:image/png;base64,<%= party.logo %>" alt="party logo" id="logo"></td>
+                                    <td><!-- Edit Button -->
+                                        <a href="" class="btn btn-outline-primary btn-floating">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>
+                                        
+                                        <!-- Delete Button -->
+                                        <form action="/delete/party/<%= party.id %>" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-outline-danger btn-floating">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+    
+                    <div class="tab-pane fade" id="create-party-tab" role="tabpanel">
+                        <div class="container pt-2">
+                            <!-- Section: Statistics with subtitles -->
+                            <section >
+                                <h1 class="mb-4" style="text-align: center;">Party Registration</h1>
+                                <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">Register your desired party</h3>
+    
+                                <form action="/create/party" method="post" id="partyRegistrationForm" enctype="multipart/form-data">
+
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="electionName" id="election" value="<%= userElectionData.election_name %>" disabled required>
+                                            <label for="dob" class="form-label">Election</label>
+                                        </div>
+                                    </div>
+
+
+                                            <input type="hidden" class="form-control" name="election" id="election" value="<%= userElectionData.election_id %>">
+                                           
+
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" name="party" id="party" placeholder="Party Name" required>
+                                            <label for="party" class="form-label">Party Name</label>
+                                        </div>
+                                    </div>
+    
+                                    <div class="col-12">
+                                        <div class="form-floating mb-3">
+                                            <input type="file" class="form-control" name="logo" id="partyLogo" required accept=".jpg, .jpeg, .png">
+                                            <label for="logo" class="form-label">Party Logo (.jpg, .jpeg, .png)</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label for="photoPreview" class="form-label">Photo Preview:</label>
+                                        <div class="d-flex justify-content-center">
+                                            <img id="photoPreview" src="" alt="Profile Picture Preview" class="img-fluid rounded" style="max-width: 200px; display: none;">
+                                        </div>
+                                    </div>
+                                    <!-- Submit button -->
+                                    <div class="mb-3">
+                                        <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Register Party</button>
+                                    </div>
+                                </form>
+                            </section>
+                        </div>
+                    </div>
+    
+                    <% } %>
             </div>
-            <!-- Tabs content -->
         </div>
     </main>
 <script>
@@ -222,4 +319,5 @@
     })
 </script>
     <script src="/js/party.js"></script>
+    <script src="/js/sweet_alert.js"></script>
     <%- include('layout/footer') %>

@@ -49,20 +49,21 @@
 /* Notifications list */
 #notification-list {
   list-style-type: none;
-  padding: 0;
-  margin: 20px 0;
+  padding: 20px;
+  width: 70%;
+
 }
 
 #notification-list li {
   /* display: flex; */
-  align-items: flex-start;
+  /* align-items: flex-start; */
   margin-bottom: 10px;
 }
 
 #notification-list li img {
   width: 30px;
   height: 30px;
-  margin-right: 10px;
+  margin-right: 5px;
 }
 
 #notification-list li span {
@@ -76,7 +77,7 @@
 }
 
 #notification-list li span img {
-  margin-left: 10px;
+  /* margin-left: 10px; */
   width: 15px;
   height: 15px;
 }
@@ -89,7 +90,13 @@
 }
 
 
-@media only screen and (max-width: 600px){
+@media only screen and (max-width: 768px){
+  #notification-list {
+  list-style-type: none;
+  padding: 20px;
+  width: 100%;
+
+}
   #fullName{
     white-space: nowrap;
     overflow: hidden;
@@ -185,7 +192,7 @@
   <ul id="notification-list">
     <% if (notifications.length > 0) { %>
       <% notifications.forEach(notification => { %>
-        <li><img src="/images/message.png" alt="notification-icon"> <span id="title"><%= notification.title %></span> <br> <span><%= notification.message %></span><span ><img src="/images/double-check.png" alt="" style="width: 20px;height: 20px;"></span></li>
+        <li><img src="/images/message.png" alt="notification-icon"> <span id="title"><%= notification.title %></span> <br> <span id="notification_msg"><%= notification.message %></span><span ><img src="/images/double-check.png" alt="" style="width: 20px;height: 20px;"></span></li>
         <li><span style="color: green;">Sent: </span><%= new Date(notification.created_at).toLocaleString() %></li>
         <hr>
       <% }) %>

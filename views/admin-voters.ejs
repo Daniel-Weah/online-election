@@ -41,8 +41,52 @@
         <!-- Sidebar -->
         <%- include('./layout/voters') -%>
 
-            <!-- Navbar -->
-            <%- include('./layout/navbar') -%>
+        <nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+            <!-- Container wrapper -->
+            <div class="container-fluid">
+                <!-- Toggle button -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+        
+                <!-- Brand -->
+                <a class="navbar-brand" href="#">
+                    <img src="/images/election.png" height="45"  alt="" loading="lazy" />
+                </a>
+        
+                <!-- Right links -->
+                <ul class="navbar-nav ms-auto d-flex flex-row">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link me-3 me-lg-0 dropdown-toggle hidden-arrow" href="#" id="notification" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell" style="font-size: 1.2rem;margin-top: 10px;"></i>
+                            <span class="badge rounded-pill badge-notification bg-danger"><%= unreadCount %></span>
+                        </a>
+                        <ul style="position: absolute" class="dropdown-menu dropdown-menu-end" aria-labelledby="notification">
+                            <li><a class="dropdown-item" href="/notifications">Notification</a></li>
+                        </ul>
+                    </li>
+                    
+                    </li>
+        
+                    <!-- Avatar -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle hidden-arrow d-flex align-items-center" href="#" id="profile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="data:image/png;base64,<%=profilePicture%>" class="rounded-circle" height="40" width="40" loading="lazy" alt="user" /> &nbsp;
+                            <span id="fullName" title="<%= currentUser.first_name%> <%= currentUser.middle_name%> <%= currentUser.last_name%>"><%= currentUser.first_name%> <%= currentUser.middle_name%> <%= currentUser.last_name%></span>
+                        </a>
+                        <ul style="position: absolute" class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+                            <li><a class="dropdown-item" href="/my/profile">My profile</a></li>
+                            <li><a class="dropdown-item" href="/voter/setting">Settings</a></li>
+                            <li><a class="dropdown-item" href="/logout" style="color: #f00;"> <i class="fas fa-arrow-right"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                    
+                </ul>
+            </div>
+            <!-- Container wrapper -->
+             
+        </nav>
+        
     </header>
 
     <div id="notification-box" style="display: none;">
@@ -223,14 +267,17 @@
                                                                 <% }); %>
                                                             </select>
                                                         </div>
-                                                        <div class="col-12 mb-3">
-                                                            <label for="election" class="form-label">Election:</label>
-                                                            <select id="election" name="election" class="form-select" required>
-                                                                <% elections.forEach(election => { %>
-                                                                    <option value="<%= election.id %>"><%= election.election %></option>
-                                                                <% }); %>
-                                                            </select>
+                                                        <div class="col-12">
+                                                            <div class="form-floating mb-3">
+                                                                <input type="text" class="form-control" name="electionName" id="election" value="<%= userElectionData.election_name %>" disabled required>
+                                                                <label for="dob" class="form-label">Election</label>
+                                                            </div>
                                                         </div>
+
+
+                                                                <input type="hidden" class="form-control" name="election" id="election" value="<%= userElectionData.election_id %>">
+                                                               
+
 
                                                         
                                                         <div class="col-12">
