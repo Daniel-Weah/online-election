@@ -672,7 +672,6 @@ app.get("/admin/voters", (req, res) => {
     return res.redirect("login");
   }
 
-  // Fetch the current user's data
   const currentUserSql = `
     SELECT users.*, roles.role, auth.username, elections.election
     FROM users
@@ -787,7 +786,7 @@ app.get("/admin/voters", (req, res) => {
 
                           res.render("admin-voters", {
                             adminUsers,
-                            currentUser: user, // Rename one of the keys
+                            currentUser: user, 
                             profilePicture,
                             voteStatus,
                             role: userRole.role,
@@ -1048,6 +1047,117 @@ app.post("/delete/user/:id", (req, res) => {
   res.redirect("/voters");
 });
 
+app.post("/admin/delete/user/:id", (req, res) => {
+  const id = req.params.id;
+  db.run("DELETE FROM users WHERE id = ?", [id]);
+  db.run("DELETE FROM auth WHERE id = ?", [id]);
+  res.redirect("/admin/voters");
+});
+
+app.post("/admin/voted/user/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.run("UPDATE users SET has_voted = ? WHERE id = ?", [1, id], function (err) {
+    if (err) {
+      console.error("Error updating user:", err.message);
+      return res.status(500).send("Internal Server Error");
+    }
+    db.run("INSERT INTO user_votes (user_id) VALUES(?)", [id], function (err) {
+      if (err) {
+        console.error("Error updating user:", err.message);
+        return res.status(500).send("Internal Server Error");
+      }
+    
+      res.redirect("/admin/voters");
+    });
+});
+});
+
+// edit user
+
+app.post("/voted/user/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.run("UPDATE users SET has_voted = ? WHERE id = ?", [1, id], function (err) {
+    if (err) {
+      console.error("Error updating user:", err.message);
+      return res.status(500).send("Internal Server Error");
+    }
+    db.run("INSERT INTO user_votes (user_id) VALUES(?)", [id], function (err) {
+      if (err) {
+        console.error("Error updating user:", err.message);
+        return res.status(500).send("Internal Server Error");
+      }
+    
+    res.redirect("/voters");
+  });
+});
+});
+
+
+
+
+app.post('/update/user', (req, res) => {
+  const { id, first_name, middle_name, last_name, role_id } = req.body;
+
+  const query = `
+      UPDATE users
+      SET first_name = ?, middle_name = ?, last_name = ?, role_id = ?
+      WHERE id = ?;
+  `;
+  db.run(query, [first_name, middle_name, last_name, role_id , id], function (err) {
+      if (err) {
+          console.error('Error updating user:', err.message);
+          return res.status(500).send('Internal Server Error');
+      }
+      res.redirect('/voters');
+  });
+});
+
+
+app.post('/admin/update/user', (req, res) => {
+  const { id, first_name, middle_name, last_name, role_id } = req.body;
+
+  const query = `
+      UPDATE users
+      SET first_name = ?, middle_name = ?, last_name = ?, role_id = ?
+      WHERE id = ?;
+  `;
+  db.run(query, [first_name, middle_name, last_name, role_id , id], function (err) {
+      if (err) {
+          console.error('Error updating user:', err.message);
+          return res.status(500).send('Internal Server Error');
+      }
+      res.redirect('/admin/voters');
+  });
+});
+
+
+app.post('/update/party', upload.single("logo"), (req, res) => {
+  const { id, party } = req.body;
+
+  const logo = req.file ? req.file.buffer : null;
+  
+  if (!logo) {
+      console.error('No logo file uploaded');
+      return res.status(400).send('Logo file is required');
+  }
+
+  const query = `
+      UPDATE parties
+      SET party = ?, logo = ? WHERE id = ?;
+  `;
+
+  db.run(query, [party, logo, id], function (err) {
+      if (err) {
+          console.error('Error updating party:', err.message);
+          return res.status(500).send('Internal Server Error');
+      }
+      res.redirect('/create/party');
+  });
+});
+
+
 // ================================= VOTERS ENDS =====================================
 
 // Route to render party registration form
@@ -1274,11 +1384,28 @@ app.post("/create/party", upload.single("logo"), (req, res) => {
   );
 });
 
-// Handle delete request
+// Handle delete and edit request
 app.post("/delete/party/:id", (req, res) => {
   const id = req.params.id;
   db.run("DELETE FROM parties WHERE id = ?", [id]);
   res.redirect("/create/party");
+});
+
+app.post('/update/position', (req, res) => {
+  const { id, position } = req.body;
+
+  const query = `
+      UPDATE positions
+      SET position = ?
+      WHERE id = ?;
+  `;
+  db.run(query, [position, id], function (err) {
+      if (err) {
+          console.error('Error updating position:', err.message);
+          return res.status(500).send('Internal Server Error');
+      }
+      res.redirect('/add/position');
+  });
 });
 
 app.get("/add/position", (req, res) => {
@@ -1443,11 +1570,12 @@ app.get("/candidate/registration", (req, res) => {
                       .send("Error fetching unread notifications count");
                   }
                   db.all(
-                    `SELECT candidates.*, parties.party, parties.logo, positions.position,votes.vote AS vote 
+                    `SELECT candidates.*, parties.party, parties.logo, positions.position,votes.vote AS vote, elections.election AS candidate_election
                   FROM candidates
                   JOIN parties ON candidates.party_id = parties.id 
                   JOIN positions ON candidates.position_id = positions.id
                   LEFT JOIN votes ON candidates.id = votes.candidate_id
+                  JOIN elections ON candidates.election_id = elections.id
                   ORDER BY candidates.id DESC
                   `,
                     [],
@@ -1506,11 +1634,12 @@ app.get("/candidate/registration", (req, res) => {
                                   }
 
                                   db.all(
-                                    `SELECT candidates.*, parties.party, parties.logo, positions.position,votes.vote AS vote 
+                                    `SELECT candidates.*, parties.party, parties.logo, positions.position,votes.vote AS vote, elections.election AS candidate_election
                                   FROM candidates
                                   JOIN parties ON candidates.party_id = parties.id 
                                   JOIN positions ON candidates.position_id = positions.id
                                   LEFT JOIN votes ON candidates.id = votes.candidate_id
+                                  JOIN elections ON candidates.election_id = elections.id
                                   WHERE candidates.election_id = ?
                                   ORDER BY candidates.id DESC
                                   `,

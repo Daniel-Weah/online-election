@@ -16,6 +16,13 @@
     height: 50px;
     border-radius: 50%;
   }
+  /* .ellipsis {
+    white-space: wrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px; 
+    display: block; 
+  } */
  
   @media only screen and (max-width: 600px){
   form {
@@ -136,13 +143,13 @@
                 </form>
             </section>
             <section id="table-section">
-            <table class="table responsive">
+            <table class="table responsive" >
               <thead>
                   
                   <th scope="col">Name</th>
-                  <th scope="col">Photo</th>
                   <th scope="col">Position</th>
                   <th scope="col">Party</th>
+                  <th scope="col">Registered Election</th>
                   <th scope="col">Votes</th>
                   <th scope="col">Action</th>
               </thead>
@@ -150,15 +157,19 @@
                <tbody>
                 <tr>
                  
-                  <td><%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%></td>
+                  <td>
+                    <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /> &nbsp;
+                    <%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%>
+                  </td>
 
-                  <td><img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /></td>
 
                   <td><%=candidate.position%></td>
 
-                  <td><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <%=candidate.party%></td>
+                  <td title="<%= candidate.party %>"><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <%=candidate.party%></td>
 
-                  <td><%=candidate.vote%></td>
+                  <td class="ellipsis" title="<%= candidate.candidate_election %>"><%= candidate.candidate_election %></td>
+
+                  <td><%= candidate.vote ? candidate.vote : '0'%></td>
                
                   <td>
                     <div class="dropdown">
@@ -258,8 +269,7 @@
           <table class="table responsive">
             <thead>
                 
-                <th scope="col">Name</th>
-                <th scope="col">Photo</th>
+                <th scope="col">Candidate</th>
                 <th scope="col">Position</th>
                 <th scope="col">Party</th>
                 <th scope="col">Votes</th>
@@ -269,15 +279,17 @@
              <tbody>
               <tr>
                
-                <td><%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%></td>
-
-                <td><img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /></td>
+                <td>
+                  <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /> &nbsp;
+                  <%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%>
+                </td>
 
                 <td><%=candidate.position%></td>
 
                 <td><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <%=candidate.party%></td>
 
-                <td><%=candidate.vote%></td>
+
+                <td><%=candidate.vote ? candidate.vote : '0' %></td>
              
                 <td>
                   <div class="dropdown">

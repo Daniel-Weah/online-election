@@ -12,6 +12,9 @@
  #form-section{
     display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
   }
+  .dropdown-item.text-primary {
+    display: block !important;
+}
 
   @media only screen and (max-width: 600px){
   form {
@@ -134,9 +137,11 @@
                                             </button>
                                             <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= position.id %>">
                                                 <li>
-                                                    <a href="" class="dropdown-item">
+                                                    <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editPosition(<%= JSON.stringify(position) %>)">
+    
                                                         <i class="fas fa-pencil-alt me-2"></i>Edit
-                                                    </a>
+                                                    </button>
+                                                    
                                                 </li>
                                                 <li>
                                                     <form action="/delete/position/<%=position.id %>" method="POST" style="margin: 0;">
@@ -218,9 +223,11 @@
                                                 </button>
                                                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= position.id %>">
                                                     <li>
-                                                        <a href="" class="dropdown-item">
+                                                        <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editPosition(<%= JSON.stringify(position) %>)">
+        
                                                             <i class="fas fa-pencil-alt me-2"></i>Edit
-                                                        </a>
+                                                        </button>
+                                                        
                                                     </li>
                                                     <li>
                                                         <form action="/delete/position/<%=position.id %>" method="POST" style="margin: 0;">
@@ -240,8 +247,43 @@
                 </section>
     
                 <% } %>
+
+                <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editUserModalLabel">Edit Position</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="editUserForm" method="POST" action="/update/position">
+                                    <input type="hidden" id="positionId" name="id">
+                                    <div class="mb-3">
+                                        <label for="position" class="form-label">position</label>
+                                        <input type="text" class="form-control" id="position_name" name="position">
+                                    </div>
+  
+
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary" form="editUserForm">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </div>
     </main>
+
+    <script>
+        function editPosition(position) {
+           console.log('This is the position data:', position); 
+           document.getElementById('positionId').value = position.id;
+           document.getElementById('position_name').value = position.position || '';
+  
+       }
+           </script>
 
    <script src="/js/party.js"></script>
     <script src="/js/sweet_alert.js"></script>

@@ -30,6 +30,9 @@
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
 }
+.dropdown-item.text-primary {
+    display: block !important;
+}
     @media only screen and (max-width: 600px) {
         #parties-tab {
             width: 100%;
@@ -153,9 +156,11 @@
                                         </button>
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= user.id %>">
                                             <li>
-                                                <a href="" class="dropdown-item">
+                                                <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editUser(<%= JSON.stringify(party) %>)">
+
                                                     <i class="fas fa-pencil-alt me-2"></i>Edit
-                                                </a>
+                                                </button>
+                                                
                                             </li>
                                             <li>
                                                 <form action="/delete/party/<%= party.id %>" method="POST" style="margin: 0;">
@@ -211,7 +216,7 @@
                                         <img id="photoPreview" src="" alt="Profile Picture Preview" class="img-fluid rounded" style="max-width: 200px; display: none;">
                                     </div>
                                 </div>
-                                <!-- Submit button -->
+                                
                                 <div class="mb-3">
                                     <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Register Party</button>
                                 </div>
@@ -248,9 +253,11 @@
                                             </button>
                                             <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= user.id %>">
                                                 <li>
-                                                    <a href="" class="dropdown-item">
+                                                    <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editUser(<%= JSON.stringify(party) %>)">
+    
                                                         <i class="fas fa-pencil-alt me-2"></i>Edit
-                                                    </a>
+                                                    </button>
+                                                    
                                                 </li>
                                                 <li>
                                                     <form action="/delete/party/<%= party.id %>" method="POST" style="margin: 0;">
@@ -317,9 +324,92 @@
                     </div>
     
                     <% } %>
+
+
+                    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editUserModalLabel">Edit Party</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="editUserForm" method="POST" action="/update/party" enctype="multipart/form-data">
+                                        <input type="hidden" id="userId" name="id">
+                                        <div class="mb-3">
+                                            <label for="party" class="form-label">Party</label>
+                                            <input type="text" class="form-control" id="party_name" name="party">
+                                        </div>
+                                        
+                                        <div class="col-12 mb-3">
+                                            <label for="logoPreview" class="form-label">Current Party Logo:</label>
+                                            <div class="d-flex justify-content-center">
+                                                <img id="logoPreview" src="" alt="Current Party Logo" class="img-fluid rounded" style="max-width: 200px;">
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <input type="file" class="form-control" name="logo" id="party_logo" required accept=".jpg, .jpeg, .png">
+                                                <label for="logo" class="form-label">Party Logo (.jpg, .jpeg, .png)</label>
+                                            </div>
+                                        </div>
+                                        
+
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary" form="editUserForm">Save Changes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
             </div>
-        </div>
+            
+            </div>
     </main>
+
+    <script>
+ function editUser(party) {
+    console.log('This is the party data:', party); 
+    document.getElementById('userId').value = party.id;
+    document.getElementById('party_name').value = party.party || '';
+    
+    document.getElementById('logoPreview').src = party.logo ? 'data:image/png;base64,' + party.logo : ''; 
+   
+}
+
+
+    </script>
+    <script>
+        // =============== SHOW NEW NOTIFICATION ALERT =======================
+
+document.addEventListener('DOMContentLoaded', (e) => {
+    const unreadCount = <%=unreadCount%>;
+
+    if (unreadCount > 0) {
+        const notificationBox = document.getElementById('notification-box');
+
+        const notificationMessage = document.getElementById('notification-message');
+
+        notificationMessage.textContent = `You have ${unreadCount} new notification(s).`;
+
+        notificationBox.style.display = 'block';
+        
+        setTimeout(function(){
+            notificationBox.style.display = 'none';
+        }, 5000)
+    };
+
+    
+});
+
+
+
+
+
+    </script>
 <script>
     document.addEventListener('DOMContentLoaded', (e) => {
         const unreadCount = <%=unreadCount%>;
