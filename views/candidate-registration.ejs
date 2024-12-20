@@ -2,6 +2,10 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
+    body {
+      background-color: #f9f9f9;
+      font-family: 'Roboto', sans-serif;
+    }
       form{
     width: 29vw;
   }
@@ -17,13 +21,15 @@
     border-radius: 50%;
   }
   /* .ellipsis {
-    white-space: wrap;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px; 
+    max-width: 300px; 
     display: block; 
   } */
- 
+  .dropdown-item.text-primary {
+    display: block !important;
+}
   @media only screen and (max-width: 600px){
   form {
     width: 100%;
@@ -157,19 +163,19 @@
                <tbody>
                 <tr>
                  
-                  <td>
-                    <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /> &nbsp;
+                  <td title="<%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%>">
+                    <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /> &nbsp; <br>
                     <%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%>
                   </td>
 
 
-                  <td><%=candidate.position%></td>
+                  <td title="<%= candidate.position%>"><%=candidate.position%></td>
 
-                  <td title="<%= candidate.party %>"><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <%=candidate.party%></td>
+                  <td title="<%= candidate.party %>"><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <br> <%=candidate.party%></td>
 
                   <td class="ellipsis" title="<%= candidate.candidate_election %>"><%= candidate.candidate_election %></td>
 
-                  <td><%= candidate.vote ? candidate.vote : '0'%></td>
+                  <td title="<%= candidate.vote ? candidate.vote : '0'%> Vote(s)"><%= candidate.vote ? candidate.vote : '0'%></td>
                
                   <td>
                     <div class="dropdown">
@@ -177,11 +183,13 @@
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= candidate.id %>">
-                            <li>
-                                <a href="" class="dropdown-item">
-                                    <i class="fas fa-pencil-alt me-2"></i>Edit
-                                </a>
-                            </li>
+                          <li>
+                            <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editCandidate(<%= JSON.stringify(candidate) %>)">
+
+                                <i class="fas fa-pencil-alt me-2"></i>Edit
+                            </button>
+                            
+                        </li>
                             <li>
                                 <form action="" method="POST" style="margin: 0;">
                                     <button type="submit" class="dropdown-item text-danger" style="margin: 0;">
@@ -297,11 +305,13 @@
                           <i class="fas fa-ellipsis-v"></i>
                       </button>
                       <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= candidate.id %>">
-                          <li>
-                              <a href="" class="dropdown-item">
-                                  <i class="fas fa-pencil-alt me-2"></i>Edit
-                              </a>
-                          </li>
+                        <li>
+                          <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editCandidate(<%= JSON.stringify(candidate) %>)">
+
+                              <i class="fas fa-pencil-alt me-2"></i>Edit
+                          </button>
+                          
+                      </li>
                           <li>
                               <form action="" method="POST" style="margin: 0;">
                                   <button type="submit" class="dropdown-item text-danger">
@@ -318,8 +328,120 @@
         </table>
       </section>
       <% } %>
+
+
+      <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel">Edit Candidate Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm" method="POST" action="/update/candidate">
+                        <input type="hidden" id="userId" name="id">
+                        <div class="mb-3">
+                            <label for="firstname" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+
+                        <div class="mb-3">
+                          <label for="middlename" class="form-label">Middle Name</label>
+                          <input type="text" class="form-control" id="middle_name" name="middle_name" >
+                      </div>
+                        
+                      <div class="mb-3">
+                        <label for="lastname" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                    </div>
+
+                    <% if(role === 'Super Admin') { %> 
+                    <div class="col-12 mb-3">
+                      <label for="positions" class="form-label">Position</label>
+                      <select id="positions" name="position" class="form-select" required>
+                      <% positions.forEach(position => { %>
+                      <option value="<%= position.id %>"><%= position.position %></option>
+                      <% }); %>
+                      </select>
+                      </div>
+
+
+                      <div class="col-12 mb-3">
+                        <label for="parties" class="form-label">Party</label>
+                        <select id="parties" name="party" class="form-select" required>
+                        <% parties.forEach(party => { %>
+                        <option value="<%= party.id %>"><%= party.party %></option>
+                        <% }); %>
+                        </select>
+                        </div>
+
+
+                        <div class="col-12 mb-3">
+                          <label for="elections" class="form-label">Election</label>
+                          <select id="elections" name="election" class="form-select" required>
+                          <% elections.forEach(election => { %>
+                          <option value="<%= election.id %>"><%= election.election %></option>
+                          <% }); %>
+                          </select>
+                          </div>
+
+                          <% } %>
+                          
+                          <% if(role === 'Admin') { %> 
+
+                            <div class="col-12 mb-3">
+                                <label for="position" class="form-label">Position:</label>
+                                <select id="position" name="position" class="form-select" required>
+                                    <% Adminpositions.forEach(position => { %>
+                                        <option value="<%= position.id %>"><%= position.position %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                              <label for="party" class="form-label">Party:</label>
+                              <select id="party" name="party" class="form-select" required>
+                                  <% Adminparties.forEach(party => { %>
+                                      <option value="<%= party.id %>"><%= party.party %></option>
+                                  <% }); %>
+                              </select>
+                          </div>
+                         
+        
+        
+                                <input type="hidden" class="form-control" name="election" id="election" value="<%= userElectionData.election_id %>">
+        
+
+                            <% } %>
+
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" form="editUserForm">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+ 
         </div>
 
     </main>
+
+
+    <script>
+      function editCandidate(candidate) {
+         console.log('This is the candidate data:', candidate); 
+         document.getElementById('userId').value = candidate.id;
+         document.getElementById('first_name').value = candidate.first_name || '';
+         document.getElementById('middle_name').value = candidate.middle_name || '';
+         document.getElementById('last_name').value = candidate.last_name || '';        
+     };
+
+         </script>
+
+
     <script src="/js/candidate.js"></script>
 <%- include('layout/footer') %>

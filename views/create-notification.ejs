@@ -51,7 +51,7 @@
 <% if (role === 'Super Admin') { %>
  <section >
   <h2 style="margin-top: 5rem;">Create Notification</h2>
-  <form action="/create/notification" method="post" id="notificationForm">
+  <form action="/create/notification" method="post" id="notificationForm" autocomplete="off">
    <div class="col-12">
     <select class="form-select mb-3" name="election" id="election" required style="cursor: pointer;">
       <option value="" selected disabled>Select Election</option>

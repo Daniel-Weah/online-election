@@ -1,29 +1,102 @@
 <%- include('layout/header') %>
 <style>
-    #profile_picture{
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        border: 2px solid rgb(241, 238, 238);
+      body {
+      background-color: #f9f9f9;
+      font-family: 'Roboto', sans-serif;
     }
-    #voters-registration-tab{
-        margin-left: -4pc;
-    }
-    #notification-box {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4CAF50; /* Green */
-  color: white;
-  padding: 15px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
+
+  /* Tabs Styling */
+  .nav-tabs {
+    border-bottom: 2px solid #ddd;
+  }
+
+  .nav-tabs .nav-link {
+    font-weight: bold;
+    color: #555;
+    border-radius: 0;
+    padding: 10px 15px;
+  }
+
+  .nav-tabs .nav-link.active {
+    background-color: #007bff;
+    color: white;
+    border: none;
+  }
+
+  /* Table Styling */
+  table {
+    width: 100%;
+    margin-top: 15px;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    background-color: #f4f4f4;
+    color: #333;
+  }
+
+  tr:hover {
+    background-color: #f9f9f9;
+  }
+
+  #profile_picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+
+  #notification-box {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: none;
+  }
+
 .dropdown-item.text-primary {
     display: block !important;
 }
+
+
+  .form-floating {
+    margin-bottom: 15px;
+  }
+
+  .form-floating label {
+    color: #888;
+  }
+
+  .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+
+  /* Button Styling */
+  .btn-primary {
+    background-color: #007bff;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+
+  .dropdown-menu {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
 
     @media only screen and (max-width: 600px){
         #voters-registration-tab{
@@ -198,7 +271,7 @@
                         </div>
                         </div>
                         </div>
-                        <form action="/voters" method="post" id="registrationForm" enctype="multipart/form-data">
+                        <form action="/voters" method="post" id="registrationForm" enctype="multipart/form-data" autocomplete="off">
                         <div class="row gy-3 overflow-hidden">
                         <div class="col-12">
                         <div class="form-floating mb-3">

@@ -1,6 +1,13 @@
 <%- include('layout/header') -%>
 
 <style>
+      body {
+      background-color: #f9f9f9;
+      font-family: 'Roboto', sans-serif;
+    }
+    .dropdown-item.text-primary {
+    display: block !important;
+}
    @media only screen and (max-width: 600px){
     #fullName{
       white-space: nowrap;
@@ -34,7 +41,7 @@
             <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Create Election</h1>
             <div class="container pt-2">
                 <section >
-                    <form action="/create/election" method="post" id="electionForm">
+                    <form action="/create/election" method="post" id="electionForm" autocomplete="off">
                      <div class="col-12">
                       <div class="form-floating mb-3">
                         <input type="text" class="form-control" name="election" id="election" placeholder="Election Title" required>
@@ -70,10 +77,13 @@
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= election.id %>">
                                 <li>
-                                    <a href="/edit/election/<%= election.id %>" class="dropdown-item">
+                                    <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editElectionModal" onclick="editElection(<%= JSON.stringify(election) %>)">
+
                                         <i class="fas fa-pencil-alt me-2"></i>Edit
-                                    </a>
+                                    </button>
+                                    
                                 </li>
+
                                 <li>
                                     <form action="/delete/election/<%= election.id %>" method="POST" style="margin: 0;">
                                         <button type="submit" class="dropdown-item text-danger">
@@ -89,11 +99,46 @@
                      </tbody>
                      <% }) %>
                 </table>
+
+
+                <div class="modal fade" id="editElectionModal" tabindex="-1" aria-labelledby="editElectionModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editElectionModalLabel">Edit Election</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="editUserForm" method="POST" action="/update/election">
+                                    <input type="hidden" id="electionId" name="id">
+                                    <div class="mb-3">
+                                        <label for="election" class="form-label">Election</label>
+                                        <input type="text" class="form-control" id="election_name" name="election">
+                                    </div>
+  
+
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary" form="editUserForm">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
-        <script>
-      
 
+        <script>
+            function editElection(election) {
+               console.log('This is the position data:', election); 
+               document.getElementById('electionId').value = election.id;
+               document.getElementById('election_name').value = election.election || '';
+      
+           }
+               </script>
+
+        <script>
             document.getElementById('electionForm').addEventListener('submit', (e) => {
              e.preventDefault();
             

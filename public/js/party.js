@@ -63,45 +63,45 @@ document.getElementById('partyRegistrationForm').addEventListener('submit', (e) 
 
 
 
-document.getElementById('positionForm').addEventListener('submit', (e) => {
-    e.preventDefault();
+// document.getElementById('positionForm').addEventListener('submit', (e) => {
+//     e.preventDefault();
 
-    const positionData = new FormData(e.target);
+//     const positionData = new FormData(e.target);
     
-    fetch('/add/position', {
-        method: 'POST',
-        body: positionData
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        if (response.ok) {
-            Swal.fire({
-                title: 'Position Successfully Created!',
-                text: 'Your position has been added.',
-                icon: 'success',
-                showConfirmButton: false,
-                timer: 2000
-            }).then(() => {
-                document.getElementById('positionForm').reset();
-            });
-        } else {
-            Swal.fire({
-                title: 'Error',
-                text: 'There was a problem sending your information. Please try again later.',
-                icon: 'error',
-                showConfirmButton: false,
-                timer: 2000
-            });
-        }
-    })
-    .catch(error => {
-        Swal.fire({
-            title: 'Error',
-            text: 'There was a problem sending your information. Please try again later.',
-            icon: 'error',
-            showConfirmButton: false,
-            timer: 2000
-        });
-        console.log('Error', error);
-    });
-});
+//     fetch('/add/position', {
+//         method: 'POST',
+//         body: positionData
+//     })
+//     .then(response => {
+//         console.log('Response status:', response.status);
+//         if (response.ok) {
+//             Swal.fire({
+//                 title: 'Position Successfully Created!',
+//                 text: 'Your position has been added.',
+//                 icon: 'success',
+//                 showConfirmButton: false,
+//                 timer: 2000
+//             }).then(() => {
+//                 document.getElementById('positionForm').reset();
+//             });
+//         } else {
+//             Swal.fire({
+//                 title: 'Error',
+//                 text: 'There was a problem sending your information. Please try again later.',
+//                 icon: 'error',
+//                 showConfirmButton: false,
+//                 timer: 2000
+//             });
+//         }
+//     })
+//     .catch(error => {
+//         Swal.fire({
+//             title: 'Error',
+//             text: 'There was a problem sending your information. Please try again later.',
+//             icon: 'error',
+//             showConfirmButton: false,
+//             timer: 2000
+//         });
+//         console.log('Error', error);
+//     });
+// });

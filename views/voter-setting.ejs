@@ -1,154 +1,122 @@
 <%- include('layout/header') %>
 
 <style>
-    .container-setting{
-        width: 40%;
-        margin: 0 auto;
-        margin-top: 50px;
-    }
-.container-setting h2{
-    font-size: 4rem;
-}
-    .info-area{
-        
-        line-height: 2rem;
-    }
-    form{
-    width: 29vw;
-  }
-  section{
-    display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
-  }
-@media only screen and (max-width: 600px){
-  .container-setting{
-        width: 100%;
-        text-align: center;
-        margin-top: 50px;
-    }
-    form {
-    width: 100%;
-  }
-  section{
-    margin-top: 20px;
-    width: 100%;
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
     padding: 0;
   }
-}
-@media only screen and (min-width: 600px)and (max-width: 768px){
-  .container-setting{
-        width: 100%;
-        text-align: center;
-        margin-top: 50px;
+  .container-setting {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  .container-setting h2 {
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #343a40;
+  }
+  .container-setting h6 {
+    font-size: 1rem;
+    text-align: center;
+    color: #6c757d;
+    margin-bottom: 2rem;
+  }
+  .nav-tabs .nav-link {
+    color: #495057;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+  .nav-tabs .nav-link.active {
+    background-color: #007bff;
+    color: #ffffff;
+    border-color: #007bff;
+  }
+  .tab-content {
+    margin-top: 2rem;
+  }
+  .form-floating {
+    margin-bottom: 1.5rem;
+  }
+  .btn {
+    padding: 0.75rem;
+    font-size: 1rem;
+    width: 100%;
+  }
+  .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+  }
+  .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+  }
+  @media (max-width: 768px) {
+    .container-setting {
+      width: 90%;
+      padding: 1.5rem;
     }
-    form {
-    width: 100%;
   }
-  section{
-    margin-top: 20px;
-    width: 100%;
-    padding: 0;
-  }
-}
 </style>
 </head>
 <body>
-    <div class="container-setting" id="voter-settting">
-        <h2>Settings</h2>
-        <h6>We only enable you access changing your username and password. Your personal information remains the same from the date of registration.</h6>
-      
-        <div class="info-area">
-           <!-- Tabs navs -->
-<ul class="nav nav-tabs nav-justified mb-3" id="ex1" role="tablist">
-    <li class="nav-item" role="presentation">
-      <a class="nav-link active" id="ex3-tab-1" data-bs-toggle="tab" href="#ex3-tabs-1" role="tab" aria-controls="ex3-tabs-1" aria-selected="true">Username</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="ex3-tab-2" data-bs-toggle="tab" href="#ex3-tabs-2" role="tab" aria-controls="ex3-tabs-2" aria-selected="false">Password</a>
-    </li>
-  </ul>
-  <!-- Tabs navs -->
-  
-  <!-- Tabs content -->
-  <div class="tab-content" id="ex2-content">
-    <div class="tab-pane fade show active" id="ex3-tabs-1" role="tabpanel" aria-labelledby="ex3-tab-1">
-        <main style="margin-top: 50px; padding-left: 0" >
-        
-            <div class="container pt-2 ">
-                <!--Section: Statistics with subtitles-->
-                <section >
-                    <h1 class="mb-4" style="text-align: center;">Update Username</h1>
-                    
-                    <form action="/setting/change/username" method="post"   id="updateUsernameForm" enctype="multipart/form-data">
-                        <div class="col-12">
-                            <div class="form-floating mb-3">
-                              <input type="text" class="form-control" name="username" id="username" placeholder="Current User Name" required>
-                              <label for="username" class="form-label">Current User Name</label>
-                            </div>
-                          </div>
-    
-                          <div class="col-12">
-                            <div class="form-floating mb-3">
-                              <input type="text" class="form-control" name="Newusername" id="Newusername" placeholder="username" required>
-                              <label for="Newusername" class="form-label">New Username</label>
-                            </div>
-                          </div>
-    
-                        <!-- Submit button -->
-                        <div class="mb-3">
-                            <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Change Username</button>
-                        </div>
-    
-                    </form>
-                 
-                </section>
-            </div>
-        </main>
+  <header>
+    <%- include('./layout/navbar') -%>
+  </header>
+  <div class="container-setting" id="voter-setting" style="margin-top: 100px;">
+    <h2>Settings</h2>
+    <h6>You can update your username and password here. Personal information is fixed from registration.</h6>
+
+    <ul class="nav nav-tabs nav-justified mb-3" id="settings-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="username-tab" data-bs-toggle="tab" href="#username" role="tab" aria-controls="username" aria-selected="true">Username</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="password-tab" data-bs-toggle="tab" href="#password" role="tab" aria-controls="password" aria-selected="false">Password</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="username" role="tabpanel" aria-labelledby="username-tab">
+        <h3 class="text-center mb-4">Update Username</h3>
+        <form action="/setting/change/username" method="post" id="updateUsernameForm" autocomplete="off">
+          <div class="form-floating">
+            <input type="text" class="form-control" name="username" id="username" placeholder="Current Username" required>
+            <label for="username">Current Username</label>
+          </div>
+          <div class="form-floating">
+            <input type="text" class="form-control" name="Newusername" id="Newusername" placeholder="New Username" required>
+            <label for="Newusername">New Username</label>
+          </div>
+          <button type="submit" class="btn btn-primary">Change Username</button>
+        </form>
+      </div>
+      <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+        <h3 class="text-center mb-4">Change Password</h3>
+        <form action="/setting/forget-password" method="post" id="forgetPasswordForm" autocomplete="off">
+          <div class="form-floating">
+            <input type="text" class="form-control" name="username" id="username" placeholder="Username" required>
+            <label for="username">Username</label>
+          </div>
+          <div class="form-floating">
+            <input type="password" class="form-control" name="password" id="password" placeholder="New Password" required>
+            <label for="password">New Password</label>
+          </div>
+          <div class="form-floating">
+            <input type="password" class="form-control" name="passwordConfirm" id="passwordConfirm" placeholder="Confirm Password" required>
+            <label for="passwordConfirm">Confirm Password</label>
+          </div>
+          <button type="submit" class="btn btn-primary">Change Password</button>
+        </form>
+      </div>
     </div>
-    <div class="tab-pane fade" id="ex3-tabs-2" role="tabpanel" aria-labelledby="ex3-tab-2">
-        <main style="margin-top: 50px; padding-left: 0" >
-        
-            <div class="container pt-2 ">
-                <!--Section: Statistics with subtitles-->
-                <section >
-                    <h1 class="mb-4" style="text-align: center;">Forget Password</h1>
-                    
-                    <form method="post" action="/setting/forget-password"  id="forgetPasswordForm">
-                        <div class="col-12">
-                            <div class="form-floating mb-3">
-                              <input type="text" class="form-control" name="username" id="userName" placeholder="User Name" required>
-                              <label for="userName" class="form-label">User Name</label>
-                            </div>
-                          </div>
-    
-                          <div class="col-12">
-                            <div class="form-floating mb-3">
-                              <input type="password" class="form-control" name="password" id="password" value="" placeholder="Password" required>
-                              <label for="password" class="form-label">New Password</label>
-                            </div>
-                          </div>
-                          <div class="col-12">
-                            <div class="form-floating mb-3">
-                              <input type="password" class="form-control" name="passwordConfirm" id="password" value="" placeholder="Password" required>
-                              <label for="password" class="form-label">Confirm Password</label>
-                            </div>
-                          </div>
-    
-                        <!-- Submit button -->
-                        <div class="mb-3">
-                            <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Change Password</button>
-                        </div>
-    
-                    </form>
-                 
-                </section>
-            </div>
-        </main>
-    </div>
-   
   </div>
-  <!-- Tabs content -->
-  
-        </div>
-    </div>
-    <script src="/js/setting.js"></script>
-<%- include('layout/footer') %>
+  <script src="/js/setting.js"></script>
+  <%- include('layout/footer') %>

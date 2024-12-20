@@ -1,198 +1,222 @@
 <%- include('layout/header') %>
 <style>
-  .candidate-name{
-    font-weight: bold;
-    font-family: 'Ubuntu', sans-serif;
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
   }
-  label p{
-    font-family: 'Roboto';
+
+  h1 {
+    text-align: center;
+    margin: 4rem 0;
+    color: #2c3e50;
+    font-size: 2rem;
+  }
+
+  h2 {
+    margin-top: 2rem;
+    color: #34495e;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #e74c3c;
+    padding-bottom: 0.5rem;
+  }
+
+  form {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+
+  form ul {
+    padding: 0;
+  }
+
+  form ul li {
+    list-style: none;
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    background-color: #ecf0f1;
+    padding: 1rem;
+    border-radius: 8px;
+    transition: box-shadow 0.2s;
+  }
+
+  form ul li:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  form ul li label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  form ul li img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-right: 1rem;
+  }
+
+  form ul li input[type="radio"] {
+    margin-right: 1rem;
+  }
+
+  .candidate-name {
     font-size: 1.2rem;
+    font-weight: bold;
+    margin-right: auto;
   }
-    form{
-        margin: 60px 25pc;
-        width: 60%;
+
+  .candidate-party {
+    font-size: 1rem;
+    color: #7f8c8d;
+  }
+
+  #submit_btn {
+    display: block;
+    width: 100%;
+    padding: 0.8rem;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+button:hover {
+    background-color: #2980b9;
+  }
+
+  #notification-box {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #27ae60;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 1000;
+    font-size: 1rem;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    form {
+      padding: 1rem;
     }
-    
-    form ul li{
-        list-style-type: none;
+
+    h1 {
+      font-size: 1.8rem;
+      margin-top: 10rem;
     }
-    form ul li label{
-        font-size: 1.3rem;
-        font-weight: 500;
-        font-family: 'Ubuntu', sans-serif;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-        line-height: -4pc;
+
+    h2 {
+      font-size: 1.3rem;
     }
-    form ul li label:hover{
-        background-color: #e1e0e0;
+
+    form ul li {
+      flex-direction: column;
+      align-items: flex-start;
     }
-    form ul li label img{
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
+
+    form ul li img {
+      margin-bottom: 0.5rem;
     }
-    label p {
-        margin-top: -20px;
-        margin-left: 4.4rem;
+
+    #submit_btn {
+      font-size: 0.9rem;
     }
-    #notification-box {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4CAF50; /* Green */
-  color: white;
-  padding: 15px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-   @media only screen and (max-width: 600px){
-    form{
-        margin: 0 auto;
-        width: 100%;
-    }
-    
-    form ul li{
-        list-style-type: none;
-    }
-    form ul li label{
-        font-size: 1rem;
-        font-weight: 500;
-        font-family: 'Ubuntu', sans-serif;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-        line-height: -25pc;
-    }
-  
-    form ul li label:hover{
-        background-color: #e1e0e0;
-    }
-    form ul li label img{
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-    }
-    form button{
-        
-        margin-left: 50px;
-    }
-    h2{
-        margin-left: 20px;
-    }
-    h1{
-        margin-top: 5pc;
-        text-align: center;
-    }
-    #fullName{
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 55px;
-      display: inline-block;
-      vertical-align: middle;
-    }
-   }
-   @media only screen and (min-width: 600px) and (max-width: 768px){
-    form{
-        margin: 0 auto;
-        width: 100%;
-    }
-    
-    form ul li{
-        list-style-type: none;
-    }
-    form ul li label{
-        font-size: 1rem;
-        font-weight: 500;
-        font-family: 'Ubuntu', sans-serif;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-        line-height: -25pc;
-        margin-left: 100px;
-    }
-    form button{
-        
-        margin-left: 100px;
-    }
-  
-    form ul li label:hover{
-        background-color: #e1e0e0;
-    }
-    form ul li label img{
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-    }
-    h2{
-        margin-left: 100px;
-    }
-    h1{
-        margin-top: 5pc;
-        text-align: center;
-    }
-   }
+  }
 </style>
 </head>
 <body>
-    <header>
-        <!-- Sidebar -->
-        <%- include('./layout/voteCandidate') -%>
+  <header>
+    <%- include('./layout/voteCandidate') -%>
+    <%- include('./layout/navbar') -%>
+  </header>
 
-            <!-- Navbar -->
-            <%- include('./layout/navbar') -%>
-    </header>
+  <div id="notification-box" style="display: none;">
+    <p id="notification-message"></p>
+  </div>
 
-    <div id="notification-box" style="display: none;">
-        <p id="notification-message"></p>
-      </div>
+  <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
+    <h1>Vote Candidate</h1>
+    <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
+    <% if (Object.keys(groupedCandidates).length === 0) { %>
+      <p class="text-center text-muted">
+        <img src="/images/noCandidate.png" alt="no candidate">
+                              <br>
+        No candidates available for voting in this election.</p>
+    <% } else { %>
+      <ul>
+        <% Object.keys(groupedCandidates).forEach(position => { %>
+          <h2><%= position %></h2>
+          <% if (groupedCandidates[position].length === 0) { %>
+            <p class="text-center text-muted">No candidates available for the <%= position %> position.</p>
+          <% } else { %>
+            <% groupedCandidates[position].forEach(candidate => { %>
+              <li>
+                <label>
+                  <img src="data:image/png;base64,<%= candidate.photo %>" alt="Candidate photo">
+                  <input type="radio" name="<%= position %>" value="<%= candidate.id %>" required>
+                  <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %></span>
+                  <span class="candidate-party">(<%= candidate.party %>)</span>
+                </label>
+              </li>
+            <% }) %>
+          <% } %>
+        <% }); %>
+      </ul>
+      <button type="submit" id="submit_btn">Submit Your Vote</button>
+    <% } %>
+  </form>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const submitButton = document.getElementById('submit_btn');
+      const voteForm = document.getElementById('voteForm');
+      const radioButtons = voteForm.querySelectorAll('input[type="radio"]');
+  
+      if (radioButtons.length === 0) {
+        submitButton.style.display = 'none';
+      } else {
+        submitButton.disabled = true; 
+  
+        radioButtons.forEach(radio => {
+          radio.addEventListener('change', () => {
+            submitButton.disabled = false;
+          });
+        });
+      }
+    });
+  </script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const unreadCount = <%= unreadCount %>;
 
-    <hr>
-    <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
-        <h1>Vote Candidate</h1>
-        <ul>
-            <input type="hidden" name="electionID" id="electionID" value=" <%= userElectionID %> ">
-            <% Object.keys(groupedCandidates).forEach(position => { %>
-                <h2><%= position %></h2>
-                <% groupedCandidates[position].forEach(candidate => { %>
-                    <li>
-                        <label>
-                            <img src="data:image/png;base64,<%= candidate.photo %>" alt="candidate photo">
-                            <input type="radio" name="<%= position %>" value="<%= candidate.id %>" required>
-                            <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %> </span>
-                            <p>(<%= candidate.party %>)</p>
-                        </label>
-                    </li>
-                <% }) %>
-            <% }); %>
-        </ul>
-        <button type="submit" class="btn btn-primary">Submit Vote</button>
-    </form>
-    
-    <script>
-      document.addEventListener('DOMContentLoaded', (e) => {
-        const unreadCount = <%=unreadCount%>;
+      if (unreadCount > 0) {
+        const notificationBox = document.getElementById('notification-box');
+        const notificationMessage = document.getElementById('notification-message');
 
-        if (unreadCount > 0) {
-            const notificationBox = document.getElementById('notification-box');
+        notificationMessage.textContent = `You have ${unreadCount} new notification(s).`;
+        notificationBox.style.display = 'block';
 
-            const notificationMessage = document.getElementById('notification-message');
-
-          
-
-                notificationMessage.textContent = `You have ${unreadCount} new notification(s).`;
-    
-                notificationBox.style.display = 'block';
-          
-
-
-            setTimeout(function(){
-                notificationBox.style.display = 'none';
-            }, 5000);
-
-        }
-      })
-      </script>
- <script src="/js/vote.js"></script>
+        setTimeout(() => {
+          notificationBox.style.display = 'none';
+        }, 5000);
+      }
+    });
+  </script>
+  <script src="/js/vote.js"></script>
 <%- include('layout/footer') %>

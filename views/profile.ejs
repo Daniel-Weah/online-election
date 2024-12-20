@@ -1,70 +1,157 @@
 <%- include('layout/header') %>
 <style>
- .container{
-        text-align: center;
-        /*  */
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 2rem auto;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    padding: 20px;
+  }
+
+  .container h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #007bff;
+    text-align: center;
+  }
+
+  .profile-img-container {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .profile-img-container img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 4px solid #007bff;
+  }
+
+  .profile-name {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .profile-name h4 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: #333;
+  }
+
+  .profile-name h6 {
+    font-size: 1rem;
+    color: gray;
+    margin: 5px 0;
+  }
+
+  .status-container {
+    text-align: center;
+    margin: 15px 0;
+  }
+
+  .status-container span {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-right: 10px;
+  }
+
+  .status-container .btn {
+    margin: 0 5px;
+  }
+
+  .info {
+    background-color: #f1f3f5;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+  }
+
+  .info p {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 10px;
+  }
+
+  .info span {
+    display: block;
+    margin: 5px 0;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .info hr {
+    margin: 15px 0;
+    border: none;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 10px;
     }
-    .container h1{
-        font-family: 'Ubuntu', sans-serif;
-        margin-top: 2pc;
-        font-weight: bold;
-        text-align: center;
+
+    .container h1 {
+      font-size: 1.8rem;
     }
-    .container img{
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
+
+    .profile-img-container img {
+      width: 120px;
+      height: 120px;
     }
-    .container h6{
-        margin-top: -10px;
+
+    .info {
+      padding: 15px;
     }
-    .container h4{
-        font-family: sans-serif;
-        font-weight: 400;
+
+    .info p {
+      font-size: 1rem;
     }
-    #info-title{
-        font-size: 1.5rem;
-        color: rgb(87, 87, 87);
-        margin-bottom: -0.1rem;
+
+    .info span {
+      font-size: 0.9rem;
     }
-    .info{
-        background-color: #f1efef;
-        padding: 1rem;
-        border-radius: 20px;
-        margin: 0 auto;
-        width: 70%;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
-    }
-    .info span{
-        font-size: 1.3rem;
-        line-height: 2rem;
-      
-    }
-    @media only screen and (max-width: 600px){
-        .info{
-            width: 100%;
-        }
-    }
+  }
 </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Voter's Profile</h1>
-    <img src="data:image/png;base64,<%= user.profile_picture %>" alt="user profile" />
-    <h4><%= user.first_name %> <%= user.middle_name %> <%= user.last_name %></h4>
-    <h6>@<%= user.username %></h6>
-    <span style="font-size: 1rem;font-weight: bold;">Role:</span>
-    <span><button id="role-btn" class="btn btn-primary"><%= user.role %></button></span>
-    <span style="font-size: 1rem;font-weight: bold;">Status:</span>
-    <span><button id="role-btn" class="btn btn-<%= voteStatus === 'Voted' ? 'success' : 'danger' %>"><%= voteStatus %></button></span>
-    <hr>
+    <header>
+        <%- include('./layout/navbar') -%>
+      </header>
+    
+  <div class="container" style="margin-top: 100px; padding-left: 0">
+    <h1>Voter Profile</h1>
+    <div class="profile-img-container">
+      <img src="data:image/png;base64,<%= user.profile_picture %>" alt="User Profile">
+    </div>
+    <div class="profile-name">
+      <h4><%= user.first_name %> <%= user.middle_name %> <%= user.last_name %></h4>
+      <h6>@<%= user.username %></h6>
+    </div>
+    <div class="status-container">
+      <span>Role:</span>
+      <button id="role-btn" class="btn btn-primary"><%= user.role %></button>
+      <span>Status:</span>
+      <button id="status-btn" class="btn btn-<%= voteStatus === 'Voted' ? 'success' : 'danger' %>"><%= voteStatus %></button>
+    </div>
     <div class="info">
-      <p id="info-title">Personal Info:</p>
+      <p>Personal Info:</p>
       <hr>
-      <span>First Name: </span> <span><%= user.first_name %></span> <br>
-      <span>Middle Name: </span> <span><%= user.middle_name %></span> <br>
-      <span>Last Name: </span> <span><%= user.last_name %></span>  <br>
-      <span>Date of Birth: </span> <span><%= user.DOB %></span>
+      <span><strong>First Name:</strong> <%= user.first_name %></span>
+      <span><strong>Middle Name:</strong> <%= user.middle_name %></span>
+      <span><strong>Last Name:</strong> <%= user.last_name %></span>
+      <span><strong>Date of Birth:</strong> <%= user.DOB %></span>
     </div>
   </div>
 <%- include('layout/footer') %>

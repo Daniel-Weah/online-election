@@ -1,4 +1,8 @@
 <style>
+      body {
+      background-color: #f9f9f9;
+      font-family: 'Roboto', sans-serif;
+    }
   #notification-box {
   position: fixed;
   top: 80px;
@@ -107,39 +111,56 @@
                         
                      </section>
 
-            <section id="contestants-results">
-                <% Object.keys(groupedCandidates).forEach(position => { %>
-                    <article>
-                        <h2><%= position %></h2>
-                        <div class="row ">
-                            <% groupedCandidates[position].forEach(candidate => { %>
-                                <div class="col-md-4 mb-4">
-                                    <div class="card ">
-                                        <div class="card-body ">
-                                            <div class="d-flex justify-content-between px-md-1 ">
-                                                <div class="align-self-center ">
-                                                    <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" />
-                                                    <h6 class="card-title name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %></h6>
-                                                    <p class="card-text party"><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <%= candidate.party %></p>
-                                                </div>
-                                                <div class="text-end ">
-                                                    <h3><%= candidate.vote %></h3>
-                                                    <p class="mb-0 ">Votes</p>
-                                                </div>
+                     <section id="contestants-results">
+                        <% if (Object.keys(groupedCandidates).length === 0) { %>
+                            <p class="text-center text-muted">
+                              <img src="/images/noCandidate.png" alt="no candidate">
+                              <br>
+                            No candidates available.</p>
+                        <% } else { %>
+                          <% Object.keys(groupedCandidates).forEach(position => { %>
+                            <article>
+                              <h2><%= position %></h2>
+                              <% if (groupedCandidates[position].length === 0) { %>
+                                <p class="text-center text-muted">No candidates for this position.</p>
+                              <% } else { %>
+                                <div class="row">
+                                  <% groupedCandidates[position].forEach(candidate => { %>
+                                    <div class="col-md-4 mb-4">
+                                      <div class="card">
+                                        <div class="card-body">
+                                          <div class="d-flex justify-content-between px-md-1">
+                                            <div class="align-self-center">
+                                              <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" />
+                                              <h6 class="card-title name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %></h6>
+                                              <p class="card-text party">
+                                                <img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" />
+                                                <%= candidate.party %>
+                                              </p>
                                             </div>
-                                            <div class="px-md-1 ">
-                                                <div class="progress mt-3 mb-1 rounded " style="height: 15px ">
-                                                    <div class="progress-bar bg-info " role="progressbar " style="width: <%= candidate.votePercentage %>%" aria-valuenow="<%= candidate.votePercentage %>" aria-valuemin="0 " aria-valuemax="100 "><%= candidate.votePercentage.toFixed(2) %>%</div>
-                                                </div>
+                                            <div class="text-end">
+                                              <h3><%= candidate.vote %></h3>
+                                              <p class="mb-0">Votes</p>
                                             </div>
+                                          </div>
+                                          <div class="px-md-1">
+                                            <div class="progress mt-3 mb-1 rounded" style="height: 15px; font-weight: bold;">
+                                              <div class="progress-bar bg-info" role="progressbar" style="width: <%= candidate.votePercentage %>%;" aria-valuenow="<%= candidate.votePercentage %>" aria-valuemin="0" aria-valuemax="100">
+                                                <%= candidate.votePercentage.toFixed(2) %>%
+                                              </div>
+                                            </div>
+                                          </div>
                                         </div>
+                                      </div>
                                     </div>
+                                  <% }) %>
                                 </div>
-                            <% }) %>
-                        </div>
-                    </article>
-                <% }) %>
-            </section>
+                              <% } %>
+                            </article>
+                          <% }) %>
+                        <% } %>
+                      </section>
+                      
         </div>
     </main>
 

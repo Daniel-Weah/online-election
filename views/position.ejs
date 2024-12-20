@@ -2,6 +2,10 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
+      body {
+      background-color: #f9f9f9;
+      font-family: 'Roboto', sans-serif;
+    }
     #table{
         margin: 0 auto;
         width: 60%;
@@ -85,7 +89,7 @@
                 <h1 class="mb-4" style="text-align: center;margin-top: 10px;">Party Position</h1>
                 <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">My Position</h3>
 
-                <form method="post" action="/add/position" id="positionForm">
+                <form method="post" action="/add/position" id="positionForm" autocomplete="off">
                     <div class="col-12 mb-3">
                         <label for="role" class="form-label">Election:</label>
                         <select id="election" name="election" class="form-select" required>
@@ -126,9 +130,9 @@
                                 <th scope="col">Action</th>
                             </thead>
                             <tbody>
-                                <% positions.forEach(position => {%>
+                                <% positions.forEach((position, index) => {%>
                                 <tr>
-                                    <td><%= position.id %></td>
+                                    <td><%= index + 1%></td>
                                     <td><%= position.position %></td>
                                     <td>
                                         <div class="dropdown">
@@ -168,7 +172,7 @@
                     <h1 class="mb-4" style="text-align: center;margin-top: 10px;">Party Position</h1>
                     <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">My Position</h3>
     
-                    <form method="post" action="/add/position" id="positionForm">
+                    <form method="post" action="/add/position" id="positionForm" autocomplete="off">
                         <div class="col-12">
                             <div class="form-floating mb-3">
                                 <input type="text" class="form-control" name="electionName" id="election" value="<%= userElectionData.election_name %>" disabled required>
@@ -211,9 +215,9 @@
                                     <th scope="col">Action</th>
                                 </thead>
                                 <tbody>
-                                    <% Adminpositions.forEach(position => {%>
-                                    <tr>
-                                        <td><%= position.id %></td>
+                                    <% Adminpositions.forEach((position, index) => {%>
+                                        <tr>
+                                        <td><%=index + 1 %></td>
                                         <td><%= position.position %></td>
 
                                         <td>
@@ -285,7 +289,7 @@
        }
            </script>
 
-   <script src="/js/party.js"></script>
+   <!-- <script src="/js/party.js"></script> -->
     <script src="/js/sweet_alert.js"></script>
 
 <%- include('layout/footer') %>
