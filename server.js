@@ -8,7 +8,8 @@ const bcrypt = require("bcrypt");
 const session = require("express-session");
 const multer = require("multer");
 require('dotenv').config();
-const { v4: uuidv4 } = require('uuid')
+const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 
 const app = express();
@@ -76,6 +77,13 @@ db.serialize(() => {
   db.run(
     "CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, username VARCHAR(50) NOT NULL, election TEXT NOT NULL, message VARCHAR(2000) NOT NULL, title VARCHAR(50) NOT NULL, is_read INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(username) REFERENCES auth (username))"
   );
+
+  db.run(`CREATE TABLE IF NOT EXISTS election_settings (
+    id TEXT PRIMARY KEY,
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    election_id TEXT NOT NULL
+);`)
 
 
   // db.run(
@@ -2060,15 +2068,17 @@ app.post("/setting/forget-password", (req, res) => {
   }
 
   db.get(
-    "SELECT * FROM auth WHERE username = ? AND id = ?",
+    "SELECT * FROM auth WHERE username = ? AND user_id = ?",
     [username, req.session.userId],
     (err, user) => {
       if (err) {
         return res.status(500).send("An error occurred");
       }
       if (!user) {
-        return res.status(404).send("Username does not exist");
-      }
+        return res.status(404).json({
+          success: false,
+          message: "Sorry! An error occured. Please check your username correctly.",
+        });      }
       if (user.username !== username) {
         return res.status(403).json({
           success: false,
@@ -2082,7 +2092,7 @@ app.post("/setting/forget-password", (req, res) => {
             .json({ success: false, message: "An error occurred" });
         }
         db.run(
-          "UPDATE auth SET password = ? WHERE username = ? AND id = ?",
+          "UPDATE auth SET password = ? WHERE username = ? AND user_id = ?",
           [hash, username, req.session.userId],
           function (err) {
             if (err) {
@@ -2102,11 +2112,11 @@ app.post("/setting/forget-password", (req, res) => {
 });
 
 // ROUTE FOR UPDATING THE USERNAME
-app.post("/setting/change/username", (req, res) => {
-  const { username, Newusername } = req.body;
+app.post("/setting/change/username", upload.none(), (req, res) => {
+  const { username, Newusername, password } = req.body;
 
   db.get(
-    "SELECT * FROM auth WHERE id = ?",
+    "SELECT * FROM auth WHERE user_id = ?",
     [req.session.userId],
     (err, user) => {
       if (err) {
@@ -2126,20 +2136,31 @@ app.post("/setting/change/username", (req, res) => {
         });
       }
 
-      db.run(
-        "UPDATE auth SET username = ? WHERE username = ? AND id = ?",
-        [Newusername, username, req.session.userId],
-        function (err) {
-          if (err) {
-            return res
-              .status(500)
-              .json({ success: false, message: "Internal server error" });
-          }
+      bcrypt.compare(password, user.password, (err, result) => {
+        if (result) {
+          db.run(
+            "UPDATE auth SET username = ? WHERE username = ? AND user_id = ?",
+            [Newusername, username, req.session.userId],
+            function (err) {
+              if (err) {
+                return res
+                  .status(500)
+                  .json({ success: false, message: "Internal server error" });
+              }
+              return res
+                .status(200)
+                .json({ success: true, message: "Username updated successfully!" });
+
+            }
+          );
+        } else {
           return res
-            .status(200)
-            .json({ success: true, message: "Username updated successfully!" });
+                .status(500)
+                .json({ success: false, message: "There was an error updating your username. Please provide your correct information." });
         }
-      );
+      });
+
+     
     }
   );
 });
@@ -2684,7 +2705,18 @@ app.get("/logout", (req, res) => {
   });
 });
 
+// const secretToken = crypto.randomBytes(32).toString('hex');
+
+const secretSavedToken = process.env.SECRET_TOKEN;
 app.get("/create/user", (req, res) => {
+
+  const token = req.query.token; 
+
+  if (token !== secretSavedToken) {
+      return res.status(403).send('Access Denied');
+  }
+  else{
+
   db.all("SELECT * FROM elections", [], (err, elections) => {
     if (err) {
       return res.status(500).send("Error Fetching elections");
@@ -2694,6 +2726,7 @@ app.get("/create/user", (req, res) => {
         return res.status(500).send("internal server error");
       }
 
+
       res.render("createUser", {
         roles,
 
@@ -2701,7 +2734,9 @@ app.get("/create/user", (req, res) => {
       });
     });
   });
+}
 });
+
 
 
 // =============================== VOTERS POST ROUTE ==================================
