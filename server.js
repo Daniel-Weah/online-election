@@ -32,7 +32,7 @@ const upload = multer({ storage: storage });
 
 app.use(
   session({
-    secret: 'thisismysecrctekeyfhrgfgrfrty84fwir767',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   })
@@ -2705,12 +2705,16 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// const secretToken = crypto.randomBytes(32).toString('hex');
 
 const secretSavedToken = process.env.SECRET_TOKEN;
+
 app.get("/create/user", (req, res) => {
 
   const token = req.query.token; 
+
+  console.log('Token passed:', token);
+console.log('Secret Token:', secretSavedToken);
+
 
   if (token !== secretSavedToken) {
       return res.status(403).send('Access Denied');
