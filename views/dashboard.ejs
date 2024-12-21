@@ -79,7 +79,7 @@
                                                  </div>
                                              </div>
                                              <div class="align-self-center">
-                                                 <h2 id="registered-voters" class="h1 mb-0"><%= totalUsers %></h2>
+                                                 <h2 id="registered-voters" class="h1 mb-0"><%= totalUsers < 10 ? '0' + totalUsers : totalUsers %></h2>
                                              </div>
                                          </div>
                                      </div>
@@ -92,7 +92,7 @@
                                          <div class="d-flex justify-content-between p-md-1 ">
                                              <div class="d-flex flex-row ">
                                                  <div class="align-self-center ">
-                                                     <!-- <i class="fas fa-vote-yea "></i> -->
+                                                     
                                                      <i class="fas fa-balance-scale text-warning fa-3x me-4 "></i>
                                                  </div>
                                                  <div>
@@ -101,7 +101,7 @@
                                                  </div>
                                              </div>
                                              <div class="align-self-center ">
-                                                 <h2 class="h1 mb-0 "><%= totalVotes %></h2>
+                                                 <h2 class="h1 mb-0 "><%= totalVotes < 10 ? '0' + totalVotes : totalVotes %></h2>
                                              </div>
                                          </div>
                                      </div>
@@ -139,7 +139,7 @@
                                               </p>
                                             </div>
                                             <div class="text-end">
-                                              <h3><%= candidate.vote %></h3>
+                                              <h3><%= candidate.vote < 10 ? '0' + candidate.vote : candidate.vote %></h3>
                                               <p class="mb-0">Votes</p>
                                             </div>
                                           </div>

@@ -278,14 +278,14 @@
                         <% }); %>
                         </select>
                         </div>
-                        <div class="col-12 mb-3">
-                        <label for="election" class="form-label">Election:</label>
-                        <select id="election" name="election" class="form-select" required>
-                        <% elections.forEach(election => { %>
-                        <option value="<%= election.id %>"><%= election.election %></option>
-                        <% }); %>
-                        </select>
-                        </div>
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                            <input type="text" class="form-control" name="electionName" id="election" value="<%=userElectionData.election_name%>" disabled>
+                            <label for="election" class="form-label">Election</label>
+                            </div>
+                            </div>
+
+                            <input type="hidden" name="election" id="" value="<%=userElectionData.election_id%>">
                         
                         <div class="col-12">
                         <div class="form-floating mb-3">

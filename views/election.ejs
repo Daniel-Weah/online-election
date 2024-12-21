@@ -49,9 +49,22 @@
                       </div>
                   </div>
 
-                    <!-- Submit button -->
+                  <div class="col-12">
+                    <div class="form-floating mb-3">
+                      <input type="datetime-local" class="form-control" name="start_time" id="start_time" placeholder="Election Start Time" required>
+                      <label for="election_start_time" class="form-label">Election Start Time</label>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-floating mb-3">
+                      <input type="datetime-local" class="form-control" name="end_time" id="end_time" placeholder="Election end Time" required>
+                      <label for="election_end_time" class="form-label">Election End Time</label>
+                    </div>
+                </div>
+
                     <div class="col-12">
-                        <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create</button>
+                        <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create Election</button>
                     </div>
                     </form>
                 </section>

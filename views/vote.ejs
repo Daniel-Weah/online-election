@@ -151,12 +151,17 @@ button:hover {
 
   <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
     <h1>Vote Candidate</h1>
+    <p id="timer" style="font-size: 18px; font-weight: bold;color: red;"></p>
     <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
-    <% if (Object.keys(groupedCandidates).length === 0) { %>
+      <% if (current < start || current > end) { %>
+        <p>Voting is only allowed between <%= start %> to <%= end %>.</p>
+        <button type="submit" id="submit_btn" disabled>Submit Your Vote</button>
+    <% } else if (Object.keys(groupedCandidates).length === 0) { %>
       <p class="text-center text-muted">
         <img src="/images/noCandidate.png" alt="no candidate">
-                              <br>
-        No candidates available for voting in this election.</p>
+        <br>
+        No candidates available for voting in this election.
+      </p>    
     <% } else { %>
       <ul>
         <% Object.keys(groupedCandidates).forEach(position => { %>
@@ -181,6 +186,39 @@ button:hover {
     <% } %>
   </form>
   
+
+  <script>
+    const startTime = new Date("<%= start %>").getTime();
+    const endTime = new Date("<%= end %>").getTime();
+
+    function updateTimer() {
+      const now = new Date().getTime();
+      const timerElement = document.getElementById('timer');
+
+      if (now >= startTime && now <= endTime) {
+        const elapsed = now - startTime;
+        const duration = endTime - startTime;
+        const percentage = Math.min((elapsed / duration) * 100, 100);
+
+        const hours = Math.floor((elapsed / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
+        const seconds = Math.floor((elapsed / 1000) % 60);
+
+        const color = `rgb(${255 - (percentage * 2.55)}, ${percentage * 2.55}, 0)`;
+
+        timerElement.innerText =
+          `Time elapsed: ${hours.toString().padStart(2, '0')}h:${minutes.toString().padStart(2, '0')}m:${seconds.toString().padStart(2, '0')}s`;
+        timerElement.style.color = color;
+      } else if (now > endTime) {
+        timerElement.innerText = "Voting period is over.";
+        
+      }
+    }
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
+  </script>
+
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const submitButton = document.getElementById('submit_btn');
