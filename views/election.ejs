@@ -73,6 +73,8 @@
                     <thead>
                         
                         <th scope="col">Election</th>
+                        <th scope="col">Start Time</th>
+                        <th scope="col">End Time</th>
                         <th scope="col">Date Created</th>
                         <th scope="col">Action</th>
                     </thead>
@@ -81,6 +83,8 @@
                       <tr>
                        
                        <td><%=election.election%></td>
+                       <td><%=election.start_time%></td>
+                       <td><%=election.end_time%></td>
                        <td><%=election.created_at%></td>
 
                        <td>
@@ -128,6 +132,16 @@
                                         <label for="election" class="form-label">Election</label>
                                         <input type="text" class="form-control" id="election_name" name="election">
                                     </div>
+
+                                    <div class="mb-3">
+                                        <label for="start_time" class="form-label">Start Time</label>
+                                        <input type="datetime-local" class="form-control" id="start_times" name="startTime">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="end_time" class="form-label">End Time</label>
+                                        <input type="datetime-local" class="form-control" id="end_times" name="endTime">
+                                    </div>
   
 
                                 </form>
@@ -144,9 +158,11 @@
 
         <script>
             function editElection(election) {
-               console.log('This is the position data:', election); 
-               document.getElementById('electionId').value = election.id;
+               console.log('This is the election data:', election); 
+               document.getElementById('electionId').value = election.election_id;
                document.getElementById('election_name').value = election.election || '';
+               document.getElementById('start_times').value = election.start_time || '';
+               document.getElementById('end_times').value = election.end_time || '';
       
            }
                </script>

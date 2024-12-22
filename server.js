@@ -2370,10 +2370,14 @@ app.get("/create/election", (req, res) => {
       if (err) {
         return res.status(500).send("Error fetching user role");
       }
-      db.all("SELECT * FROM elections", [], (err, elections) => {
+      db.all(`SELECT elections.*, election_settings.*
+              FROM elections
+              JOIN election_settings ON elections.id = election_settings.election_id
+        `, [], (err, elections) => {
         if (err) {
           return res.status(500).send("Error fetching elections");
         }
+        console.log('The election data', elections);
         db.get(
           "SELECT username FROM auth WHERE user_id = ?",
           [req.session.userId],
@@ -2472,8 +2476,10 @@ app.post("/create/election", (req, res) => {
   );
 });
 
-app.post("/update/election", (req, res) => {
-  const { id, election } = req.body;
+app.post("/update/election", upload.none(), (req, res) => {
+  const { id, election, startTime, endTime } = req.body;
+
+  console.log(req.body);
 
   db.run(
     "UPDATE elections SET election = ? WHERE id = ?",
@@ -2483,7 +2489,18 @@ app.post("/update/election", (req, res) => {
         console.error(err.message);
         return res.status(500).send("Error updating election");
       }
-      res.redirect("/create/election");
+
+      db.run("UPDATE election_settings SET start_time = ?, end_time = ? WHERE election_id = ?",
+        [startTime, endTime, id],
+        function (err) {
+          if (err) {
+            console.error(err.message);
+            return res.status(500).send("Error updating election dates");
+          }
+          res.redirect("/create/election");
+        })
+
+
     }
   );
 });
