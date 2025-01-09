@@ -30,6 +30,7 @@
   .dropdown-item.text-primary {
     display: block !important;
 }
+
   @media only screen and (max-width: 600px){
   form {
     width: 100%;
@@ -107,6 +108,16 @@
                           <label for="lastname" class="form-label">Last Name</label>
                         </div>
                     </div>
+
+                    <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="date" class="form-control" name="DOB" id="DOB" placeholder="DOB" required>
+                        <label for="DOB" class="form-label">DOB</label>
+                      </div>
+                  </div>
+                  
+                  <input type="hidden" name="role" id="role" value="<%= secondRole.id %>">
+
                     <div class="col-12 mb-3">
                         <label for="party" class="form-label">Party:</label>
                         <select id="party" name="party" class="form-select" required>
@@ -132,17 +143,30 @@
                         </select>
                     </div>
                     <div class="col-12">
-                        <div class="form-floating mb-3">
-                          <input type="file" class="form-control" name="photo" id="photo" required accept=".jpg, .jpeg, .png">
-                          <label for="photo" class="form-label">Candidate Photo (.jpg, .jpeg, .png)</label>
-                        </div>
-                    </div>
-                    <div class="col-12 mb-3">
-                      <label for="photoPreview" class="form-label">Photo Preview:</label>
-                      <div class="d-flex justify-content-center">
-                          <img id="photoPreview" src="" alt="Profile Picture Preview" class="img-fluid rounded" style="max-width: 200px; display: none;">
+                      <div class="form-floating mb-3">
+                        <input type="file" class="form-control" name="photo" id="photo" required accept=".jpg, .jpeg, .png">
+                        <label for="photo" class="form-label">Candidate Photo (.jpg, .jpeg, .png)</label>
                       </div>
                   </div>
+                  <div class="col-12 mb-3">
+                    <label for="photoPreview" class="form-label">Photo Preview:</label>
+                    <div class="d-flex justify-content-center">
+                        <img id="photoPreview" src="" alt="Profile Picture Preview" class="img-fluid rounded" style="max-width: 200px; display: none;">
+                    </div>
+                </div>
+                    <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="username" id="username" placeholder="username" required>
+                        <label for="username" class="form-label">Username</label>
+                      </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating mb-3">
+                      <input type="password" class="form-control" name="password" id="password" placeholder="password" required>
+                      <label for="password" class="form-label">Password</label>
+                    </div>
+                </div>
+                   
                     <div class="mb-3">
                         <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Register Candidate</button>
                     </div>
@@ -191,11 +215,11 @@
                             
                         </li>
                             <li>
-                                <form action="" method="POST" style="margin: 0;">
-                                    <button type="submit" class="dropdown-item text-danger" style="margin: 0;">
-                                        <i class="fas fa-trash-alt me-2"></i>Delete
-                                    </button>
-                                </form>
+                              <form action="/delete/candidate/<%= candidate.id %>" method="POST" style="margin: 0;">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fas fa-trash-alt me-2"></i>Delete
+                                </button>
+                            </form>
                             </li>
                         </ul>
                     </div>
@@ -229,6 +253,12 @@
                         <input type="text" class="form-control" name="lastname" id="lastname" placeholder="Last Name" required>
                         <label for="lastname" class="form-label">Last Name</label>
                       </div>
+                      <div class="col-12">
+                        <div class="form-floating mb-3">
+                          <input type="date" class="form-control" name="DOB" id="DOB" placeholder="DOB" required>
+                          <label for="DOB" class="form-label">DOB</label>
+                        </div>
+                    </div>
                   </div>
                   <div class="col-12 mb-3">
                       <label for="party" class="form-label">Party:</label>
@@ -268,6 +298,18 @@
                         <img id="photoPreview" src="" alt="Profile Picture Preview" class="img-fluid rounded" style="max-width: 200px; display: none;">
                     </div>
                 </div>
+                <div class="col-12">
+                  <div class="form-floating mb-3">
+                    <input type="text" class="form-control" name="username" id="username" placeholder="username" required>
+                    <label for="username" class="form-label">Username</label>
+                  </div>
+              </div>
+              <div class="col-12">
+                <div class="form-floating mb-3">
+                  <input type="password" class="form-control" name="password" id="password" placeholder="password" required>
+                  <label for="password" class="form-label">Password</label>
+                </div>
+            </div>
                   <div class="mb-3">
                       <button style="width: 100%; margin-top: 10px;" id="login-btn" class="btn btn-primary btn-block btn-lg mb-4">Register Candidate</button>
                   </div>

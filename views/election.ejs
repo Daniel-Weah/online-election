@@ -63,6 +63,14 @@
                     </div>
                 </div>
 
+                <div class="col-12">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control" name="voter_age_eligibility" id="voter_age_eligibility" placeholder="Voter Age Eligibility" min="10" required>
+                      <label for="voter_age_eligibility" class="form-label">Voter Age Eligibility</label>
+                    </div>
+                </div>
+               
+
                     <div class="col-12">
                         <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create Election</button>
                     </div>
@@ -75,6 +83,7 @@
                         <th scope="col">Election</th>
                         <th scope="col">Start Time</th>
                         <th scope="col">End Time</th>
+                        <th scope="col">Voter Age Eligibility</th>
                         <th scope="col">Date Created</th>
                         <th scope="col">Action</th>
                     </thead>
@@ -85,6 +94,7 @@
                        <td><%=election.election%></td>
                        <td><%=election.start_time%></td>
                        <td><%=election.end_time%></td>
+                       <td><%=election.voter_age_eligibility%> Years</td>
                        <td><%=election.created_at%></td>
 
                        <td>
@@ -142,6 +152,11 @@
                                         <label for="end_time" class="form-label">End Time</label>
                                         <input type="datetime-local" class="form-control" id="end_times" name="endTime">
                                     </div>
+
+                                    <div class="mb-3">
+                                        <label for="voter_age_eligibilities class="form-label">Voter Age Eligibility</label>
+                                        <input type="number" class="form-control" id="voter_age_eligibilities" name="voter_age_eligibilities" min="10">
+                                    </div>
   
 
                                 </form>
@@ -163,6 +178,7 @@
                document.getElementById('election_name').value = election.election || '';
                document.getElementById('start_times').value = election.start_time || '';
                document.getElementById('end_times').value = election.end_time || '';
+               document.getElementById('voter_age_eligibilities').value = election.voter_age_eligibility
       
            }
                </script>

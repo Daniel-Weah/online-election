@@ -246,10 +246,7 @@
                         <path d="M2 8a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm0-3a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
                         </svg>
                         </div>
-                        <button class="btn btn-danger">Powered by</button>
-                        <p class="lead mb-4">
-                        <a href="https://innovativetechsolution.expert" style="color: rgb(0, 0, 0); text-decoration: none; font-size: 16px;">Innovative Tech Solution</a>
-                        </p>
+                        <a href="https://danielk-weahjr.onrender.com" style="color: rgb(0, 0, 0); text-decoration: none; font-size: 16px;"><button class="btn btn-danger">Developer</button></a>
                         </div>
                         </div>
                         </div>
@@ -268,8 +265,8 @@
                         <div class="row gy-3 overflow-hidden">
                         <div class="col-12">
                         <div class="form-floating mb-3">
-                        <input type="text" class="form-control" name="firstname" id="firstname" placeholder="First Name" required>
-                        <label for="firstname" class="form-label">First Name</label>
+                        <input type="text" class="form-control" name="firstname" id="firstname" placeholder="First Name" required >
+                        <label for="firstname" class="form-label">First Name<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         </div>
                         </div>
                         <div class="col-12">
@@ -281,23 +278,23 @@
                         <div class="col-12">
                         <div class="form-floating mb-3">
                         <input type="text" class="form-control" name="lastname" id="lastname" placeholder="Last Name" required>
-                        <label for="lastname" class="form-label">Last Name</label>
+                        <label for="lastname" class="form-label">Last Name<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span> </label>
                         </div>
                         </div>
                         <div class="col-12">
                         <div class="form-floating mb-3">
                         <input type="text" class="form-control" name="username" id="username" placeholder="User Name" required>
-                        <label for="username" class="form-label">User Name</label>
+                        <label for="username" class="form-label">User Name<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         </div>
                         </div>
                         <div class="col-12">
                         <div class="form-floating mb-3">
                         <input type="date" class="form-control" name="dob" id="dob" required>
-                        <label for="dob" class="form-label">DOB</label>
+                        <label for="dob" class="form-label">DOB<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span> </label>
                         </div>
                         </div>
                         <div class="col-12 mb-3">
-                        <label for="role" class="form-label">Role:</label>
+                        <label for="role" class="form-label">Role<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         <select id="role" name="role" class="form-select" required>
                         <% roles.forEach(role => { %>
                         <option value="<%= role.id %>"><%= role.role %></option>
@@ -305,7 +302,7 @@
                         </select>
                         </div>
                         <div class="col-12 mb-3">
-                        <label for="election" class="form-label">Election:</label>
+                        <label for="election" class="form-label">Election<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         <select id="election" name="election" class="form-select" required>
                         <% elections.forEach(election => { %>
                         <option value="<%= election.id %>"><%= election.election %></option>
@@ -316,7 +313,7 @@
                         <div class="col-12">
                         <div class="form-floating mb-3">
                         <input type="file" class="form-control" name="photo" id="photo" accept=".jpg, .jpeg, .png" required>
-                        <label for="photo" class="form-label">Photo (.jpg, .jpeg, .png)</label>
+                        <label for="photo" class="form-label">Photo<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         </div>
                         </div>
                         <!-- Preview Image -->
@@ -329,7 +326,7 @@
                         <div class="col-12">
                         <div class="form-floating mb-3">
                         <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
-                        <label for="password" class="form-label">Password</label>
+                        <label for="password" class="form-label">Password<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         </div>
                         </div>
                         <div class="col-12">
@@ -379,7 +376,7 @@
                                         <div class="col-12 mb-3">
                                             <label for="role" class="form-label">Role:</label>
                                             <select id="role_id" name="role_id" class="form-select" required>
-                                            <% roles.forEach(role => { %>
+                                            <% allRoles.forEach(role => { %>
                                             <option value="<%= role.id %>"><%= role.role %></option>
                                             <% }); %>
                                             </select>
@@ -402,15 +399,21 @@
 
     <script>
   function editUser(user) {
-    console.log('This is the users Data:',user); // Debugging
     document.getElementById('userId').value = user.id;
     document.getElementById('firstName').value = user.first_name || '';
     document.getElementById('middleName').value = user.middle_name || '';
     document.getElementById('lastName').value = user.last_name || '';
     document.getElementById('edit_role').value = user.role || '';
-
 }
 
+document.getElementById('firstname').addEventListener('input', generateUsername);
+document.getElementById('lastname').addEventListener('input', generateUsername);
+
+function generateUsername() {
+  let firstname = document.getElementById('firstname').value.trim().toLowerCase();
+  let lastname = document.getElementById('lastname').value.trim().toLowerCase();
+  document.getElementById('username').value = firstname + "-" + lastname;
+}
 
     </script>
     <script>

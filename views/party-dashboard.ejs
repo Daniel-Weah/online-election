@@ -1,0 +1,169 @@
+<%- include('layout/header') -%>
+
+<style>
+    body {
+      background-color: #f9f9f9;
+      font-family: 'Roboto', sans-serif;
+    }
+  
+    .party-title-logo {
+      text-align: center;
+    }
+  
+    .party-title-logo img {
+      width: 200px;
+  height: 200px;
+  object-fit: cover; 
+    }
+  
+    .party-title-logo h3 {
+      font-size: 2rem;
+      padding-bottom: 3px;
+      margin-top: -1pc;
+    }
+  
+    .bg-badge {
+      background-color: #f1f1f1;
+      color: #6c757d;
+      display: inline-block;
+      font-weight: 500;
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+  
+    .dropdown-item.text-primary {
+      display: block !important;
+    }
+    .team-members {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);  
+  gap: 10px;
+}
+
+.team-members .team-card {
+  padding: 10px; 
+  background: #f4f4f4; 
+  border-radius: 8px;  
+  text-align: center; 
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.team-members .team-card img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover; 
+  border-radius: 50%;  
+}
+
+.team-members .team-card h4 {
+  font-size: 1.1em;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.team-members .team-card p {
+  font-size: 0.9em;
+  color: #666;  
+}
+
+    @media only screen and (max-width: 600px) {
+      #fullName {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 55px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .team-members {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);  
+  gap: 10px;
+}
+.party-title-logo h3 {
+      font-size: 2rem;
+      padding-bottom: 3px;
+      margin-top: -1pc;
+    }
+    }
+  
+    @media only screen and (min-width: 600px) and (max-width: 768px) {
+      form input {
+        width: 100%;
+      }
+      .party-title-logo h3 {
+      font-size: 2rem;
+      padding-bottom: 3px;
+      margin-top: -3pc;
+    }
+    }
+  </style>
+    </head>
+
+    <body>
+        <header>
+            <%- include('layout/partyDashboardSidebar') -%>
+
+                <%- include('layout/navbar') -%>
+        </header>
+
+        <main style="margin-top: 70px ">
+            <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Party Dashboard</h1>
+            <div class="container pt-2">
+                <section >
+                   <div class="party-title-logo">
+                    <img src="data:image/png;base64,<%= user.logo %>" alt="Party Logo" />
+<br>                     
+<h3><%= user.party %></h3>
+                   </div>
+                   <div class="team">
+                    <h3>Team</h3>
+                    <div class="team-members">
+                      <% users.forEach(user => { %> 
+                      <div class="team-card">
+                        <img src="data:image/png;base64,<%= user.photo %>"  alt="picture" /> 
+                        <h4><%= user.first_name %> <%= user.middle_name %> <%= user.last_name %></h4>
+                        <p><%= user.position %></p>
+                      </div>
+                      <% }) %>
+                    </div>
+                   </div>
+                   <hr>
+                   <p class="text-muted small bg-badge px-3 py-2 rounded">Members Info
+                   </p> 
+                </section>
+
+                <table class="table responsive">
+                    <thead>
+                        
+                        <th scope="col">#</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Position</th>
+                        <th scope="col">Standing (Vote - Percentage %) </th>
+                    </thead>
+                    <% users.forEach((user, index) => { %> 
+                     <tbody>
+                      <tr>
+                        <td> <%= index + 1 %> </td>
+                        <td><img src="data:image/png;base64,<%= user.photo %>" class="img-fluid text-info" alt="picture" style="width: 50px;height: 50px;"/> 
+                          <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %> </td>
+                        <td><span class="badge bg-info text-dark">Active</span></td>
+                        <td> <%= user.position %> </td>
+                        <% if (user.vote) { %> 
+                        <td> <%= user.vote < 10 ? '0' + user.vote : user.vote %> - 00.00%</td>
+                        <% } else { %>
+                          <td>0 - 00.00%</td>
+                          <% } %>
+                      </tr>
+                     </tbody>
+                     <% }) %>
+                </table>
+
+
+            </div>
+        </main>
+
+
+        
+    <%- include('layout/footer') -%>

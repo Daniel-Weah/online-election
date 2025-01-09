@@ -83,7 +83,6 @@
     <main style="margin-top: 50px; padding-left: 0" >
         
         <div class="container pt-2 ">
-            <!--Section: Statistics with subtitles-->
             <% if (role === 'Super Admin') { %> 
             <section id="form-section">
                 <h1 class="mb-4" style="text-align: center;margin-top: 10px;">Party Position</h1>
@@ -105,7 +104,13 @@
                         </div>
                       </div>
 
-                    <!-- Submit button -->
+                      <div class="col-12">
+                        <div class="form-floating mb-3">
+                          <input type="number" class="form-control" name="candidate_age_eligibility" id="candidate_age_eligibility" placeholder="Candidate Age Eligibility" min="10" required>
+                          <label for="candidate_age_eligibility" class="form-label">Candidate Age Eligibility</label>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                        
 
@@ -127,6 +132,7 @@
                             <thead>
                                 <th>#</th>
                                 <th scope="col">Position</th>
+                                <th scope="col">Candidate Age Eligibility</th>
                                 <th scope="col">Action</th>
                             </thead>
                             <tbody>
@@ -134,6 +140,7 @@
                                 <tr>
                                     <td><%= index + 1%></td>
                                     <td><%= position.position %></td>
+                                    <td><%= position.candidate_age_eligibility %> Years</td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
@@ -189,8 +196,14 @@
                               <label for="userName" class="form-label">Position </label>
                             </div>
                           </div>
+
+                          <div class="col-12">
+                            <div class="form-floating mb-3">
+                              <input type="number" class="form-control" name="candidate_age_eligibility" id="candidate_age_eligibility" placeholder="Candidate Age Eligibility" min="10" required>
+                              <label for="candidate_age_eligibility" class="form-label">Candidate Age Eligibility</label>
+                            </div>
+                        </div>
     
-                        <!-- Submit button -->
                         <div class="mb-3">
                            
     
@@ -212,6 +225,7 @@
                                 <thead>
                                     <th>#</th>
                                     <th scope="col">Position</th>
+                                    <th scope="col">Candidate Age Eligibility</th>
                                     <th scope="col">Action</th>
                                 </thead>
                                 <tbody>
@@ -219,6 +233,8 @@
                                         <tr>
                                         <td><%=index + 1 %></td>
                                         <td><%= position.position %></td>
+                                        <td><%= position.candidate_age_eligibility %> Years</td>
+
 
                                         <td>
                                             <div class="dropdown">
@@ -267,7 +283,10 @@
                                         <input type="text" class="form-control" id="position_name" name="position">
                                     </div>
   
-
+                                    <div class="mb-3">
+                                        <label for="candidate_age_eligibilities" class="form-label">Candidate Age Eligibility</label>
+                                        <input type="number" class="form-control" id="candidate_age_eligibilities" name="candidate_age_eligibilities" min="10">
+                                    </div>
                                 </form>
                             </div>
                             <div class="modal-footer">
@@ -285,6 +304,8 @@
            console.log('This is the position data:', position); 
            document.getElementById('positionId').value = position.id;
            document.getElementById('position_name').value = position.position || '';
+           document.getElementById('candidate_age_eligibilities').value = position.candidate_age_eligibility || '';
+
   
        }
            </script>
