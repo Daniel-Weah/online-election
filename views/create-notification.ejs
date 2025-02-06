@@ -1,40 +1,122 @@
 <%- include('layout/header') %>
 
 <style>
-   form{
-    width: 29vw;
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
   }
-  section{
-    display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
+
+  section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    margin: 2rem auto;
+    width: 80%;
+    max-width: 600px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
-  @media only screen and (max-width: 600px){
+
+  h2 {
+    color: #333;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
   form {
     width: 100%;
   }
-  section{
-    margin-top: 20px;
-    width: 100%;
-    padding: 10px;
+
+  .form-floating {
+    position: relative;
+    margin-bottom: 1rem;
   }
-  #fullName{
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 55px;
-      display: inline-block;
-      vertical-align: middle;
+
+  .form-floating input,
+  .form-select {
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    font-size: 1rem;
+  }
+
+    /* .form-floating label {
+      position: absolute;
+      top: -0.6rem;
+      left: 0.75rem;
+      font-size: 0.9rem;
+      background: transparent;
+      padding: 0 0.2rem;
+      color: #666;
+    } */
+
+  .editor-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .editor-toolbar button {
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+  }
+
+  .editor-toolbar button:hover {
+    background-color: #e2e2e2;
+    border-color: #bbb;
+  }
+
+  #message {
+    height: 200px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 0.5rem;
+    font-size: 1rem;
+    overflow-y: auto;
+    background: #f9f9f9;
+  }
+
+  .btn-primary {
+    background-color: #007bff;
+    color: #fff;
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+
+  @media (max-width: 600px) {
+    section {
+      width: 95%;
     }
-  }
-  @media only screen and (min-width: 600px) and (max-width: 768px){
-  form {
-    width: 100%;
-    padding: 2pc;
-  }
-  section{
-    margin-top: 20px;
-    width: 100%;
-    padding: 10px;
-  }
+
+    form {
+      width: 100%;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    .btn-primary {
+      font-size: 0.9rem;
+    }
   }
 </style>
 </head>
@@ -50,7 +132,7 @@
 </header>
 <% if (role === 'Super Admin') { %>
  <section >
-  <h2 style="margin-top: 5rem;">Create Notification</h2>
+  <h2 style="margin-top: 5rem;">Send New Notification</h2>
   <form action="/create/notification" method="post" id="notificationForm" autocomplete="off">
    <div class="col-12">
     <select class="form-select mb-3" name="election" id="election" required style="cursor: pointer;">
@@ -66,14 +148,22 @@
       <label for="title" class="form-label">Notification Title</label>
     </div>
     <div class="form-floating mb-3">
-     <textarea class="form-control" name="message" id="message" placeholder="Leave a message here" style="height: 200px;"></textarea>
-     <label for="message">Notification to be sent</label>
-   </div>
+      <div class="editor-toolbar">
+        <button type="button" onclick="formatText('bold')" title="Bold"><b>B</b></button>
+        <button type="button" onclick="formatText('italic')" title="Italic"><i>I</i></button>
+        <button type="button" onclick="formatText('underline')" title="Underline"><u>U</u></button>
+        <button type="button" onclick="insertBullet()" title="Bullet List">•</button>
+      </div>
+      <div id="message" contenteditable="true" name="message" style="height: 200px; border: 1px solid #ccc; padding: 0.5rem;" >
+        Type your notification here...
+      </div>
+      <!-- <label for="message">Notification to be sent</label> -->
+    </div>
    
 
   <!-- Submit button -->
   <div class="col-12">
-      <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create</button>
+      <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Send Notification</button>
   </div>
   </form>
 </section>
@@ -97,18 +187,27 @@
          
  
      <div class="form-floating mb-3">
-       <input type="text" class="form-control" name="title" id="title" placeholder="Message Title" required>
        <label for="title" class="form-label">Notification Title</label>
+       <input type="text" class="form-control" name="title" id="title" placeholder="Notification Title" required>
      </div>
      <div class="form-floating mb-3">
-      <textarea class="form-control" name="message" id="message" placeholder="Leave a message here" style="height: 200px;" required></textarea>
-      <label for="message">Notification to be sent</label>
+      <div class="editor-toolbar">
+        <button type="button" onclick="formatText('bold')" title="Bold"><b>B</b></button>
+        <button type="button" onclick="formatText('italic')" title="Italic"><i>I</i></button>
+        <button type="button" onclick="formatText('underline')" title="Underline"><u>U</u></button>
+        <button type="button" onclick="insertBullet()" title="Bullet List">•</button>
+      </div>
+      <div id="message" contenteditable="true" name="message" style="height: 200px; border: 1px solid #ccc; padding: 0.5rem;">
+        Type your notification here...
+      </div>
+      <!-- <label for="message">Notification to be sent</label> -->
     </div>
+    
     
  
    <!-- Submit button -->
    <div class="col-12">
-       <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create</button>
+       <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Send Notification</button>
    </div>
    </form>
  </section>
@@ -116,53 +215,98 @@
 
 <script>
       
+      document.getElementById('notificationForm').addEventListener('submit', (e) => {
+  e.preventDefault();
 
-  document.getElementById('notificationForm').addEventListener('submit', (e) => {
-   e.preventDefault();
-  
-   const formData = new FormData(e.target);
-   const formObject = Object.fromEntries(formData.entries());
-  
-   fetch('/create/notification', {
-     method: 'POST',
-       headers: {
-           'Content-Type': 'application/json'
-       },
-       body: JSON.stringify(formObject)
-   })
-   .then(response => response.json())
-   .then((data) => {
-    if (data.success) {
-     Swal.fire({
-      title: data.message,
-      text: "Your notification was delivered successfully",
-      icon: 'success',
-      showConfirmButton: false,
-      timer: 2000
-  }).then(() => {
-      document.getElementById('notificationForm').reset();
-  });
-    } else {
-     Swal.fire({
-         title: 'Error',
-         text: data.message,
-         icon: 'error',
-         showConfirmButton: false,
-         timer: 2000
-     });
-  }
+  const message = document.getElementById('message').innerHTML; // Get HTML content
+  const formData = new FormData(e.target);
+  formData.set('message', message); // Replace plain text with HTML content
+
+  fetch('/create/notification', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(Object.fromEntries(formData.entries())),
   })
-  .catch(error => {
-  Swal.fire({
-     title: 'Error',
-     text: 'There was a problem sending your notification. Please try again later.',
-     icon: 'error',
-     showConfirmButton: false,
-     timer: 2000
-  });
-  console.error('Error:', error);
-  });
-   })
-  
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire({
+          title: data.message,
+          text: "Your notification was delivered successfully",
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 2000,
+        }).then(() => {
+          document.getElementById('notificationForm').reset();
+          document.getElementById('message').innerHTML = ''; // Clear content
+        });
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: data.message,
+          icon: 'error',
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      }
+    })
+    .catch(error => {
+      Swal.fire({
+        title: 'Error',
+        text: 'There was a problem sending your notification. Please try again later.',
+        icon: 'error',
+        showConfirmButton: false,
+        timer: 2000,
+      });
+      console.error('Error:', error);
+    });
+});
+
      </script>
+
+    <script>
+      function formatText(command) {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+  const selectedText = range.toString();
+
+  let formattedText;
+  switch (command) {
+    case 'bold':
+      formattedText = `<b>${selectedText}</b>`;
+      break;
+    case 'italic':
+      formattedText = `<i>${selectedText}</i>`;
+      break;
+    case 'underline':
+      formattedText = `<u>${selectedText}</u>`;
+      break;
+    default:
+      return;
+  }
+
+  range.deleteContents();
+  const fragment = document.createRange().createContextualFragment(formattedText);
+  range.insertNode(fragment);
+}
+
+function insertBullet() {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+  const bulletPoint = document.createElement('div');
+  bulletPoint.textContent = `• ${range.toString() || 'Bullet Point'}`;
+  
+  range.deleteContents();
+  range.insertNode(bulletPoint);
+  bulletPoint.contentEditable = 'true'; // Ensure the bullet is editable
+  bulletPoint.focus();
+}
+
+    </script>
 <%- include('layout/footer') %>

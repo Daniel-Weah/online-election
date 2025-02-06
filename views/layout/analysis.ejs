@@ -17,6 +17,13 @@
         <i class="fas fa-person-booth fa-fw me-3"></i><span>Vote Candidate</span></a
         >
 
+        <a
+        href="/vote/analysis"
+        class="list-group-item list-group-item-action py-2 ripple bg-primary rounded 4 " style="color: #fff;"
+      >
+        <i class="fas fa-chart-bar fa-fw me-3"></i><span>Vote Analysis</span>
+      </a>
+
         <% if (role === 'Admin') { %>
           <a
             href="/admin/voters"
@@ -100,12 +107,7 @@
       >
         <i class="fas fa-chart-pie fa-fw me-3"></i><span>Elections</span>
       </a>
-      <a
-        href="/vote/analysis"
-        class="list-group-item list-group-item-action py-2 ripple bg-primary rounded 4 " style="color: #fff;"
-      >
-        <i class="fas fa-chart-bar fa-fw me-3"></i><span>Vote Analysis</span>
-      </a>
+   
       <a
         href="/create/notification"
         class="list-group-item list-group-item-action py-2 ripple"

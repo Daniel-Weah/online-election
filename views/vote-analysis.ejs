@@ -1,37 +1,58 @@
 <%- include('layout/header') %>
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.2.4/dist/frappe-charts.min.iife.js"></script>
 
 <style>
+  /* Ensure the container leaves 25px space for the sidebar */
+  body {
+    margin-left: 25px; /* Leave space for the sidebar */
+  }
+
   #positionTabs {
     display: flex;
     justify-content: center;
     margin-top: 20px;
+    flex-wrap: wrap; /* Ensure tabs wrap on smaller screens */
   }
 
   .tab-content {
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: scroll;
+    overflow-x: auto; /* Allow horizontal scrolling */
+    flex-direction: column; /* Stack charts vertically on smaller screens */
   }
 
   .tab-pane > div {
     margin: 0 auto;
-    width: 900px;
+    width: 90%; /* Use percentage for better responsiveness */
+    max-width: 900px;
     height: 500px;
   }
-  
-  /* Media Query for Medium Devices */
-  
-  /* Media Query for Small Devices */
-  @media only screen and (max-width: 600px) {
-    
+
+  /* Large screens */
+  @media only screen and (min-width: 1024px) {
     .tab-pane > div {
-      margin: 0 auto;
-      width: 350px;
-      height: 400px;
+      width: 900px;
+      height: 500px;
+    }
   }
-  #fullName{
+
+  /* Medium Devices */
+  @media only screen and (max-width: 1024px) {
+    .tab-pane > div {
+      width: 700px;
+      height: 400px;
+    }
+  }
+
+  /* Small Devices */
+  @media only screen and (max-width: 600px) {
+    .tab-pane > div {
+      width: 90%; /* Adjust width for small screens */
+      height: 300px;
+    }
+
+    #fullName {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -40,7 +61,6 @@
       vertical-align: middle;
     }
   }
-
 </style>
 </head>
 <body>
@@ -51,55 +71,41 @@
     <!-- Navbar -->
     <%- include('./layout/navbar') -%>
   </header>
+  <main>
   <div class="container mt-5">
     <h1 class="text-center" style="margin-top: 80px;">Voter Analysis</h1>
-    <ul class="nav nav-tabs" id="positionTabs" role="tablist">
-      <% Object.keys(groupedCandidates).forEach((position, index) => { %>
-        <li class="nav-item" role="presentation">
-          <a class="nav-link <%= index === 0 ? 'active' : '' %>" id="<%= position %>-tab" data-bs-toggle="tab" href="#<%= position %>" role="tab" aria-controls="<%= position %>" aria-selected="<%= index === 0 %>"><%= position %></a>
-        </li>
-      <% }); %>
-    </ul>
-    <div class="tab-content" id="positionTabsContent">
-      <% Object.keys(groupedCandidates).forEach((position, index) => { %>
-        <div class="tab-pane fade <%= index === 0 ? 'show active' : '' %>" id="<%= position.replace(/\s+/g, '-') %>" role="tabpanel" aria-labelledby="<%= position.replace(/\s+/g, '-') %>-tab">
-          <div id="chart_<%= position.replace(/\s+/g, '-') %>"></div>
-        </div>
-      <% }); %>
-    </div>
+    <div id="chart"></div>
   </div>
+</main>
+  <script>
+    const groupedData = <%- groupedData %>;
 
-<script>
-  google.charts.load('current', {'packages':['corechart']});
-google.charts.setOnLoadCallback(drawCharts);
+    Object.keys(groupedData).forEach((position) => {
+      const positionData = groupedData[position];
+      const container = document.createElement("div");
+      container.id = `chart-${position}`;
+      container.style.marginBottom = "20px";
+      document.getElementById("chart").appendChild(container);
 
-function drawCharts() {
-  <% Object.keys(groupedCandidates).forEach((position) => { %>
-    var data_<%= position.replace(/\s+/g, '-') %> = google.visualization.arrayToDataTable([
-      ['Candidate', 'Votes'],
-      <% groupedCandidates[position].forEach(candidate => { %>
-        ['<%= candidate.first_name + ' ' + (candidate.middle_name ? candidate.middle_name + ' ' : '') + candidate.last_name %>', <%= candidate.vote %>],
-      <% }); %>
-    ]);
+      const data = {
+        labels: positionData.labels,
+        datasets: [
+          {
+            name: "Votes",
+            type: "bar",
+            values: positionData.votes,
+          },
+        ],
+      };
 
-    var options_<%= position.replace(/\s+/g, '-') %> = {
-      title: '<%= position %> Candidates',
-      pieHole: 0.4,
-      pieSliceText: 'value'
-    };
-
-    var chart_<%= position.replace(/\s+/g, '-') %> = new google.visualization.PieChart(document.getElementById('chart_<%= position.replace(/\s+/g, '-') %>'));
-    chart_<%= position.replace(/\s+/g, '-') %>.draw(data_<%= position.replace(/\s+/g, '-') %>, options_<%= position.replace(/\s+/g, '-') %>);
-
-    // Redraw chart on tab change
-    document.getElementById('<%= position.replace(/\s+/g, '-') %>-tab').addEventListener('shown.bs.tab', function () {
-      setTimeout(function() {
-        chart_<%= position.replace(/\s+/g, '-') %>.draw(data_<%= position.replace(/\s+/g, '-') %>, options_<%= position.replace(/\s+/g, '-') %>);
-      }, 100);
+      new frappe.Chart(`#chart-${position}`, {
+        title: `${position} - Vote Analysis`,
+        data: data,
+        type: "bar",
+        height: 300,
+        colors: ["#008B8B"],
+      });
     });
-  <% }); %>
-}
-
-</script>
+  </script>
 
 <%- include('layout/footer') %>

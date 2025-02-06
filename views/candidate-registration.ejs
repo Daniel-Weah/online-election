@@ -118,6 +118,14 @@
                   
                   <input type="hidden" name="role" id="role" value="<%= secondRole.id %>">
 
+                  <div class="col-12 mb-3">
+                    <label for="election" class="form-label">Election:</label>
+                    <select id="election" name="election" class="form-select" required>
+                      <% elections.forEach(election => { %>
+                        <option value="<%= election.id %>"><%= election.election %></option>
+                        <% }); %>
+                      </select>
+                    </div>
                     <div class="col-12 mb-3">
                         <label for="party" class="form-label">Party:</label>
                         <select id="party" name="party" class="form-select" required>
@@ -131,14 +139,6 @@
                         <select id="position" name="position" class="form-select" required>
                             <% positions.forEach(position => { %>
                                 <option value="<%= position.id %>"><%= position.position %></option>
-                            <% }); %>
-                        </select>
-                    </div>
-                    <div class="col-12 mb-3">
-                        <label for="election" class="form-label">Election:</label>
-                        <select id="election" name="election" class="form-select" required>
-                            <% elections.forEach(election => { %>
-                                <option value="<%= election.id %>"><%= election.election %></option>
                             <% }); %>
                         </select>
                     </div>
@@ -188,14 +188,14 @@
                 <tr>
                  
                   <td title="<%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%>">
-                    <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /> &nbsp; <br>
+                    <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" /> <br>
                     <%=candidate.first_name%> <%=candidate.middle_name%> <%=candidate.last_name%>
                   </td>
 
 
                   <td title="<%= candidate.position%>"><%=candidate.position%></td>
 
-                  <td title="<%= candidate.party %>"><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <br> <%=candidate.party%></td>
+                  <td title="<%= candidate.party %>"><%=candidate.party%></td>
 
                   <td class="ellipsis" title="<%= candidate.candidate_election %>"><%= candidate.candidate_election %></td>
 
@@ -336,7 +336,7 @@
 
                 <td><%=candidate.position%></td>
 
-                <td><img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" /> <%=candidate.party%></td>
+                <td title="<%=candidate.party%>"><%=candidate.party%></td>
 
 
                 <td><%=candidate.vote ? candidate.vote : '0' %></td>

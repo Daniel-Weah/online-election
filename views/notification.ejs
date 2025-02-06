@@ -192,7 +192,7 @@
   <ul id="notification-list">
     <% if (notifications.length > 0) { %>
       <% notifications.forEach(notification => { %>
-        <li><img src="/images/message.png" alt="notification-icon"> <span id="title"><%= notification.title %></span> <br> <span id="notification_msg"><%= notification.message %></span><span ><img src="/images/double-check.png" alt="" style="width: 20px;height: 20px;"></span></li>
+        <li><img src="/images/message.png" alt="notification-icon"> <span id="title"><%= notification.title %></span> <br> <span class="message" style="white-space: pre-wrap;"><%- notification.message %></span><span ><img src="/images/double-check.png" alt="" style="width: 20px;height: 20px;"></span></li>
         <li><span style="color: green;">Sent: </span><%= new Date(notification.created_at).toLocaleString() %></li>
         <hr>
       <% }) %>

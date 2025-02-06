@@ -11,16 +11,31 @@
     }
     #notification-box {
   position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4CAF50; /* Green */
-  color: white;
-  padding: 15px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  top: 100px;
+  left: 300px;
+  width: auto;
+  height: auto;
+  background-color: #ffffff;
+  /* font-weight: bold; */
+  font-size: 1rem;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  display: none;
+  transition: transform 0.3s ease-in-out;
 }
+
+#notification-box.error {
+    color: rgb(58, 57, 57);
+
+}
+
+#notification-box.success {
+  color: rgb(58, 57, 57);
+}
+
+
 
 .dropdown-item.text-primary {
     display: block !important;
@@ -95,6 +110,10 @@
     
       <main style="margin-top: 70px;">
         <div class="container pt-2">
+                    <!-- Notification Modal -->
+    <div id="notification-box" style="display: none;">
+        <p id="notification-message"></p>
+    </div>
             <!-- Tabs navs -->
             <ul class="nav nav-tabs nav-fill mb-3" id="ex1" role="tabpanel">
                 <li class="nav-item" role="presentation">
@@ -139,16 +158,19 @@
                                     <td><%= index + 1 %></td>
                                     <td>
                                         <img src="data:image/png;base64,<%= user.profile_picture %>" alt="profile_picture" id="profile_picture"> 
-                                        <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %>
+                                        <div>
+                                            <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %> <br>
+                                            <p class="text-muted small"><%= user.username%></p>
+                                            </div>
                                     </td>
                                     <td>
                                         <span class="badge bg-primary"><%= user.role ? user.role : 'No Role' %></span>
                                     </td>
                                     <td>
                                         <% if (user.has_voted) { %> 
-                                        <button id="role-btn" class="btn btn-success">Voted</button>
+                                            <span id="role-badge" class="badge bg-success">Voted</span>
                                         <% } else { %>
-                                        <button id="role-btn" class="btn btn-danger">Not Voted</button>
+                                            <span id="role-badge" class="badge bg-danger">Not Voted</span>
                                         <% } %>
                                     </td>
                                     <td><%= user.election %></td>
@@ -404,8 +426,8 @@ document.addEventListener('DOMContentLoaded', (e) => {
 
         const notificationMessage = document.getElementById('notification-message');
 
-        notificationMessage.textContent = `You have ${unreadCount} new notification(s).`;
-
+        notificationMessage.innerHTML = `<i class="fas fa-check-circle" style='color: green;'></i> You have ${unreadCount} new notification(s).`;
+        
         notificationBox.style.display = 'block';
         
         setTimeout(function(){
@@ -414,7 +436,34 @@ document.addEventListener('DOMContentLoaded', (e) => {
     };
 
     
+    
+    const urlParams = new URLSearchParams(window.location.search);
+  const successMessage = urlParams.get('success');
+  const errorMessage = urlParams.get('error');
+
+  const notificationBox = document.getElementById('notification-box');
+  const notificationMessage = document.getElementById('notification-message');
+
+  if (successMessage) {
+    notificationMessage.innerHTML = `<i class="fas fa-check-circle" style='color: green;'></i> `+successMessage;
+    notificationBox.classList.add('success');
+    notificationBox.style.display = 'block';
+    setTimeout(() => notificationBox.style.transform = 'translateX(0)', 10);
+  } else if (errorMessage) {
+    notificationMessage.innerHTML = `<i class="fa-solid fa-exclamation-triangle" style='color: red;'></i> ` + errorMessage;
+    notificationBox.classList.add('error');
+    notificationBox.style.display = 'block';
+    setTimeout(() => notificationBox.style.transform = 'translateX(0)', 10);
+  }
+
+  setTimeout(() => {
+    notificationBox.style.transform = 'translateX(-500px)';
+    setTimeout(() => notificationBox.style.display = 'none', 300); 
+  }, 3000);
 });
+
+// });
+
 
 
 

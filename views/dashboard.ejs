@@ -3,17 +3,21 @@
       background-color: #f9f9f9;
       font-family: 'Roboto', sans-serif;
     }
-  #notification-box {
+    #notification-box {
   position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4CAF50; /* Green */
-  color: white;
-  padding: 15px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  top: 100px;
+  left: 300px;
+  width: auto;
+  height: auto;
+  background-color: #ffffff;
+  /* font-weight: bold; */
+  font-size: 1rem;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  display: none;
+  transition: transform 0.3s ease-in-out;
 }
 
 
@@ -47,7 +51,7 @@
     </div>
     
     <main style="margin-top: 70px " id="content-area">
-        <h1 class="mb-4" style="text-align: center; padding-top: 30px;">Result Dashboard</h1>
+        <h1 class="mb-4" style="text-align: center; padding-top: 30px;">Election Result Dashboard</h1>
         <div class="container pt-2 bg-light">
           <div class="mb-3" style="margin: 20px;">
             <label class="visually-hidden" for="elections-dropdown">Preference</label>
@@ -71,7 +75,7 @@
                                          <div class="d-flex justify-content-between p-md-1 ">
                                              <div class="d-flex flex-row ">
                                                  <div class="align-self-center ">
-                                                     <i class="fas fa-pencil-alt text-info fa-3x me-4 "></i>
+                                                  <i class="fas fa-users text-info fa-3x me-4 "></i>
                                                  </div>
                                                  <div>
                                                      <h4>Registered Voters</h4>
@@ -93,7 +97,7 @@
                                              <div class="d-flex flex-row ">
                                                  <div class="align-self-center ">
                                                      
-                                                     <i class="fas fa-balance-scale text-warning fa-3x me-4 "></i>
+                                                  <i class="fas fa-vote-yea text-warning fa-3x me-4 "></i>
                                                  </div>
                                                  <div>
                                                      <h4>Total Votes</h4>
@@ -171,7 +175,8 @@
           const notificationBox = document.getElementById('notification-box');
           const notificationMessage = document.getElementById('notification-message');
     
-          notificationMessage.textContent = `You have ${unreadCount} new notification(s).`;
+          notificationMessage.innerHTML = `<i class="fas fa-check-circle" style='color: green;'></i> You have ${unreadCount} new notification(s).`;
+          
           notificationBox.style.display = 'block';
     
           setTimeout(function() {
