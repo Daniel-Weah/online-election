@@ -169,6 +169,60 @@
     #photoPreview {
         margin-top: 10px;
     }
+
+    #notification-box {
+  position: fixed;
+  top: 100px;
+  left: 300px;
+  width: auto;
+  height: auto;
+  background-color: #ffffff;
+  /* font-weight: bold; */
+  font-size: 1rem;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: none;
+  transition: transform 0.3s ease-in-out;
+}
+
+#notification-box.error {
+    color: rgb(223, 35, 35);
+
+}
+
+#notification-box.success {
+  color: rgb(58, 57, 57);
+}
+#table-section{
+    width: 150%;
+    overflow-x: scroll;
+    margin-left: -5.5pc;
+  }
+#table-section img{
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid rgb(171, 175, 175);
+}
+
+  @media only screen and (max-width: 600px){
+    #table-section{
+    width: 100%;
+    overflow-x: scroll;
+    margin-left: 0;
+  }
+  }
+  @media only screen and (min-width: 600px) and (max-width: 768px){
+    #table-section{
+    width: 100%;
+    overflow-x: scroll;
+    margin-left: 0;
+  }
+
+  }
+
 </style>
 </head>
 
@@ -187,6 +241,9 @@
     <!-- Main layout -->
     <main style="margin-top: 70px; padding-left: 0">
         <div class="container pt-2">
+            <div id="notification-box" style="display: none;">
+                <p id="notification-message"></p>
+            </div>
             <!-- Tabs navs -->
             <ul class="nav nav-tabs nav-fill mb-3" id="ex1" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -209,11 +266,14 @@
                         <option value="">Select Election</option>
                     </select>
 
+                    <section id="table-section">
+                        <table class="table responsive">
                     <table class="table table-responsive">
                         <thead>
                             <tr>
                                 <th scope="col">#</th>
                                 <th scope="col">Party</th>
+                                <th scope="col">Election</th>
                                 <th scope="col">Logo</th>
                                 <th scope="col">Action</th>
                             </tr>
@@ -223,8 +283,8 @@
                             <tr>
                                 <td><%= index + 1 %></td>
                                 <td><%= party.party %></td>
+                                <td><%= party.election%></td>
                                 <td><img src="data:image/png;base64,<%= party.logo %>" alt="party logo" id="logo"></td>
-
                                 <td>
                                     <div class="dropdown">
                                         <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= party.id %>" data-bs-toggle="dropdown" aria-expanded="false">
@@ -254,6 +314,7 @@
                             <% }) %>
                         </tbody>
                     </table>
+                </section>
                 </div>
 
                 <div class="tab-pane fade" id="create-party-tab" role="tabpanel">
@@ -308,18 +369,24 @@
     
                         
     
+                        <section id="table-section">
+                            <table class="table responsive">
                         <table class="table table-responsive">
                             <thead>
                                 <tr>
+                                    <th scope="col">#</th>
                                     <th scope="col">Party</th>
+                                    <th scope="col">Election</th>
                                     <th scope="col">Logo</th>
                                     <th scope="col">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <% Adminparties.forEach(party => {%>
+                                <% parties.forEach((party, index) => {%>
                                 <tr>
+                                    <td><%= index + 1 %></td>
                                     <td><%= party.party %></td>
+                                    <td><%= party.election%></td>
                                     <td><img src="data:image/png;base64,<%= party.logo %>" alt="party logo" id="logo"></td>
                                     <td>
                                         <div class="dropdown">
@@ -348,6 +415,7 @@
                                 <% }) %>
                             </tbody>
                         </table>
+                    </section>
                     </div>
     
                     <div class="tab-pane fade" id="create-party-tab" role="tabpanel">
@@ -477,7 +545,33 @@ document.addEventListener('DOMContentLoaded', (e) => {
     };
 
     
+    const urlParams = new URLSearchParams(window.location.search);
+  const successMessage = urlParams.get('success');
+  const errorMessage = urlParams.get('error');
+
+  const notificationBox = document.getElementById('notification-box');
+  const notificationMessage = document.getElementById('notification-message');
+
+  if (successMessage) {
+    notificationMessage.innerHTML = `<i class="fas fa-check-circle" style='color: green;'></i> `+successMessage;
+    notificationBox.classList.add('success');
+    notificationBox.style.display = 'block';
+    setTimeout(() => notificationBox.style.transform = 'translateX(0)', 10);
+  } else if (errorMessage) {
+    notificationMessage.innerHTML = `<i class="fa-solid fa-exclamation-triangle" style='color: red;'></i> ` + errorMessage;
+    notificationBox.classList.add('error');
+    notificationBox.style.display = 'block';
+    setTimeout(() => notificationBox.style.transform = 'translateX(0)', 10);
+  }
+
+  setTimeout(() => {
+    notificationBox.style.transform = 'translateX(-500px)';
+    setTimeout(() => notificationBox.style.display = 'none', 300); 
+  }, 3000);
 });
+
+
+
 
 
 

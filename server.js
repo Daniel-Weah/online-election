@@ -11,6 +11,8 @@ require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
 const sanitizeHtml = require('sanitize-html');
+const fs = require('fs');
+const { Parser } = require('json2csv');
 
 const app = express();
 const server = http.createServer(app);
@@ -52,7 +54,7 @@ db.serialize(() => {
     "CREATE TABLE IF NOT EXISTS parties(id TEXT PRIMARY KEY, election_id TEXT NOT NULL, party VARCHAR(50) NOT NULL, logo BLOB)"
   );
   db.run(
-    "CREATE TABLE IF NOT EXISTS positions(id TEXT PRIMARY KEY, election_id TEXT NOT NULL, position VARCHAR(50) NOT NULL, candidate_age_eligibility INTEGER NOT NULL)"
+    "CREATE TABLE IF NOT EXISTS positions(id TEXT PRIMARY KEY, election_id TEXT NOT NULL, position VARCHAR(50) NOT NULL, position_description VARCHAR(50), candidate_age_eligibility INTEGER NOT NULL)"
   );
   db.run(
     "CREATE TABLE IF NOT EXISTS candidates(id TEXT PRIMARY KEY, first_name VARCHAR(50) NOT NULL, middle_name VARCHAR(50) NULL, last_name VARCHAR(50) NOT NULL, party_id TEXT NOT NULL, position_id TEXT NOT NULL, election_id TEXT NOT NULL, user_id TEXT NOT NULL, photo BLOB)"
@@ -984,31 +986,6 @@ app.post("/admin/update/user", (req, res) => {
       });
     });
 
-
-app.post("/update/party", upload.single("logo"), (req, res) => {
-  const { id, party } = req.body;
-
-  const logo = req.file ? req.file.buffer : null;
-
-  if (!logo) {
-    console.error("No logo file uploaded");
-    return res.status(400).send("Logo file is required");
-  }
-
-  const query = `
-      UPDATE parties
-      SET party = ?, logo = ? WHERE id = ?;
-  `;
-
-  db.run(query, [party, logo, id], function (err) {
-    if (err) {
-      console.error("Error updating party:", err.message);
-      return res.status(500).send("Internal Server Error");
-    }
-    res.redirect("/create/party");
-  });
-});
-
 // ================================= VOTERS ENDS =====================================
 
 // Route to render party registration form
@@ -1019,7 +996,11 @@ app.get("/create/party", (req, res) => {
   ) {
     return res.redirect("/login");
   }
-  db.all("SELECT * FROM parties", [], (err, parties) => {
+  db.all(`SELECT parties.*, elections.election
+          FROM parties
+          JOIN elections ON parties.election_id = elections.id
+
+    `, [], (err, parties) => {
     if (err) {
       return res.status(500).send("Internal server error");
     }
@@ -1140,95 +1121,6 @@ app.get("/create/party", (req, res) => {
   });
 });
 
-// app.get("/admin/create/party", (req, res) => {
-//   if (!req.session.userId) {
-//     return res.redirect("/login");
-//   }
-//   db.all("SELECT * FROM parties", [], (err, parties) => {
-//     if (err) {
-//       return res.status(500).send("Internal server error");
-//     }
-
-//     parties.forEach((party) => {
-//       if (party.logo) {
-//         party.logo = party.logo.toString("base64");
-//       }
-//     });
-
-//     const profilePicture = req.session.profilePicture;
-//     db.get(
-//       "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
-//       [req.session.userId],
-//       (err, userRole) => {
-//         if (err) {
-//           return res.status(500).send("Error fetching user role");
-//         }
-//         db.get(
-//           "SELECT username FROM auth WHERE user_id = ?",
-//           [req.session.userId],
-//           (err, user) => {
-//             if (err) {
-//               return res.status(500).send("Error fetching user");
-//             }
-
-//             if (!user) {
-//               return res.status(404).send("User not found");
-//             }
-
-//             // Fetch unread notifications count
-//             db.get(
-//               "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = ? AND is_read = 0",
-//               [user.username],
-//               (err, countResult) => {
-//                 if (err) {
-//                   return res
-//                     .status(500)
-//                     .send("Error fetching unread notifications count");
-//                 }
-//                 db.get(
-//                   "SELECT * FROM users WHERE id = ?",
-//                   [req.session.userId],
-//                   (err, user) => {
-//                     if (err) {
-//                       return res
-//                         .status(500)
-//                         .send("Error fetching user from the user table");
-//                     }
-
-//                     db.get(
-//                       `SELECT users.*, elections.election AS election_name
-//                        FROM users
-//                        JOIN elections ON users.election_id = elections.id
-//                        WHERE users.id = ?`,
-//                       [req.session.userId],
-//                       (err, userElectionData) => {
-//                         if (err) {
-//                           console.error("Error getting the user election name:", err);
-//                           return res.send("Error getting the userElectionName");
-//                         }
-
-//                         console.log("userElectionData", userElectionData);
-
-//                     res.render("admin-party-registration", {
-//                       parties,
-//                       role: userRole.role,
-//                       profilePicture,
-//                       unreadCount: countResult.unreadCount,
-//                       user,
-//                       userElectionData
-//                     });
-//                   }
-//                 );
-//               }
-//             );
-//           }
-//         );
-//       }
-//     );
-//   });
-// });
-// });
-
 app.post("/create/party", upload.single("logo"), (req, res) => {
   const { election, party } = req.body;
   const logo = req.file ? req.file.buffer : null;
@@ -1248,29 +1140,43 @@ app.post("/create/party", upload.single("logo"), (req, res) => {
   );
 });
 
+app.post("/update/party", upload.single("logo"), (req, res) => {
+  const { id, party } = req.body;
+
+  const logo = req.file ? req.file.buffer : null;
+
+  if (!logo) {
+    console.error("No logo file uploaded");
+    return res.redirect("/create/party?error=Party Logo Required");
+  }
+
+  const query = `
+      UPDATE parties
+      SET party = ?, logo = ? WHERE id = ?;
+  `;
+
+  db.run(query, [party, logo, id], function (err) {
+    if (err) {
+      console.error("Error updating party:", err.message);
+      return res.redirect("/create/party?error=Error updating party");
+    }
+    res.redirect("/create/party?success=Party Updated Successfully!");
+  });
+});
+
 // Handle delete and edit request
 app.post("/delete/party/:id", (req, res) => {
   const id = req.params.id;
-  db.run("DELETE FROM parties WHERE id = ?", [id]);
-  res.redirect("/create/party");
-});
-
-app.post("/update/position", (req, res) => {
-  const { id, position, candidate_age_eligibilities } = req.body;
-
-  const query = `
-      UPDATE positions
-      SET position = ?, candidate_age_eligibility = ?
-      WHERE id = ?;
-  `;
-  db.run(query, [position, candidate_age_eligibilities, id], function (err) {
+  db.run("DELETE FROM parties WHERE id = ?", [id], function(err) {
     if (err) {
-      console.error("Error updating position:", err.message);
-      return res.status(500).send("Internal Server Error");
+      console.error("Error deleting party:", err.message);
+      return res.redirect("/create/party?error=Error deleting party");
     }
-    res.redirect("/add/position");
-  });
+  res.redirect("/create/party?success=Party Deleted Successfully!");
 });
+});
+
+
 
 app.get("/add/position", (req, res) => {
   if (
@@ -1279,7 +1185,10 @@ app.get("/add/position", (req, res) => {
   ) {
     return res.redirect("/login");
   }
-  db.all("SELECT * FROM positions", [], (err, positions) => {
+  db.all(`SELECT positions.*, elections.election
+          FROM positions
+          JOIN elections ON positions.election_id = elections.id
+    `, [], (err, positions) => {
     if (err) {
       return res.status.send("Internal server error");
     }
@@ -1388,13 +1297,13 @@ app.get("/add/position", (req, res) => {
 });
 
 app.post("/add/position", (req, res) => {
-  const { election, Position, candidate_age_eligibility } = req.body;
+  const { election, Position, position_description, candidate_age_eligibility } = req.body;
 
   const positionID = uuidv4();
 
   db.run(
-    "INSERT INTO positions (id, election_id, position, candidate_age_eligibility) VALUES (?,?,?,?)",
-    [positionID, election, Position, candidate_age_eligibility],
+    "INSERT INTO positions (id, election_id, position, position_description, candidate_age_eligibility) VALUES (?,?,?,?,?)",
+    [positionID, election, Position, position_description, candidate_age_eligibility],
     (err) => {
       if (err) {
         return console.log(err.message);
@@ -1404,10 +1313,34 @@ app.post("/add/position", (req, res) => {
   );
 });
 
+app.post("/update/position", (req, res) => {
+  const { id, position, candidate_age_eligibilities } = req.body;
+
+  const query = `
+      UPDATE positions
+      SET position = ?, candidate_age_eligibility = ?
+      WHERE id = ?;
+  `;
+  db.run(query, [position, candidate_age_eligibilities, id], function (err) {
+    if (err) {
+      console.error("Error updating position:", err.message);
+      return res.redirect("/add/position?error=Error updating position");
+    }
+    res.redirect("/add/position?success=Position updated successfully!");
+  });
+});
+
+
+
 app.post("/delete/position/:id", (req, res) => {
   const id = req.params.id;
-  db.run("DELETE FROM positions WHERE id = ?", [id]);
-  res.redirect("/add/position");
+  db.run("DELETE FROM positions WHERE id = ?", [id], function(err) {
+    if (err) {
+      console.error("Error deleting party:", err.message);
+      return res.redirect("/create/party?error=Error deleting party");
+    } 
+  res.redirect("/add/position?success=Position deleted successfully!");
+});
 });
 
 //======================== CANDIDATE REGISTRATION ROUTES =============================
@@ -1634,7 +1567,7 @@ app.get("/candidate/registration", (req, res) => {
 });
 
 app.post("/update/candidate", (req, res) => {
-  const { id, first_name, middle_name, last_name, position, party, election } =
+  const { id, first_name, middle_name, last_name, position, party, election, user_id} =
     req.body;
 
   const query = `
@@ -1648,16 +1581,29 @@ app.post("/update/candidate", (req, res) => {
     function (err) {
       if (err) {
         console.error("Error updating candidate:", err.message);
-        return res.status(500).send("Internal Server Error");
+        return res.redirect("/candidate/registration?error=Error updating candidate record");
       }
-      res.redirect("/candidate/registration");
+  db.run(`UPDATE users
+          SET first_name = ?, middle_name = ?, last_name = ?
+          WHERE id = ?
+    `, [first_name, middle_name, last_name, user_id], function (err) {
+      if (err) {
+        console.error("Error updating candidate:", err.message);
+        return res.redirect("/candidate/registration?error=Error updating candidate record");
+      }
+      res.redirect("/candidate/registration?success=Candidate record updated successfully!");
     }
   );
 });
+});
 app.post("/delete/candidate/:id", (req, res) => {
   const id = req.params.id;
-  db.run("DELETE FROM candidates WHERE id = ?", [id]);
-  res.redirect("/candidate/registration");
+  db.run("DELETE FROM candidates WHERE id = ?", [id], function(err) {
+    if (err) {
+      return res.redirect("/candidate/registration?error=Error deleting candidate record")
+    }
+  res.redirect("/candidate/registration?success=Candidate record deleted successfully!");
+});
 });
 
 app.post(
@@ -3512,6 +3458,147 @@ app.get("/party-dashboard", (req, res) => {
     }
   );
 });
+
+// Downloading registered voters and election results list
+// Route to download CSV
+app.get('/voters-record', (req, res) => {
+  if (!req.session.userId || req.session.userRole !== "Candidate") {
+    return res.redirect("/login");
+  }
+  db.get(
+    "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
+    [req.session.userId],
+    (err, userRole) => {
+      if (err) {
+        return res.status(500).send("Error fetching user role");
+      }
+      db.all("SELECT * FROM roles", [], (err, roles) => {
+        if (err) {
+          return res.status(500).send("internal server error");
+        }
+       
+  db.get(
+    "SELECT * FROM candidates WHERE user_id = ?",
+    [req.session.userId],
+    (err, currentUser) => {
+      if (err) {
+        console.error("Error fetching current user:", err);
+        return res.status(500).send("An error occurred");
+      }
+      if (!currentUser) {
+        return res.status(404).send("User not found");
+      }
+
+      db.all(`SELECT users.*, elections.election 
+              FROM users
+              JOIN elections ON users.election_id = elections.id
+         WHERE election_id = ?`, 
+        [currentUser.election_id], 
+        (err, allVotersData) => {
+          if (err) {
+            console.error("Error fetching voters:", err);
+            return res.status(500).send("An error occurred");
+          }
+          db.get(
+            `SELECT candidates.*, parties.*, users.*
+            FROM candidates
+            JOIN parties ON candidates.party_id = parties.id
+            JOIN users ON candidates.user_id = users.id
+            WHERE candidates.election_id = ? AND candidates.user_id = ?`,
+            [currentUser.election_id, currentUser.user_id],
+            (err, user) => {
+              if (err) {
+                console.error(
+                  `Error fetching current candidate for election_id ${currentUser.election_id}:`,
+                  err
+                );
+                return res
+                  .status(500)
+                  .send("An error occurred while fetching candidate data.");
+              }
+    
+              if (!user) {
+                return res
+                  .status(404)
+                  .send("Candidate not found for the specified election.");
+              }
+              db.get(
+                "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = ? AND is_read = 0",
+                [user.username],
+                (err, countResult) => {
+                  if (err) {
+                    return res
+                      .status(500)
+                      .send("Error fetching unread notifications count");
+                  }
+                  const profilePicture = req.session.profilePicture;
+          res.render('voters-record', { 
+            allVotersData,
+            role: userRole.role,
+            roles,
+            unreadCount: countResult.unreadCount,
+            user,
+            profilePicture
+           });
+      });
+  });
+});
+});
+});
+});
+});
+
+
+
+app.get('/download/csv', (req, res) => {
+  if (!req.session.userId || req.session.userRole !== "Candidate") {
+    return res.redirect("/login");
+  }
+
+  db.get(
+    "SELECT * FROM candidates WHERE user_id = ?",
+    [req.session.userId],
+    (err, currentUser) => {
+      if (err) {
+        console.error("Error fetching current user:", err);
+        return res.status(500).send("An error occurred");
+      }
+      if (!currentUser) {
+        return res.status(404).send("User not found");
+      }
+
+      db.all(`SELECT users.*, elections.election, roles.role
+              FROM users
+              JOIN elections ON users.election_id = elections.id
+              JOIN roles ON users.role_id = roles.id
+              WHERE users.election_id = ?`,
+        [currentUser.election_id], 
+        (err, rows) => {
+          if (err) {
+            console.error("Error fetching voters:", err);
+            return res.status(500).send("An error occurred");
+          }
+
+          if (rows.length === 0) {
+            return res.status(404).send("No voter records found.");
+          }
+
+          try {
+            const fields = ['first_name', 'middle_name', 'last_name', 'election'];
+            const parser = new Parser({ fields });
+            const csv = parser.parse(rows);
+
+            res.header('Content-Type', 'text/csv');
+            res.attachment('voters-data.csv');
+            res.send(csv);
+          } catch (csvError) {
+            console.error("CSV generation error:", csvError);
+            return res.status(500).send("Error generating CSV");
+          }
+      });
+  });
+});
+
 //     }
 //   );
 // });

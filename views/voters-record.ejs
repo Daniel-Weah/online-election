@@ -1,5 +1,9 @@
 <%- include('layout/header') -%>
-
+<script>
+    function downloadCSV() {
+        window.location.href = '/download/csv';
+    }
+</script>
 <style>
     body {
       background-color: #f9f9f9;
@@ -113,53 +117,28 @@
         </header>
 
         <main style="margin-top: 70px ">
-            <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Party Dashboard</h1>
+            <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Registered Voters List</h1>
             <div class="container pt-2">
-                <section >
-                   <div class="party-title-logo">
-                    <img src="data:image/png;base64,<%= user.logo %>" alt="Party Logo" />
-            <br>                     
-            <h3><%= user.party %></h3>
-                   </div>
-                   <div class="team">
-                    <h3>Team</h3>
-                    <div class="team-members">
-                      <% users.forEach(user => { %> 
-                      <div class="team-card">
-                        <img src="data:image/png;base64,<%= user.photo %>"  alt="picture" /> 
-                        <h4><%= user.first_name %> <%= user.middle_name %> <%= user.last_name %></h4>
-                        <p><%= user.position %></p>
-                      </div>
-                      <% }) %>
-                    </div>
-                   </div>
-                   <hr>
-                   <p class="text-muted small bg-badge px-3 py-2 rounded">Members Info
-                   </p> 
-                </section>
-
+                <button class="btn btn-primary" onclick="downloadCSV()" title="Download Voters Record">Download Record</button>
+               <br><br>
                 <table class="table responsive">
                     <thead>
                         
                         <th scope="col">#</th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Position</th>
-                        <th scope="col">Standing (Vote - Percentage %) </th>
+                        <th scope="col">First Name</th>
+                        <th scope="col">Middle Name</th>
+                        <th scope="col">Last Name</th>
+                        <th scope="col">Election</th>
                     </thead>
-                    <% users.forEach((user, index) => { %> 
+                    <% allVotersData.forEach((user, index) => { %> 
                      <tbody>
                       <tr>
                         <td> <%= index + 1 %> </td>
-                        <td><img src="data:image/png;base64,<%= user.photo %>" class="img-fluid text-info" alt="picture" style="width: 50px;height: 50px;"/> 
-                          <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %> </td>
-                        <td><span class="badge bg-info text-dark">Active</span></td>
-                        <td> <%= user.position %> </td>
-                        <% if (user.vote) { %> 
-                        <td> <%= user.vote < 10 ? '0' + user.vote : user.vote %> - 00.00%</td>
-                        <% } else { %>
-                          <td>0 - 00.00%</td>
-                          <% } %>
+                        <td><%= user.first_name %> </td>
+                        <td><%= user.middle_name %></td>
+                        <td>
+                           <%= user.last_name %> </td>
+                        <td><%=user.election%></td>
                       </tr>
                      </tbody>
                      <% }) %>

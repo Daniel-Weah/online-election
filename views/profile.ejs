@@ -84,7 +84,7 @@
   }
 
   .status-container span {
-    font-size: 1rem;
+    font-size: 16px;
     font-weight: bold;
     margin-right: 10px;
   }
@@ -164,9 +164,9 @@
     </div>
     <div class="status-container">
       <span>Role:</span>
-      <button id="role-btn" class="btn btn-primary"><%= user.role %></button>
+      <span id="role-badge" class="badge bg-primary"><%= user.role %></span>
       <span>Status:</span>
-      <button id="status-btn" class="btn btn-<%= voteStatus === 'Voted' ? 'success' : 'danger' %>"><%= voteStatus %></button>
+      <span id="role-badge" class="badge bg-<%= voteStatus === 'Voted' ? 'success' : 'danger' %>"><%= voteStatus %></span>
     </div>
     <div class="info">
       <p>Personal Info:</p>

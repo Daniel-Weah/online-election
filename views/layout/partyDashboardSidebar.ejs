@@ -16,7 +16,12 @@
         >
         <i class="fas fa-person-booth fa-fw me-3"></i><span>Vote Candidate</span></a
         >
-
+        <a
+        href="/vote/analysis"
+        class="list-group-item list-group-item-action py-2" 
+        >
+        <i class="fas fa-chart-bar fa-fw me-3"></i><span>Vote Analysis</span>
+      </a>
         <% if (role === 'Candidate') { %>
 
           <a
@@ -25,7 +30,8 @@
         >
           <i class="fas fa-users fa-fw me-3"></i><span>Party Dashboard</span>
         </a>
-        
+        <br>
+       
 
         <% } %>
 
@@ -126,6 +132,33 @@
       </a>
 
       <% } %>
+    
+      <% if (role === 'Super Admin' || role === 'Admin' || role === 'Candidate') { %> 
+        <code>Follow the links below to download election records</code>
+    
+        <div class="accordion accordion-flush" id="accordionFlushExample">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                        Election Records
+                    </button>
+                </h2>
+                <div id="flush-collapseOne" class="accordion-collapse collapse" 
+                    aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                    
+                    <a href="/voters-record" class="list-group-item list-group-item-action py-2">
+                        Voters Record
+                    </a>
+    
+                    <a href="#" class="list-group-item list-group-item-action py-2">
+                        Result Record
+                    </a>
+    
+                </div>
+            </div>
+        </div>
+    <% } %>
     
     </div>
   </div>

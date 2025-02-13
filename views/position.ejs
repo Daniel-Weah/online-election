@@ -19,7 +19,42 @@
   .dropdown-item.text-primary {
     display: block !important;
 }
+#notification-box {
+  position: fixed;
+  top: 100px;
+  left: 300px;
+  width: auto;
+  height: auto;
+  background-color: #ffffff;
+  /* font-weight: bold; */
+  font-size: 1rem;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: none;
+  transition: transform 0.3s ease-in-out;
+}
 
+#notification-box.error {
+    color: rgb(223, 35, 35);
+
+}
+
+#notification-box.success {
+  color: rgb(58, 57, 57);
+}
+/* #table-section{
+    width: 100%;
+    margin-left: 4pc;
+    overflow-x: scroll;
+    background-color: #ebe4e4;
+  } */
+  #table-section{
+    width: 90%;
+    overflow-x: scroll;
+    margin-left: 10pc;
+  }
   @media only screen and (max-width: 600px){
   form {
     width: 100%;
@@ -29,16 +64,7 @@
     width: 100%;
     padding: 0;
   }
-  #table-section {
-            width: 100%;
-            padding-left: 0;
-            padding-right: 0;
-        }
-       
 
-        #table {
-            width: 100%;
-        }
         #fullName{
       white-space: nowrap;
       overflow: hidden;
@@ -47,6 +73,11 @@
       display: inline-block;
       vertical-align: middle;
     }
+    #table-section{
+    width: 100%;
+    overflow-x: scroll;
+    margin-left: 0;
+  }
   }
   @media only screen and (min-width: 600px) and (max-width: 768px){
   form {
@@ -57,16 +88,12 @@
     width: 100%;
     padding: 0;
   }
-  #table-section {
-            width: 100%;
-            padding-left: 0;
-            padding-right: 0;
-        }
-       
+  #table-section{
+    width: 100%;
+    overflow-x: scroll;
+    margin-left: 0;
+  }
 
-        #table {
-            width: 100%;
-        }
   }
 </style>
 </head>
@@ -83,6 +110,9 @@
     <main style="margin-top: 50px; padding-left: 0" >
         
         <div class="container pt-2 ">
+            <div id="notification-box" style="display: none;">
+                <p id="notification-message"></p>
+            </div>
             <% if (role === 'Super Admin') { %> 
             <section id="form-section">
                 <h1 class="mb-4" style="text-align: center;margin-top: 10px;">Party Position</h1>
@@ -103,6 +133,12 @@
                           <label for="userName" class="form-label">Position </label>
                         </div>
                       </div>
+                      <div class="col-12">
+                        <div class="form-floating mb-3">
+                          <input type="text" class="form-control" name="position_description" id="position Description" placeholder="Positon Description" required>
+                          <label for="Position Description" class="form-label">Position Description</label>
+                        </div>
+                      </div>
 
                       <div class="col-12">
                         <div class="form-floating mb-3">
@@ -121,18 +157,13 @@
              
             </section>
             <section id="table-section">
-                <h2 class="mb-4" style="text-align: center;">View Positions</h2>
-                
-                    <!-- <select class="custom-select" id="elections-dropdown2"  style="width: 10%; margin: 20px auto;">
-                        <option value="">Select Election</option>
-                    </select> -->
-                  
-
-                        <table class="table table-responsive" id="table">
+                <table class="table responsive">
                             <thead>
                                 <th>#</th>
                                 <th scope="col">Position</th>
-                                <th scope="col">Candidate Age Eligibility</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Age Eligibility</th>
+                                <th scope="col">Election</th>
                                 <th scope="col">Action</th>
                             </thead>
                             <tbody>
@@ -140,7 +171,9 @@
                                 <tr>
                                     <td><%= index + 1%></td>
                                     <td><%= position.position %></td>
+                                    <td><%= position.position_description%></td>
                                     <td><%= position.candidate_age_eligibility %> Years</td>
+                                    <td><%= position.election%></td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
@@ -199,6 +232,13 @@
 
                           <div class="col-12">
                             <div class="form-floating mb-3">
+                              <input type="text" class="form-control" name="position_description" id="position Description" placeholder="Positon Description" required>
+                              <label for="Position Description" class="form-label">Position Description</label>
+                            </div>
+                          </div>
+
+                          <div class="col-12">
+                            <div class="form-floating mb-3">
                               <input type="number" class="form-control" name="candidate_age_eligibility" id="candidate_age_eligibility" placeholder="Candidate Age Eligibility" min="10" required>
                               <label for="candidate_age_eligibility" class="form-label">Candidate Age Eligibility</label>
                             </div>
@@ -214,17 +254,11 @@
                  
                 </section>
                 <section id="table-section">
-                    <h2 class="mb-4" style="text-align: center;">View Positions</h2>
-                    
-                        <!-- <select class="custom-select" id="elections-dropdown2" style="width: 70%;">
-                            <option value="">Select Election</option>
-                        </select> -->
-                      
-    
-                            <table class="table table-responsive" id="table">
+                    <table class="table responsive">
                                 <thead>
                                     <th>#</th>
                                     <th scope="col">Position</th>
+                                    <th scope="col">Description</th>
                                     <th scope="col">Candidate Age Eligibility</th>
                                     <th scope="col">Action</th>
                                 </thead>
@@ -233,6 +267,7 @@
                                         <tr>
                                         <td><%=index + 1 %></td>
                                         <td><%= position.position %></td>
+                                        <td><%= position.position_description%></td>
                                         <td><%= position.candidate_age_eligibility %> Years</td>
 
 
@@ -279,8 +314,13 @@
                                 <form id="editUserForm" method="POST" action="/update/position">
                                     <input type="hidden" id="positionId" name="id">
                                     <div class="mb-3">
-                                        <label for="position" class="form-label">position</label>
+                                        <label for="position" class="form-label">Position</label>
                                         <input type="text" class="form-control" id="position_name" name="position">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="position description" class="form-label">Position Description</label>
+                                        <input type="text" class="form-control" id="position_description" name="position_description">
                                     </div>
   
                                     <div class="mb-3">
@@ -301,13 +341,41 @@
 
     <script>
         function editPosition(position) {
-           console.log('This is the position data:', position); 
+        //    console.log('This is the position data:', position); 
            document.getElementById('positionId').value = position.id;
+           document.getElementById('position_description').value = position.position_description;
            document.getElementById('position_name').value = position.position || '';
            document.getElementById('candidate_age_eligibilities').value = position.candidate_age_eligibility || '';
 
   
        }
+
+       document.addEventListener('DOMContentLoaded', (e) => {
+
+        const urlParams = new URLSearchParams(window.location.search);
+  const successMessage = urlParams.get('success');
+  const errorMessage = urlParams.get('error');
+
+  const notificationBox = document.getElementById('notification-box');
+  const notificationMessage = document.getElementById('notification-message');
+
+  if (successMessage) {
+    notificationMessage.innerHTML = `<i class="fas fa-check-circle" style='color: green;'></i> `+successMessage;
+    notificationBox.classList.add('success');
+    notificationBox.style.display = 'block';
+    setTimeout(() => notificationBox.style.transform = 'translateX(0)', 10);
+  } else if (errorMessage) {
+    notificationMessage.innerHTML = `<i class="fa-solid fa-exclamation-triangle" style='color: red;'></i> ` + errorMessage;
+    notificationBox.classList.add('error');
+    notificationBox.style.display = 'block';
+    setTimeout(() => notificationBox.style.transform = 'translateX(0)', 10);
+  }
+
+  setTimeout(() => {
+    notificationBox.style.transform = 'translateX(-500px)';
+    setTimeout(() => notificationBox.style.display = 'none', 300); 
+  }, 3000);
+});
            </script>
 
    <!-- <script src="/js/party.js"></script> -->

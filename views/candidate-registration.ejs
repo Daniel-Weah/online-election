@@ -13,8 +13,10 @@
     display: grid; justify-items: center;padding: 0.8rem;width: 50%;margin: 0 auto; border-radius: 10px;
   }
   #table-section{
-    display: grid; justify-items: center;padding: 1rem;width: 70%;margin: 0 auto; border-radius: 10px;
+    width: 90%;overflow-x: scroll; margin-left: 10pc;
+    background-color: #ebe4e4;
   }
+  
   #table-section img{
     width: 50px;
     height: 50px;
@@ -29,6 +31,31 @@
   } */
   .dropdown-item.text-primary {
     display: block !important;
+}
+#notification-box {
+  position: fixed;
+  top: 100px;
+  left: 300px;
+  width: auto;
+  height: auto;
+  background-color: #ffffff;
+  /* font-weight: bold; */
+  font-size: 1rem;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: none;
+  transition: transform 0.3s ease-in-out;
+}
+
+#notification-box.error {
+    color: rgb(223, 35, 35);
+
+}
+
+#notification-box.success {
+  color: rgb(58, 57, 57);
 }
 
   @media only screen and (max-width: 600px){
@@ -49,11 +76,8 @@
       display: inline-block;
       vertical-align: middle;
     }
-  #table-section{
-    margin-top: 20px;
-    width: 100%;
-    padding: 0;
-    overflow: scroll;
+    #table-section{
+    width: 100%;overflow-x: scroll; margin-left: 0;
   }
   }
   @media only screen and (min-width: 600px) and (max-width: 768px){
@@ -66,10 +90,7 @@
     padding: 0;
   }
   #table-section{
-    margin-top: 20px;
-    width: 100%;
-    padding: 0;
-    overflow: scroll;
+    width: 100%;overflow-x: scroll; margin-left: 0;
   }
   }
 </style>
@@ -84,7 +105,9 @@
     </header>
     <main style="margin-top: 50px; padding-left: 0">
         <div class="container pt-2">
-
+          <div id="notification-box" style="display: none;">
+            <p id="notification-message"></p>
+        </div>
           <% if(role === 'Super Admin') { %> 
             <section >
                 <h1 class="mb-4" style="text-align: center;">Candidate Registration</h1>
@@ -138,7 +161,7 @@
                         <label for="position" class="form-label">Position:</label>
                         <select id="position" name="position" class="form-select" required>
                             <% positions.forEach(position => { %>
-                                <option value="<%= position.id %>"><%= position.position %></option>
+                                <option value="<%= position.id %>"><%= position.position_description %></option>
                             <% }); %>
                         </select>
                     </div>
@@ -382,6 +405,7 @@
                 <div class="modal-body">
                     <form id="editUserForm" method="POST" action="/update/candidate">
                         <input type="hidden" id="userId" name="id">
+                        <input type="hidden" id="userIDLink" name="user_id">
                         <div class="mb-3">
                             <label for="firstname" class="form-label">First Name</label>
                             <input type="text" class="form-control" id="first_name" name="first_name" required>
@@ -475,13 +499,40 @@
 
     <script>
       function editCandidate(candidate) {
-         console.log('This is the candidate data:', candidate); 
+        //  console.log('This is the candidate data:', candidate); 
          document.getElementById('userId').value = candidate.id;
+         document.getElementById('userIDLink').value = candidate.user_id;
          document.getElementById('first_name').value = candidate.first_name || '';
          document.getElementById('middle_name').value = candidate.middle_name || '';
          document.getElementById('last_name').value = candidate.last_name || '';        
      };
 
+     document.addEventListener("DOMContentLoaded", function() {
+      const urlParams = new URLSearchParams(window.location.search);
+  const successMessage = urlParams.get('success');
+  const errorMessage = urlParams.get('error');
+
+  const notificationBox = document.getElementById('notification-box');
+  const notificationMessage = document.getElementById('notification-message');
+
+  if (successMessage) {
+    notificationMessage.innerHTML = `<i class="fas fa-check-circle" style='color: green;'></i> `+successMessage;
+    notificationBox.classList.add('success');
+    notificationBox.style.display = 'block';
+    setTimeout(() => notificationBox.style.transform = 'translateX(0)', 10);
+  } else if (errorMessage) {
+    notificationMessage.innerHTML = `<i class="fa-solid fa-exclamation-triangle" style='color: red;'></i> ` + errorMessage;
+    notificationBox.classList.add('error');
+    notificationBox.style.display = 'block';
+    setTimeout(() => notificationBox.style.transform = 'translateX(0)', 10);
+  }
+
+  setTimeout(() => {
+    notificationBox.style.transform = 'translateX(-500px)';
+    setTimeout(() => notificationBox.style.display = 'none', 300); 
+  }, 3000);
+
+  });
          </script>
 
 
