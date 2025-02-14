@@ -547,7 +547,7 @@ app.get("/admin/voters", (req, res) => {
           if (err) {
             return res.status(500).send("Error Fetching elections");
           }
-          db.all("SELECT * FROM roles LIMIT 2", [], (err, roles) => {
+          db.all("SELECT * FROM roles LIMIT 1", [], (err, roles) => {
             if (err) {
               return res.status(500).send("Internal server error");
             }
