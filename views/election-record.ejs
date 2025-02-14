@@ -1,7 +1,7 @@
 <%- include('layout/header') -%>
 <script>
     function downloadCSV() {
-        window.location.href = '/download/csv';
+        window.location.href = '/election/download/csv';
     }
 </script>
 <style>
@@ -117,9 +117,9 @@
         </header>
 
         <main style="margin-top: 70px ">
-            <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Registered Voters List</h1>
+            <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Candidates Election Result</h1>
             <div class="container pt-2">
-                <button class="btn btn-white" onclick="downloadCSV()" title="Download Voters Record"><i class="fas fa-download" style="font-size: 1.5rem;"></i></button>
+                <button class="btn btn-white" onclick="downloadCSV()" title="Download Election Record"><i class="fas fa-download" style="font-size: 1.5rem;"></i></button>
                <br><br>
                 <table class="table responsive">
                     <thead>
@@ -128,9 +128,11 @@
                         <th scope="col">First Name</th>
                         <th scope="col">Middle Name</th>
                         <th scope="col">Last Name</th>
-                        <th scope="col">Election</th>
+                        <th scope="col">Position</th>
+                        <th scope="col">Party</th>
+                        <th scope="col">Number of Vote</th>
                     </thead>
-                    <% allVotersData.forEach((user, index) => { %> 
+                    <% allCandidateData.forEach((user, index) => { %> 
                      <tbody>
                       <tr>
                         <td> <%= index + 1 %> </td>
@@ -138,7 +140,9 @@
                         <td><%= user.middle_name %></td>
                         <td>
                            <%= user.last_name %> </td>
-                        <td><%=user.election%></td>
+                           <td><%=user.position%></td>
+                        <td><%=user.party%></td>
+                        <td><%=user.vote < 10 ? '0' + user.vote : user.vote%></td>
                       </tr>
                      </tbody>
                      <% }) %>

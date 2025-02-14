@@ -112,8 +112,8 @@
                                 </li>
 
                                 <li>
-                                    <form action="/delete/election/<%= election.id %>" method="POST" style="margin: 0;">
-                                        <button type="submit" class="dropdown-item text-danger">
+                                    <form action="/delete/election/<%=election.election_id%>" method="POST" style="margin: 0;">
+                                        <button type="submit" class="dropdown-item text-danger" title="Delete Election">
                                             <i class="fas fa-trash-alt me-2"></i>Delete
                                         </button>
                                     </form>

@@ -1,5 +1,5 @@
 <nav
-  style="margin-top: 10px"
+  style="margin-top: 10px; overflow-y: scroll;"
   id="sidebarMenu"
   class="collapse d-lg-block sidebar collapse bg-white"
 >
@@ -58,7 +58,7 @@
           href="/create/notification"
           class="list-group-item list-group-item-action py-2 ripple"
         >
-        <i class="fas fa-bell fa-fw me-3"></i><span>Create Notification</span>
+        <i class="fas fa-bell fa-fw me-3"></i><span>Notification</span>
         </a>
   
         <% } %>
@@ -109,7 +109,33 @@
       </a>
 
       <% } %>
+      <% if (role === 'Super Admin' || role === 'Admin' || role === 'Candidate') { %> 
+        <code>Follow the links below to download election records</code>
     
+        <div class="accordion accordion-flush" id="accordionFlushExample">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                        Election Records
+                    </button>
+                </h2>
+                <div id="flush-collapseOne" class="accordion-collapse collapse" 
+                    aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                    
+                    <a href="/voters-record" class="list-group-item list-group-item-action py-2">
+                        Voters Record
+                    </a>
+    
+                    <a href="#" class="list-group-item list-group-item-action py-2">
+                        Result Record
+                    </a>
+    
+                </div>
+            </div>
+        </div>
+    <% } %>
+
     </div>
   </div>
 </nav>
