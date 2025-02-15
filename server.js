@@ -18,7 +18,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const port = 3000;
-const db = new sqlite3.Database("./election.db");
+const db = new sqlite3.Database("./data/election.db");
 app.set("view engine", "ejs");
 
 app.use(express.static(path.join(__dirname, "public")));
@@ -121,7 +121,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-  res.redirect("/login");
+  res.render("index");
 });
 
 app.get("/login", (req, res) => {
