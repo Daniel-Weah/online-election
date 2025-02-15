@@ -14,9 +14,810 @@
     <!-- Bootstrap CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
    <!-- Custom styles -->
- <link rel="stylesheet" href="/css/admin.css">
- <link rel="stylesheet" href="/css/style.css" />
+
     <!-- Additional Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+
+    <style>
+      html{
+        scroll-behavior: smooth;
+      }
+      header{
+        position: sticky;
+        top: 0;
+        z-index: 999;
+      }
+      #top-bar{
+        font-family: 'jost';
+        font-weight: 500;
+      }
+      #top-bar a{
+        color: #fff;
+        text-decoration: none;
+      }
+      nav li, button{
+        font-weight: 500;
+      }
+
+      /* From Uiverse.io by adeladel522 */ 
+.button {
+  position: relative;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+  padding-block: 0.5rem;
+  padding-inline: 1.25rem;
+  background-color: rgb(0 107 179);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ffff;
+  gap: 10px;
+  font-weight: bold;
+  border: 3px solid #ffffff4d;
+  outline: none;
+  overflow: hidden;
+  font-size: 15px;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease-in-out;
+}
+
+.button:hover {
+  transform: scale(1.05);
+  border-color: #fff9;
+}
+
+.button:hover .icon {
+  transform: translate(4px);
+}
+
+.button:hover::before {
+  animation: shine 1.5s ease-out infinite;
+}
+
+.button::before {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 100%;
+  background-image: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0) 70%
+  );
+  top: 0;
+  left: -100px;
+  opacity: 0.6;
+}
+
+@keyframes shine {
+  0% {
+    left: -100px;
+  }
+
+  60% {
+    left: 100%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+.hero{
+  background-color: #007bff;
+  color: #fff;
+}
+.hero-section-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 20px;
+  margin-top: -60px;
+  padding: 20px;
+}
+
+.hero-text {
+  text-align: left;
+}
+.hero-text h2{
+  font-weight: bold;
+  font-size: 4rem;
+  font-family: 'jost';
+}
+.hero-text p{
+  font-size: 1.2rem;
+  font-family: 'ubuntu', sans-serif;
+}
+
+.hero-image img {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 10px;
+}
+
+.about-section {
+  padding: 60px 20px;
+  background: #f8f9fa;
+}
+
+.about-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #007bff;
+  margin-bottom: 15px;
+}
+
+.about-text {
+  font-size: 18px;
+  line-height: 1.6;
+  color: #444;
+  margin-bottom: 20px;
+}
+
+.about-list {
+  list-style: none;
+  padding: 0;
+}
+
+.about-list li {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.about-list i {
+  color: #007bff;
+  margin-right: 10px;
+}
+
+.about-img {
+  width: 100%;
+  max-width: 450px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.features-section {
+  padding: 60px 20px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.features-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #007bff;
+  margin-bottom: 10px;
+}
+
+.features-subtitle {
+  font-size: 18px;
+  color: #444;
+  margin-bottom: 40px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.feature-box {
+  background: #f8f9fa;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+.feature-box:hover {
+  transform: translateY(-5px);
+}
+
+.feature-icon {
+  font-size: 40px;
+  color: #007bff;
+  margin-bottom: 15px;
+}
+
+.feature-box h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.feature-box p {
+  font-size: 16px;
+  color: #666;
+}
+
+/* Responsive Design */
+
+.developer-section {
+  padding: 60px 20px;
+  background: #f1f3f5;
+  text-align: center;
+}
+
+.developer-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #007bff;
+  margin-bottom: 20px;
+}
+
+.developer-subtitle {
+  font-size: 18px;
+  color: #444;
+  margin-bottom: 40px;
+}
+
+.developer-card {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  width: 300px;
+  text-align: center;
+  margin: 15px;
+}
+
+.developer-card img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 15px;
+}
+
+.developer-card h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.developer-card p {
+  font-size: 16px;
+  color: #666;
+}
+
+.social-links {
+  margin-top: 20px;
+}
+
+.social-links a {
+  color: #007bff;
+  margin: 0 10px;
+  font-size: 20px;
+  text-decoration: none;
+}
+
+.social-links a:hover {
+  color: #0056b3;
+}
+.contact-section {
+  text-align: center;
+  padding: 50px 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+}
+
+.contact-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.contact-image img {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.contact-form-container {
+  flex: 1;
+}
+
+form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+.footer {
+  background: #222;
+  color: white;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.footer-about,
+.footer-links,
+.footer-social {
+  flex: 1;
+  min-width: 250px;
+}
+
+.footer h3 {
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.footer p,
+.footer ul {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.footer ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer ul li {
+  margin: 8px 0;
+}
+
+.footer ul li a {
+  color: #bbb;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer ul li a:hover {
+  color: #007bff;
+}
+
+.social-icons a {
+  display: inline-block;
+  font-size: 24px;
+  color: white;
+  margin: 0 10px;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.social-icons a:hover {
+  transform: translateY(-5px);
+  color: #007bff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .contact-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .contact-image img {
+    max-width: 300px;
+  }
+}
+
+
+@media (max-width: 1024px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr); 
+  }
+}
+
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: repeat(1, 1fr); 
+  }
+  .about-section .row {
+    flex-direction: column-reverse;
+    text-align: left;
+    padding: 0;
+  }
+  .about-section {
+  padding: 50px 10px;
+  background: #f8f9fa;
+}
+  .about-img {
+    max-width: 80%;
+    margin-bottom: 20px;
+  }
+  .hero-section-details {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+.hero-text h2{
+  margin-top: 4rem;
+  font-weight: bold;
+  font-size: 2rem;
+  font-family: 'jost';
+}
+.hero-text p{
+  font-size: 1.2rem;
+  font-family: 'ubuntu', sans-serif;
+  text-align: left;
+}
+  .hero-text {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .hero-img img {
+    max-width: 80%;
+  }
+}
+
+    </style>
+</head>
+
+<body>
+  <main>
+<!-- ========== top nav =============== -->
+<header>
+  <div id="top-bar" class="d-flex justify-content-between align-items-center p-2 text-white" style="background-color: teal;">
+    <div>
+    <span ><i class="fas fa-phone"></i> <a href="tel:+231-771894241">+231-771894241</a> | <a href="tel:+231-880822436">+231-880822436</a></span> |<span class=""> <i class="fas fa-envelope"></i> votewise@gmail.com</span>
+  </div>
+  <div class="d-flex gap-3">
+    <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
+    <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
+    <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+    <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
+  </div>
+</div>
+
+
+
+    <!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+    <!-- Toggle button -->
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Collapsible wrapper -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <!-- Navbar brand -->
+      <a class="navbar-brand mt-2 mt-lg-0" href="#">
+        <img
+          src="/images/election.png"
+          height="50"
+          alt="Logo"
+          loading="lazy"
+        />
+      </a>
+
+      <!-- Left links -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#features">Features</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#developer">Developer</a>
+        </li>
+       
+      </ul>
+    </div>
+
+    <!-- Right elements -->
+    <div class="d-flex align-items-center">
+      <li style="list-style-type: none;">
+        <button class="btn"><a href="/login" style="text-decoration: none;font-size: 1.3rem;color: #666;font-family: 'jost';">Login</a></button>
+      </li>
+        <li class="nav-item" style="list-style-type: none;">
+          <button class="button"><a class="nav-link" href="#contact-us">Contact Us
+            <svg fill="currentColor" viewBox="0 0 24 24" class="icon">
+              <path
+                clip-rule="evenodd"
+                d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z"
+                fill-rule="evenodd"
+              ></path>
+            </svg></a></button>
+        </li>
+       
+  </div>
+</nav>
+<!-- Navbar -->
+ </header>
+
+<section class="hero">
+  <div class="hero-section-details">
+    <div class="hero-text">
+      <h2>Vote Wise Online Election</h2>
+      <p>Empowering democracy through secure and transparent online voting. Cast your vote anytime, anywhere with confidence.</p>
+      <button class="button" style="background-color: white; color: #666;"><a class="nav-link" href="/login">Get started
+        <svg fill="currentColor" viewBox="0 0 24 24" class="icon">
+          <path
+            clip-rule="evenodd"
+            d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z"
+            fill-rule="evenodd"
+          ></path>
+        </svg></a></button>
+    </div>
+    <div class="hero-img">
+      <img src="/images/voteIllustration.png" alt=""  height="500">
+    </div>
+  </div>
+</section>
+
+<section class="about-section" id="about">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <img src="/images/about-votewise.png" alt="About Vote Wise" class="about-img" height="500">
+      </div>
+      <div class="col-md-6">
+        <h2 class="about-title">About Vote Wise</h2>
+        <p class="about-text">
+          Vote Wise is a secure and transparent online election platform designed to empower democracy. 
+          Our system allows voters to cast their votes anytime, anywhere, ensuring a seamless and trustworthy electoral process.
+        </p>
+        <ul class="about-list">
+          <li><i class="fas fa-check-circle"></i> Secure and Encrypted Voting</li>
+          <li><i class="fas fa-check-circle"></i> User-Friendly Experience</li>
+          <li><i class="fas fa-check-circle"></i> Real-Time Election Results</li>
+          <li><i class="fas fa-check-circle"></i> Trusted by Communities Worldwide</li>
+        </ul>
+        <button class="button"><a class="nav-link" href="#">Learn More</a></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="features-section" id="features">
+  <div class="container">
+    <h2 class="features-title">Key Features</h2>
+    <p class="features-subtitle">Empowering democracy with a secure and seamless voting experience.</p>
+
+    <div class="features-grid">
+      <div class="feature-box">
+        <i class="fas fa-shield-alt feature-icon"></i>
+        <h3>Secure Voting</h3>
+        <p>End-to-end encryption ensures a safe and tamper-proof election process.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-mobile-alt feature-icon"></i>
+        <h3>Mobile-Friendly</h3>
+        <p>Cast your vote anytime, anywhere from any device with ease.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-chart-line feature-icon"></i>
+        <h3>Real-Time Results</h3>
+        <p>Get instant election results with accurate and transparent vote counts.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-users feature-icon"></i>
+        <h3>User Authentication</h3>
+        <p>Secure login and verification ensure only eligible voters can participate.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-clock feature-icon"></i>
+        <h3>24/7 Availability</h3>
+        <p>Vote at your convenience with a system that’s available round the clock.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-handshake feature-icon"></i>
+        <h3>Fair & Transparent</h3>
+        <p>Built with integrity, ensuring elections are fair and unbiased.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="developer-section" id="developer">
+  <div class="container">
+    <h2 class="developer-title">Meet the Developer</h2>
+    <p class="developer-subtitle">This platform was developed by a passionate individual.</p>
+
+    <div class="developer-card">
+      <img src="/images/developer.jpg" alt="Daniel K. Weah, Jr.">
+      <h3>Daniel K. Weah, Jr.</h3>
+      <p>Lead Developer</p>
+      <p>Daniel is a skilled developer dedicated to creating secure and seamless digital experiences.</p>
+      
+      <!-- Social Links -->
+      <div class="social-links">
+        <a href="https://twitter.com/DanielKWeah" target="_blank" title="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href="https://github.com/DanielKWeah" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/daniel-k-weah-jr" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+        <a href="mailto:daniel.k.weah@example.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact-section" id="contact-us">
+  <div class="container">
+    <h2 class="contact-title">Contact Us</h2>
+    <p class="contact-subtitle">Have questions or feedback? Get in touch with us.</p>
+
+    <div class="contact-content">
+      <!-- Contact Image -->
+      
+
+      <!-- Contact Form -->
+      <div class="contact-form-container">
+        <form id="contact-form">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+          </div>
+
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5" placeholder="Type your message" required></textarea>
+          </div>
+
+          <button type="submit">Send Message</button>
+        </form>
+
+        <div id="response-message"></div>
+      </div>
+      <div class="contact-image">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9KWdLFDsrEUuI66R1HCFNDrQiDQL2x52suw&s" alt="Contact Us" height="500">
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <!-- Left Side: About & Copyright -->
+      <div class="footer-about">
+        <h3>About Us</h3>
+        <p>Providing the best solutions for your needs. Stay connected with us for updates and support.</p>
+        <p>&copy; 2025 All Rights Reserved.</p>
+      </div>
+
+      <!-- Middle: Navigation Links -->
+      <div class="footer-links">
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#contact-us">Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- Right Side: Social Media -->
+      <div class="footer-social">
+        <h3>Follow Us</h3>
+        <div class="social-icons">
+          <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook"></i></a>
+          <a href="https://twitter.com" target="_blank"><i class="fab fa-twitter"></i></a>
+          <a href="https://linkedin.com" target="_blank"><i class="fab fa-linkedin"></i></a>
+          <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+<!-- Include Axios for sending requests -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+  document.getElementById("contact-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const formData = {
+      name: document.getElementById("name").value,
+      email: document.getElementById("email").value,
+      message: document.getElementById("message").value
+    };
+
+    axios.post("/send-email", formData)
+      .then(response => {
+        document.getElementById("response-message").innerHTML = "<p style='color: green;'>Message sent successfully!</p>";
+        document.getElementById("contact-form").reset();
+        setTimeout(() => {
+          document.getElementById("response-message").innerHTML = ""
+        }, 5000);
+
+      })
+      .catch(error => {
+        document.getElementById("response-message").innerHTML = "<p style='color: red;'>Failed to send message. Please try again.</p>";
+
+        setTimeout(() => {
+          document.getElementById("response-message").innerHTML = ""
+        }, 5000);
+
+      });
+  });
+</script>
+
+  </main>
+
+  <%- include('layout/footer') -%>

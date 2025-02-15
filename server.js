@@ -13,8 +13,12 @@ const crypto = require("crypto");
 const sanitizeHtml = require("sanitize-html");
 const fs = require("fs");
 const { Parser } = require("json2csv");
+const nodemailer = require("nodemailer");
+const cors = require("cors");
 
 const app = express();
+app.use(cors());
+app.use(bodyParser.json());
 const server = http.createServer(app);
 const io = socketIo(server);
 const port = 3000;
@@ -123,6 +127,43 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.render("index");
 });
+// ============= SENDING MESSAGE FROM THE HOME PAGE TO MY EMAIL ============
+
+
+// Nodemailer Transporter
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS, 
+  },
+});
+
+// Route to handle contact form submission
+app.post("/send-email", (req, res) => {
+  const { name, email, message } = req.body;
+
+  const mailOptions = {
+    from: email,
+    to: process.env.EMAIL_USER,
+    subject: `New Contact Message from ${name}`,
+    text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Error sending email:", error);
+      res.status(500).json({ success: false, message: "Failed to send email" });
+    } else {
+      console.log("Email sent:", info.response);
+      res.status(200).json({ success: true, message: "Email sent successfully" });
+    }
+  });
+});
+
+
+
+
 
 app.get("/login", (req, res) => {
   res.render("login.ejs");
