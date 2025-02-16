@@ -285,7 +285,7 @@ app.get("/dashboard", (req, res) => {
                 if (err) {
                   return res.status(500).send("Error fetching candidates data");
                 }
-
+// converting photo
                 candidates = candidates.map((candidate) => {
                   return {
                     ...candidate,
