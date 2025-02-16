@@ -71,6 +71,20 @@
                 </div>
                
 
+                <div class="col-12">
+                    <div class="form-floating mb-3">
+                      <input type="datetime-local" class="form-control" name="registration_start_time" id="registration_start_time" placeholder="Registration Start Time" required>
+                      <label for="registration_start_time" class="form-label">Registration Start Time</label>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-floating mb-3">
+                      <input type="datetime-local" class="form-control" name="registration_end_time" id="registration_end_time" placeholder="Registration end Time" required>
+                      <label for="registration_end_time" class="form-label">Registration End Time</label>
+                    </div>
+                </div>
+
                     <div class="col-12">
                         <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create Election</button>
                     </div>
@@ -83,7 +97,7 @@
                         <th scope="col">Election</th>
                         <th scope="col">Start Time</th>
                         <th scope="col">End Time</th>
-                        <th scope="col">Voter Age Eligibility</th>
+                        <th scope="col">Eligibility</th>
                         <th scope="col">Date Created</th>
                         <th scope="col">Action</th>
                     </thead>
@@ -158,7 +172,15 @@
                                         <input type="number" class="form-control" id="voter_age_eligibilities" name="voter_age_eligibilities" min="10">
                                     </div>
   
+                                    <div class="mb-3">
+                                        <label for="registration_start_time" class="form-label">Registration Start Time</label>
+                                        <input type="datetime-local" class="form-control" id="registration_start_times" name="RegistrationStartTime">
+                                    </div>
 
+                                    <div class="mb-3">
+                                        <label for="registration_end_time" class="form-label">Registration End Time</label>
+                                        <input type="datetime-local" class="form-control" id="registration_end_times" name="RegistrationEndTime">
+                                    </div>
                                 </form>
                             </div>
                             <div class="modal-footer">
@@ -179,7 +201,9 @@
                document.getElementById('start_times').value = election.start_time || '';
                document.getElementById('end_times').value = election.end_time || '';
                document.getElementById('voter_age_eligibilities').value = election.voter_age_eligibility
-      
+               document.getElementById('registration_start_times').value = election.registration_start_time || '';
+               document.getElementById('registration_end_times').value = election.registration_end_time || '';
+
            }
                </script>
 

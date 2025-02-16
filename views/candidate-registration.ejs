@@ -239,6 +239,7 @@
                         </li>
                             <li>
                               <form action="/delete/candidate/<%= candidate.id %>" method="POST" style="margin: 0;">
+                                <input type="hidden" name="candidateUserID" id="candidateUserId" value="<%= candidate.user_id%>">
                                 <button type="submit" class="dropdown-item text-danger">
                                     <i class="fas fa-trash-alt me-2"></i>Delete
                                 </button>

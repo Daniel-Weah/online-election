@@ -52,7 +52,7 @@
     margin-right: 10px;
   }
 
-  #notification-box {
+  /* #notification-box {
     position: fixed;
     top: 80px;
     left: 50%;
@@ -64,7 +64,7 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     display: none;
-  }
+  } */
 
 .dropdown-item.text-primary {
     display: block !important;
@@ -263,6 +263,11 @@
                     </div>
                     
 
+                    <% if (current > end) { %> 
+                        <h2 style="text-align: center; color: red;">Registration has Ended!</h2>
+                    <% } else { %> 
+                        <h2 style="text-align: center; color: green;">Registration in Progress</h2>
+                        <p><%= start %> <span style="font-weight: b;">To</span> <%= end %></p>
                     <div class="tab-pane fade" id="voters-registration-tab" role="tabpanel" >
     
                         <section id="registration" class="py-3 py-md-5 py-xl-5" style="background-color: aliceblue;">
@@ -381,7 +386,7 @@
                         </div>
                 <% } %>
 
-
+                <% } %>
                         
 
                   
