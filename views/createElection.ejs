@@ -1,0 +1,95 @@
+<%- include('layout/header') -%>
+
+<style>
+      body {
+      background-color: #f9f9f9;
+      font-family: 'Roboto', sans-serif;
+    }
+    .dropdown-item.text-primary {
+    display: block !important;
+}
+   @media only screen and (max-width: 600px){
+    #fullName{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+   }
+    @media only screen and (min-width: 600px) and (max-width: 768px){
+        form input{
+            width: 100%;
+        }
+    }
+</style>
+    </head>
+
+    <body>
+        <!--Main Navigation-->
+      
+
+        <!--Main layout-->
+        <main style="margin-top: 70px ">
+            <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Create Election</h1>
+            <div class="container pt-2">
+                <section >
+                    <form action="/create/election" method="post" id="electionForm" autocomplete="off">
+                     <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="election" id="election" placeholder="Election Title" required>
+                        <label for="title" class="form-label">Election Title</label>
+                      </div>
+                  </div>
+
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="datetime-local" class="form-control" name="registration_start_time" id="registration_start_time" placeholder="Registration Start Time" required>
+                        <label for="registration_start_time" class="form-label">Registration Start Time</label>
+                      </div>
+                  </div>
+  
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="datetime-local" class="form-control" name="registration_end_time" id="registration_end_time" placeholder="Registration end Time" required>
+                        <label for="registration_end_time" class="form-label">Registration End Time</label>
+                      </div>
+                  </div>
+                  
+                  <div class="col-12">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control" name="voter_age_eligibility" id="voter_age_eligibility" placeholder="Voter Age Eligibility" min="10" required>
+                      <label for="voter_age_eligibility" class="form-label">Voter Age Eligibility</label>
+                    </div>
+                </div>
+               
+
+                <div class="col-12">
+                  <div class="form-floating mb-3">
+                    <input type="datetime-local" class="form-control" name="start_time" id="start_time" placeholder="Election Start Time" required>
+                    <label for="election_start_time" class="form-label">Election Start Time</label>
+                  </div>
+              </div>
+
+              <div class="col-12">
+                  <div class="form-floating mb-3">
+                    <input type="datetime-local" class="form-control" name="end_time" id="end_time" placeholder="Election end Time" required>
+                    <label for="election_end_time" class="form-label">Election End Time</label>
+                  </div>
+              </div>
+
+                    <div class="col-12">
+                        <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create Election</button>
+                    </div>
+                    </form>
+                </section>
+
+               
+
+                
+                </div>
+            </div>
+        </main>
+        
+    <%- include('layout/footer') -%>

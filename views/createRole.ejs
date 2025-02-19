@@ -1,0 +1,60 @@
+<%- include('layout/header') -%>
+
+<style>
+      body {
+      background-color: #f9f9f9;
+      font-family: 'Roboto', sans-serif;
+    }
+    .dropdown-item.text-primary {
+    display: block !important;
+}
+   @media only screen and (max-width: 600px){
+    #fullName{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+   }
+    @media only screen and (min-width: 600px) and (max-width: 768px){
+        form input{
+            width: 100%;
+        }
+    }
+</style>
+    </head>
+
+    <body>
+        <!--Main Navigation-->
+      
+
+        <!--Main layout-->
+        <main style="margin-top: 70px ">
+            <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Create Role</h1>
+            <div class="container pt-2">
+                <section >
+                    <form action="/create-role" method="post" id="electionForm" autocomplete="off">
+                     <div class="col-12">
+                      <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="role" id="role" placeholder="Role" required>
+                        <label for="role" class="form-label">Role</label>
+                      </div>
+                  </div>
+
+                  
+                    <div class="col-12">
+                        <button type="submit" id="create-election-btn" class="btn btn-primary btn-block btn-lg mb-4">Create Role</button>
+                    </div>
+                    </form>
+                </section>
+
+               
+
+                
+                </div>
+            </div>
+        </main>
+        
+    <%- include('layout/footer') -%>

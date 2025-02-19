@@ -77,35 +77,43 @@
     <div id="chart"></div>
   </div>
 </main>
-  <script>
-    const groupedData = <%- groupedData %>;
+<script>
+  const groupedData = <%- groupedData %>; 
 
-    Object.keys(groupedData).forEach((position) => {
-      const positionData = groupedData[position];
-      const container = document.createElement("div");
-      container.id = `chart-${position}`;
-      container.style.marginBottom = "20px";
-      document.getElementById("chart").appendChild(container);
+  Object.keys(groupedData).forEach((position) => {
+    const positionData = groupedData[position];
 
-      const data = {
-        labels: positionData.labels,
-        datasets: [
-          {
-            name: "Votes",
-            type: "bar",
-            values: positionData.votes,
-          },
-        ],
-      };
+    const normalizedPosition = position
+      .replace(/\s+/g, '_') 
+      .replace(/[^a-zA-Z0-9_]/g, '');
 
-      new frappe.Chart(`#chart-${position}`, {
-        title: `${position} - Vote Analysis`,
-        data: data,
-        type: "bar",
-        height: 300,
-        colors: ["#008B8B"],
-      });
+    const container = document.createElement("div");
+    container.id = `chart-${normalizedPosition}`; 
+    container.style.marginBottom = "20px";
+    document.getElementById("chart").appendChild(container);
+
+    const data = {
+      labels: positionData.labels,
+      datasets: [
+        {
+          name: "Votes",
+          type: "bar",
+          values: positionData.votes,
+        },
+      ],
+    };
+
+    // Initialize the chart
+    new frappe.Chart(`#chart-${normalizedPosition}`, {  
+      title: `${position} - Vote Analysis`,
+      data: data,
+      type: "bar",
+      height: 300,
+      colors: ["#007bff", "#28a745"]
+,
     });
-  </script>
+  });
+</script>
+
 
 <%- include('layout/footer') %>
