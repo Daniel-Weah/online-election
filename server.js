@@ -3,10 +3,8 @@ const path = require("path");
 const bodyParser = require("body-parser");
 const http = require("http");
 const socketIo = require("socket.io");
-// const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcrypt");
 const session = require("express-session");
-const PgSession = require("connect-pg-simple")(session);
 const multer = require("multer");
 require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
@@ -20,12 +18,20 @@ const { Pool } = require('pg');
 
 
 const app = express();
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+); 
+
 app.use(cors());
 app.use(bodyParser.json());
 const server = http.createServer(app);
 const io = socketIo(server);
 const port = 3000;
-// const db = new sqlite3.Database("./data/election.db");
 app.set("view engine", "ejs");
 
 app.use(express.static(path.join(__dirname, "public")));
@@ -38,16 +44,6 @@ app.use(bodyParser.json());
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
-
-
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-  })
-);
-
 
 const pool = new Pool({
   user: 'neondb_owner',
