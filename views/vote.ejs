@@ -154,7 +154,7 @@ button:hover {
     <p id="timer" style="font-size: 18px; font-weight: bold;color: red;"></p>
     <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
       <% if (current < start || current > end) { %>
-        <p>Voting is only allowed between <%= start %> to <%= end %>.</p>
+        <p>Voting is only allowed between <%= start %> <b>To</b> <%= end %>.</p>
         <button type="submit" id="submit_btn" disabled>Submit Your Vote</button>
     <% } else if (Object.keys(groupedCandidates).length === 0) { %>
       <p class="text-center text-muted">
