@@ -6,6 +6,7 @@ const socketIo = require("socket.io");
 // const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcrypt");
 const session = require("express-session");
+const PgSession = require("connect-pg-simple")(session);
 const multer = require("multer");
 require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
@@ -15,6 +16,8 @@ const fs = require("fs");
 const { Parser } = require("json2csv");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
+const { Pool } = require('pg');
+
 
 const app = express();
 app.use(cors());
@@ -36,15 +39,8 @@ app.use(bodyParser.json());
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-  })
-);
 
-const { Pool } = require('pg');
+
 
 
 const pool = new Pool({
@@ -57,6 +53,23 @@ const pool = new Pool({
     rejectUnauthorized: false, 
   },
 });
+
+app.use(
+  session({
+    store: new PgSession({
+      pool, 
+      tableName: "session", 
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: (1 + Math.floor(Math.random() * 30)) * 24 * 60 * 60 * 1000, 
+    },
+  })
+);
 
 pool.connect()
   .then(() => console.log('Connected to Neon PostgreSQL database successfully!'))
