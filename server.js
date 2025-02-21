@@ -1911,6 +1911,12 @@ app.post("/vote", upload.none(), async (req, res) => {
 
 
 app.get("/forget-password", (req, res) => {
+  if (
+    !req.session.userId ||
+    (req.session.userRole !== "Super Admin")
+  ) {
+    return res.redirect("/login");
+  }
   res.render("forget-password");
 });
 

@@ -280,7 +280,8 @@
                       <p><%= startDate.toString() %> <span style="font-weight: bold;">To</span> <%= endDate.toString() %></p>
                 
                   
-    
+                      <div class="tab-pane fade" id="voters-registration-tab" role="tabpanel" >
+
                         <section id="registration" class="py-3 py-md-5 py-xl-5" style="background-color: aliceblue;">
                         <div class="container">
                         <div class="row gy-2 align-items-center">
@@ -335,7 +336,7 @@
                         </div>
                         <div class="col-12">
                         <div class="form-floating mb-3">
-                        <input type="text" class="form-control" name="username" id="username" placeholder="User Name" required>
+                        <input type="text" class="form-control" name="username" id="username" placeholder="User Name" required readonly>
                         <label for="username" class="form-label">User Name<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         </div>
                         </div>
@@ -377,7 +378,7 @@
                         </div>
                         <div class="col-12">
                         <div class="form-floating mb-3">
-                        <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Password" required readonly>
                         <label for="password" class="form-label">Password<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         </div>
                         </div>
@@ -458,14 +459,24 @@
     document.getElementById('edit_role').value = user.role || '';
 }
 
-document.getElementById('firstname').addEventListener('input', generateUsername);
-document.getElementById('lastname').addEventListener('input', generateUsername);
-
-function generateUsername() {
-  let firstname = document.getElementById('firstname').value.trim().toLowerCase();
-  let lastname = document.getElementById('lastname').value.trim().toLowerCase();
-  document.getElementById('username').value = firstname + "-" + lastname;
+// Function to generate a random ID
+function generateRandomId() {
+    return Math.floor(1000 + Math.random() * 9000); // Generates a 4-digit random number
 }
+
+// Function to generate the username
+function generateUsername() {
+    let randomId = generateRandomId(); 
+    document.getElementById('username').value = randomId;
+    document.getElementById('password').value = randomId + '@votewise';
+}
+
+window.onload = function () {
+    generateUsername(); 
+};
+
+
+
 
     </script>
     <script>
