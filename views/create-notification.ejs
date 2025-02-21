@@ -177,13 +177,13 @@
    <form action="/create/notification" method="post" id="notificationForm">
     <div class="col-12">
       <div class="form-floating mb-3">
-          <input type="text" class="form-control" name="electionName" id="election" value="<%= userElectionData.election_name %>" disabled required>
+          <input type="text" class="form-control" name="electionName" id="election" value="<%= userElectionData[0].election_name %>" disabled required>
           <label for="dob" class="form-label">Election</label>
       </div>
   </div>
 
 
-          <input type="hidden" class="form-control" name="election" id="election" value="<%= userElectionData.election_id %>">
+          <input type="hidden" class="form-control" name="election" id="election" value="<%= userElectionData[0].election_id %>">
          
  
           <div class="form-floating mb-3">
