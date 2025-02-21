@@ -216,13 +216,28 @@
                     </div>
                     
 
-                <% } %>
 
 
 
                     <!-- Voters Registration Tab -->
                   
-
+                    <%
+                    // Convert start and end to Date objects
+                    const startDate = new Date(start);
+                    const endDate = new Date(end);
+                    const currentDate = new Date(); // Get the current time
+                  
+                    console.log("Current Date:", currentDate);
+                    console.log("End Date:", endDate);
+                  %>
+                  
+                  <% if (currentDate > endDate) { %> 
+                      <h2 style="text-align: center; color: red;">Registration has Ended!</h2>
+                  <% } else { %> 
+                      <h2 style="text-align: center; color: green;">Registration in Progress</h2>
+                      <p><%= startDate.toString() %> <span style="font-weight: bold;">To</span> <%= endDate.toString() %></p>
+                
+                  
                     <div class="tab-pane fade" id="voters-registration-tab" role="tabpanel" >
 
                         <section id="registration" class="py-3 py-md-5 py-xl-5" style="background-color: aliceblue;">
@@ -343,6 +358,9 @@
                         </section>
                         </div>
                         
+                        <% } %>
+
+                        <% } %>
 
                   
 

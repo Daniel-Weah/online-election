@@ -46,10 +46,11 @@ app.use(
 
 const { Pool } = require('pg');
 
+
 const pool = new Pool({
-  user: 'root',
+  user: 'neondb_owner',
   host: process.env.DATABASE_HOST, 
-  database: 'votewise_database_e3iu',
+  database: 'neondb',
   password: process.env.DATABASE_PASS, 
   port: 5432,
   ssl: {
@@ -58,8 +59,8 @@ const pool = new Pool({
 });
 
 pool.connect()
-  .then(() => console.log('Connected to Render PostgreSQL database successfully!'))
-  .catch(err => console.error('Error connecting to Render PostgreSQL database:', err));
+  .then(() => console.log('Connected to Neon PostgreSQL database successfully!'))
+  .catch(err => console.error('Error connecting to Neon PostgreSQL database:', err));
 
 module.exports = pool;
 
@@ -567,6 +568,26 @@ app.get("/admin/voters", async (req, res) => {
 
     console.log("User Election Data:", userElectionData);
 
+    const electionSettingsSql = `SELECT * FROM election_settings WHERE election_id = $1`;
+    const electionSettingsResult = await pool.query(electionSettingsSql, [user.election_id]);
+
+    const registrationTiming = electionSettingsResult.rows[0];
+    console.log("Registration Timing:", registrationTiming);
+
+    const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false });
+    const registrationStartTime = registrationTiming.registration_start_time;
+    const registrationEndTime = registrationTiming.registration_end_time;
+
+    console.log("Registration Start time:", registrationStartTime);
+    console.log("Registration End time:", registrationEndTime);
+
+    const currentDate = registrationStartTime.split("T")[0];
+    const fullCurrentTime = `${currentDate}T${currentTime}`;
+
+    const start = new Date(registrationStartTime);
+    const end = new Date(registrationEndTime);
+    const current = new Date(fullCurrentTime);
+
     // Render the template with all data
     res.render("admin-voters", {
       adminUsers,
@@ -578,6 +599,9 @@ app.get("/admin/voters", async (req, res) => {
       unreadCount,
       elections,
       userElectionData,
+      start,
+      end,
+      current
     });
   } catch (err) {
     console.error("Error:", err);
@@ -1894,47 +1918,34 @@ app.post("/forget-password", (req, res) => {
   const { username, password, passwordConfirm } = req.body;
 
   if (password !== passwordConfirm) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Passwords do not match" });
+    return res.status(400).json({ success: false, message: "Passwords do not match" });
   }
 
- pool.query("SELECT * FROM auth WHERE username = $1", [username], (err, user) => {
+  pool.query("SELECT * FROM auth WHERE username = $1", [username], (err, result) => {
     if (err) {
-      return res
-        .status(500)
-        .json({ success: false, message: "An error occurred" });
+      return res.status(500).json({ success: false, message: "An error occurred" });
     }
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Username does not exist" });
+
+    if (!result.rows.length) {
+      return res.status(404).json({ success: false, message: "Username does not exist" });
     }
 
     bcrypt.hash(password, 10, (err, hash) => {
       if (err) {
-        return res
-          .status(500)
-          .json({ success: false, message: "An error occurred" });
+        return res.status(500).json({ success: false, message: "An error occurred" });
       }
-      pool.query(
-        "UPDATE auth SET password = $1 WHERE username = $2",
-        [hash, username],
-        function (err) {
-          if (err) {
-            return res
-              .status(500)
-              .json({ success: false, message: "An error occurred" });
-          }
 
-          return res
-            .status(200)
-            .json({ success: true, message: "Password Updated Successfully" });
+      pool.query("UPDATE auth SET password = $1 WHERE username = $2", [hash, username], (err) => {
+        if (err) {
+          return res.status(500).json({ success: false, message: "An error occurred" });
         }
-      );
+
+        return res.status(200).json({ success: true, message: "Password Updated Successfully" });
+      });
     });
   });
 });
+
 
 // VOTER SETTING PAGE ROUTE
 app.get("/voter/setting", (req, res) => {
@@ -1943,43 +1954,37 @@ app.get("/voter/setting", (req, res) => {
   }
 
   const sql = `
-  SELECT users.*, roles.role, auth.username
-  FROM users
-  JOIN roles ON users.role_id = roles.id
-  JOIN auth ON users.id = auth.user_id
-  WHERE users.id = $1
-`;
+    SELECT users.*, roles.role, auth.username
+    FROM users
+    JOIN roles ON users.role_id = roles.id
+    JOIN auth ON users.id = auth.user_id
+    WHERE users.id = $1
+  `;
 
- pool.query(sql, [req.session.userId], (err, user) => {
+  pool.query(sql, [req.session.userId], (err, result) => {
     if (err) {
       return res.status(500).send("An error occurred");
     }
-    if (!user) {
+
+    if (!result.rows.length) {
       return res.status(404).send("User not found");
     }
 
-   pool.query(
+    const user = result.rows[0];
+
+    pool.query(
       "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
       [user.username],
       (err, countResult) => {
         if (err) {
-          return res
-            .status(500)
-            .send("Error fetching unread notifications count");
+          return res.status(500).send("Error fetching unread notifications count");
         }
 
+        const unreadCount = parseInt(countResult.rows[0].unreadcount);
         const profilePicture = req.session.profilePicture;
 
-        const sql = `
-      SELECT users.*, roles.role, auth.username
-      FROM users
-      JOIN roles ON users.role_id = roles.id
-      JOIN auth ON users.id = auth.user_id
-      WHERE users.id = $1
-    `;
-
         res.render("voter-setting", {
-          unreadCount: countResult.unreadCount,
+          unreadCount,
           profilePicture,
           user,
         });
@@ -1988,115 +1993,90 @@ app.get("/voter/setting", (req, res) => {
   });
 });
 
+
 // POST ROUTE FOR UPDATING THE USER PASSWORD FROM THE SEETING PAGE
 app.post("/setting/forget-password", (req, res) => {
   const { username, password, passwordConfirm } = req.body;
 
   if (password !== passwordConfirm) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Passwords do not match" });
+    return res.status(400).json({ success: false, message: "Passwords do not match" });
   }
 
- pool.query(
-    "SELECT * FROM auth WHERE username = $1 AND user_id = $2",
-    [username, req.session.userId],
-    (err, user) => {
-      if (err) {
-        return res.status(500).send("An error occurred");
-      }
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "Sorry! An error occured. Please check your username correctly.",
-        });
-      }
-      if (user.username !== username) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorize to change this password",
-        });
-      }
-      bcrypt.hash(password, 10, (err, hash) => {
-        if (err) {
-          return res
-            .status(500)
-            .json({ success: false, message: "An error occurred" });
-        }
-        pool.query(
-          "UPDATE auth SET password = $1 WHERE username = $2 AND user_id = $3",
-          [hash, username, req.session.userId],
-          function (err) {
-            if (err) {
-              return res
-                .status(500)
-                .json({ success: false, message: "An error occurred" });
-            }
-            res.status(200).json({
-              success: true,
-              message: "Password updated successfully",
-            });
-          }
-        );
-      });
+  pool.query("SELECT * FROM auth WHERE username = $1 AND user_id = $2", [username, req.session.userId], (err, result) => {
+    if (err) {
+      return res.status(500).send("An error occurred");
     }
-  );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ success: false, message: "Invalid username." });
+    }
+
+    const user = result.rows[0];
+
+    if (user.username !== username) {
+      return res.status(403).json({ success: false, message: "You are not authorized to change this password" });
+    }
+
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: "An error occurred" });
+      }
+
+      pool.query(
+        "UPDATE auth SET password = $1 WHERE username = $2 AND user_id = $3",
+        [hash, username, req.session.userId],
+        (err) => {
+          if (err) {
+            return res.status(500).json({ success: false, message: "An error occurred" });
+          }
+
+          res.status(200).json({ success: true, message: "Password updated successfully" });
+        }
+      );
+    });
+  });
 });
+
 
 // ROUTE FOR UPDATING THE USERNAME
 app.post("/setting/change/username", upload.none(), (req, res) => {
   const { username, Newusername, password } = req.body;
 
- pool.query(
-    "SELECT * FROM auth WHERE user_id = $1",
-    [req.session.userId],
-    (err, user) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ success: false, message: "Internal server error" });
-      }
-      if (!user) {
-        return res
-          .status(500)
-          .json({ success: false, message: "User does not exist" });
-      }
-      if (user.username !== username) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorized to change this username",
-        });
+  pool.query("SELECT * FROM auth WHERE user_id = $1", [req.session.userId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+
+    if (!result.rows.length) {
+      return res.status(404).json({ success: false, message: "User does not exist" });
+    }
+
+    const user = result.rows[0];
+
+    if (user.username !== username) {
+      return res.status(403).json({ success: false, message: "You are not authorized to change this username" });
+    }
+
+    bcrypt.compare(password, user.password, (err, match) => {
+      if (!match) {
+        return res.status(400).json({ success: false, message: "Incorrect password" });
       }
 
-      bcrypt.compare(password, user.password, (err, result) => {
-        if (result) {
-          pool.query(
-            "UPDATE auth SET username = $1 WHERE username = $2 AND user_id = $3",
-            [Newusername, username, req.session.userId],
-            function (err) {
-              if (err) {
-                return res
-                  .status(500)
-                  .json({ success: false, message: "Internal server error" });
-              }
-              return res.status(200).json({
-                success: true,
-                message: "Username updated successfully!",
-              });
-            }
-          );
-        } else {
-          return res.status(500).json({
-            success: false,
-            message:
-              "There was an error updating your username. Please provide your correct information.",
-          });
+      pool.query(
+        "UPDATE auth SET username = $1 WHERE username = $2 AND user_id = $3",
+        [Newusername, username, req.session.userId],
+        (err) => {
+          if (err) {
+            return res.status(500).json({ success: false, message: "Internal server error" });
+          }
+
+          res.status(200).json({ success: true, message: "Username updated successfully!" });
         }
-      });
-    }
-  );
+      );
+    });
+  });
 });
+
 
 //========================== ELECTION BEGINS ==========================================
 
