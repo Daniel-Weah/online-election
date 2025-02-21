@@ -40,7 +40,13 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 
-
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 
 const pool = new Pool({
@@ -54,22 +60,7 @@ const pool = new Pool({
   },
 });
 
-app.use(
-  session({
-    store: new PgSession({
-      pool, 
-      tableName: "session", 
-    }),
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: (1 + Math.floor(Math.random() * 30)) * 24 * 60 * 60 * 1000, 
-    },
-  })
-);
+
 
 pool.connect()
   .then(() => console.log('Connected to Neon PostgreSQL database successfully!'))
