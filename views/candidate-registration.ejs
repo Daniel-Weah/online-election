@@ -179,13 +179,13 @@
                 </div>
                     <div class="col-12">
                       <div class="form-floating mb-3">
-                        <input type="text" class="form-control" name="username" id="username" placeholder="username" required>
+                        <input type="text" class="form-control" name="username" id="username" placeholder="username" required readonly>
                         <label for="username" class="form-label">Username</label>
                       </div>
                   </div>
                   <div class="col-12">
                     <div class="form-floating mb-3">
-                      <input type="password" class="form-control" name="password" id="password" placeholder="password" required>
+                      <input type="password" class="form-control" name="password" id="password" placeholder="password" required readonly>
                       <label for="password" class="form-label">Password</label>
                     </div>
                 </div>
@@ -284,6 +284,10 @@
                         </div>
                     </div>
                   </div>
+
+                  <input type="hidden" name="role" id="role" value="<%= secondRole.id %>">
+
+
                   <div class="col-12 mb-3">
                       <label for="party" class="form-label">Party:</label>
                       <select id="party" name="party" class="form-select" required>
@@ -321,13 +325,13 @@
                 </div>
                 <div class="col-12">
                   <div class="form-floating mb-3">
-                    <input type="text" class="form-control" name="username" id="username" placeholder="username" required>
+                    <input type="text" class="form-control" name="username" id="username" placeholder="username" required readonly>
                     <label for="username" class="form-label">Username</label>
                   </div>
               </div>
               <div class="col-12">
                 <div class="form-floating mb-3">
-                  <input type="password" class="form-control" name="password" id="password" placeholder="password" required>
+                  <input type="password" class="form-control" name="password" id="password" placeholder="password" required readonly>
                   <label for="password" class="form-label">Password</label>
                 </div>
             </div>
@@ -376,11 +380,12 @@
                           
                       </li>
                           <li>
-                              <form action="" method="POST" style="margin: 0;">
-                                  <button type="submit" class="dropdown-item text-danger">
-                                      <i class="fas fa-trash-alt me-2"></i>Delete
-                                  </button>
-                              </form>
+                            <form action="/delete/candidate/<%= candidate.id %>" method="POST" style="margin: 0;">
+                              <input type="hidden" name="candidateUserID" id="candidateUserId" value="<%= candidate.user_id%>">
+                              <button type="submit" class="dropdown-item text-danger">
+                                  <i class="fas fa-trash-alt me-2"></i>Delete
+                              </button>
+                          </form>
                           </li>
                       </ul>
                   </div>
@@ -504,6 +509,21 @@
          document.getElementById('middle_name').value = candidate.middle_name || '';
          document.getElementById('last_name').value = candidate.last_name || '';        
      };
+
+     function generateRandomId() {
+    return Math.floor(1000 + Math.random() * 9000); 
+}
+
+// Function to generate the username
+function generateUsername() {
+    let randomId = generateRandomId(); 
+    document.getElementById('username').value = randomId;
+    document.getElementById('password').value = 'c'+ randomId + '@votewise';
+}
+
+window.onload = function () {
+    generateUsername(); 
+};
 
      document.addEventListener("DOMContentLoaded", function() {
       const urlParams = new URLSearchParams(window.location.search);

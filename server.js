@@ -212,7 +212,13 @@ app.get("/dashboard", async (req, res) => {
       WHERE candidates.election_id = $1
       GROUP BY positions.position
     `;
-
+    const sqlTotalVotes = `
+    SELECT COALESCE(SUM(votes.vote), 0) AS totalVotes
+    FROM candidates
+    LEFT JOIN votes ON candidates.id = votes.candidate_id
+    WHERE candidates.election_id = $1
+  `;
+  
     // Fetch total users
     const totalUsersQuery = await pool.query(
       `SELECT COUNT(*) AS totalUsers 
@@ -249,10 +255,9 @@ app.get("/dashboard", async (req, res) => {
     }));
 
     // Calculate total votes
-    const totalVotes = totalVotesPerPositionQuery.rows.reduce(
-      (acc, row) => acc + row.totalvotes,
-      0
-    );
+    const totalVotesQuery = await pool.query(sqlTotalVotes, [userElectionId]);
+    const totalVotes = totalVotesQuery.rows[0].totalvotes || 0;
+    
 
     // Group candidates by position
     const groupedCandidates = candidates.reduce((acc, candidate) => {
@@ -613,7 +618,7 @@ app.get("/admin/voters", async (req, res) => {
 // =============================== VOTERS POST ROUTE ==================================
 app.post("/voters", upload.single("photo"), async (req, res) => {
   const { firstname, middlename, lastname, dob, username, role, election, password } = req.body;
-  
+
   if (firstname.length < 3 || lastname.length < 3) {
     return res.status(400).json({ success: false, message: "First Name or Last Name must be at least 3 characters" });
   }
@@ -655,25 +660,44 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // **Start Transaction**
+    await pool.query("BEGIN");
+
     // Insert into users table
-    await pool.query(
-      "INSERT INTO users(id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-      [votersID, firstname, middlename, lastname, dob, photo, role, election]
-    );
+    const insertUserQuery = `
+      INSERT INTO users(id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `;
+    const userInsertResult = await pool.query(insertUserQuery, [votersID, firstname, middlename, lastname, dob, photo, role, election]);
+
+    if (userInsertResult.rowCount === 0) {
+      throw new Error("User insertion failed");
+    }
 
     // Insert into auth table
-    await pool.query(
-      "INSERT INTO auth(id, username, password, user_id, election_id) VALUES ($1, $2, $3, $4, $5)",
-      [uuidv4(), username, hashedPassword, votersID, election]
-    );
+    const authID = uuidv4();
+    const insertAuthQuery = `
+      INSERT INTO auth(id, username, password, user_id, election_id) 
+      VALUES ($1, $2, $3, $4, $5)
+    `;
+    const authInsertResult = await pool.query(insertAuthQuery, [authID, username, hashedPassword, votersID, election]);
 
-    // Send notification
+    if (authInsertResult.rowCount === 0) {
+      throw new Error("Auth insertion failed");
+    }
+
+    // Insert notification
     const notificationMessage = `Hi ${firstname} ${middlename} ${lastname} (${username}), you have successfully registered for ${electionEligibility.election}!`;
     await pool.query(
       "INSERT INTO notifications (id, username, election, message, title, created_at) VALUES ($1, $2, $3, $4, $5, NOW())",
       [uuidv4(), username, election, notificationMessage, "Registration Successful"]
     );
 
+    // Commit transaction if everything is successful
+    await pool.query("COMMIT");
+
+    // Emit notification
     io.to(username).emit("new-notification", {
       message: notificationMessage,
       title: "Registration Successful",
@@ -681,11 +705,15 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
     });
 
     res.status(201).json({ success: true, message: `${username} has successfully been registered` });
+
   } catch (err) {
+    // Rollback transaction if an error occurs
+    await pool.query("ROLLBACK");
     console.error("Error processing request:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 // Delete user
 app.post("/delete/user/:id", (req, res) => {
@@ -3186,11 +3214,12 @@ app.get("/download/csv", (req, res) => {
       }
 
       pool.query(
-        `SELECT users.*, elections.election, roles.role
-        FROM users
-        JOIN elections ON users.election_id = elections.id
-        JOIN roles ON users.role_id = roles.id
-        WHERE users.election_id = $1`,
+        `SELECT auth.*, users.*, COALESCE(elections.election, 'No Election') AS election
+        FROM auth
+        JOIN users ON auth.user_id = users.id
+        LEFT JOIN elections ON users.election_id = elections.id
+        WHERE auth.user_id IN (SELECT id FROM users WHERE election_id = $1);
+        `,
         [currentUser.rows[0].election_id],
         (err, rows) => {
           if (err) {
