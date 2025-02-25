@@ -46,6 +46,9 @@ app.use(bodyParser.json());
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+const Redis = require("ioredis");
+const redis = new Redis();
+
 const pool = new Pool({
   user: 'neondb_owner',
   host: process.env.DATABASE_HOST, 
@@ -53,7 +56,7 @@ const pool = new Pool({
   password: process.env.DATABASE_PASS, 
   port: 5432,
   ssl: {
-    rejectUnauthorized: false, 
+    rejectUnauthorized: true, 
   },
 });
 
@@ -172,8 +175,7 @@ app.post("/login", (req, res) => {
 });
 
 
-const Redis = require("ioredis");
-const redis = new Redis();
+
 
 // Assuming pool is already configured for your database
 
