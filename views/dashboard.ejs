@@ -151,7 +151,8 @@
                                           <div class="px-md-1">
                                             <div class="progress mt-3 mb-1 rounded" style="height: 15px; font-weight: bold;">
                                               <div class="progress-bar bg-info" role="progressbar" style="width: <%= candidate.votePercentage %>%;" aria-valuenow="<%= candidate.votePercentage %>" aria-valuemin="0" aria-valuemax="100">
-                                                <%= candidate.votePercentage.toFixed(2) %>%
+                                                <%= candidate.votePercentage ? candidate.votePercentage.toFixed(2) : '0.00' %>%
+
                                               </div>
                                             </div>
                                           </div>

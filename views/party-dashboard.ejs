@@ -140,31 +140,37 @@
                 </section>
 
                 <table class="table responsive">
-                    <thead>
-                        
-                        <th scope="col">#</th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Position</th>
-                        <th scope="col">Standing (Vote - Percentage %) </th>
-                    </thead>
+                  <thead>
+                      <th scope="col">#</th>
+                      <th scope="col">Name</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Position</th>
+                      <th scope="col">Standing (Vote - Percentage %) </th>
+                  </thead>
+                  <tbody>
                     <% users.forEach((user, index) => { %> 
-                     <tbody>
-                      <tr>
-                        <td> <%= index + 1 %> </td>
-                        <td><img src="data:image/png;base64,<%= user.photo %>" class="img-fluid text-info" alt="picture" style="width: 50px;height: 50px;"/> 
-                          <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %> </td>
-                        <td><span class="badge bg-info text-dark">Active</span></td>
-                        <td> <%= user.position %> </td>
-                        <% if (user.vote) { %> 
-                        <td> <%= user.vote < 10 ? '0' + user.vote : user.vote %> - 00.00%</td>
-                        <% } else { %>
-                          <td>0 - 00.00%</td>
-                          <% } %>
-                      </tr>
-                     </tbody>
-                     <% }) %>
-                </table>
+                        <% let voteData = null; %> <!-- Initialize voteData to null -->
+                        <% if (votePercentageData[user.position_id]) { %>
+                            <% voteData = votePercentageData[user.position_id].find(vote => vote.name === (user.first_name + " " + user.middle_name + " " + user.last_name)); %>
+                        <% } %>
+                        <tr>
+                            <td><%= index + 1 %></td>
+                            <td>
+                                <img src="data:image/png;base64,<%= user.photo %>" class="img-fluid text-info" alt="picture" style="width: 50px;height: 50px;"/> 
+                                <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %>
+                            </td>
+                            <td><span class="badge bg-info text-dark">Active</span></td>
+                            <td><%= user.position %></td>
+                            <% if (voteData) { %>
+                                <td><%= voteData.votes < 10 ? '0' + voteData.votes : voteData.votes %> - <%= voteData.percentage %>%</td>
+                            <% } else { %>
+                                <td>No votes yet</td>
+                            <% } %>
+                        </tr>
+                    <% }) %>
+                </tbody>
+                
+              </table>
 
 
             </div>
