@@ -56,7 +56,7 @@ const pool = new Pool({
   password: process.env.DATABASE_PASS, 
   port: 5432,
   ssl: {
-    rejectUnauthorized: true, 
+    rejectUnauthorized: false, 
   },
 });
 
