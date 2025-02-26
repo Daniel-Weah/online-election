@@ -15,7 +15,6 @@ const { Parser } = require("json2csv");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
 const { Pool } = require('pg');
-const async = require('async');
 
 
 const app = express();
@@ -46,29 +45,12 @@ app.use(bodyParser.json());
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-const Redis = require("ioredis");
-
-const redis = new Redis({
-  host: process.env.REDIS_HOST,  
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASS, 
-  tls: process.env.REDIS_TLS === "true" ? {} : undefined, // Enable TLS if needed
-});
-
-redis.on("connect", () => {
-  console.log("Connected to Redis successfully!");
-});
-
-redis.on("error", (err) => {
-  console.error("Redis connection error:", err);
-});
-
 const pool = new Pool({
-  user: 'neondb_owner',
+  user: 'avnadmin',
   host: process.env.DATABASE_HOST, 
-  database: 'neondb',
+  database: 'defaultdb',
   password: process.env.DATABASE_PASS, 
-  port: 5432,
+  port: 15368,
   ssl: {
     rejectUnauthorized: false, 
   },
@@ -76,11 +58,9 @@ const pool = new Pool({
 
 
 
-
-
 pool.connect()
-  .then(() => console.log('Connected to Neon PostgreSQL database successfully!'))
-  .catch(err => console.error('Error connecting to Neon PostgreSQL database:', err));
+  .then(() => console.log('Connected to aiven PostgreSQL database successfully!'))
+  .catch(err => console.error('Error connecting to aiven PostgreSQL database:', err));
 
 module.exports = pool;
 
@@ -191,10 +171,6 @@ app.post("/login", (req, res) => {
 });
 
 
-
-
-// Assuming pool is already configured for your database
-
 app.get("/dashboard", async (req, res) => {
   if (!req.session.userId) {
     return res.redirect("/login");
@@ -203,107 +179,70 @@ app.get("/dashboard", async (req, res) => {
   try {
     const electionId = req.query.electionId || null;
 
-    // Get election ID from user
+    // Get the election ID associated with the user
     const userElectionQuery = await pool.query(
       "SELECT election_id FROM users WHERE id = $1",
       [req.session.userId]
     );
-    const userElectionId = electionId || userElectionQuery.rows[0]?.election_id;
+
+    const userElectionId =
+      electionId || userElectionQuery.rows[0]?.election_id;
 
     if (!userElectionId) {
       return res.status(404).send("Election not selected or registered");
     }
 
-    // Cache prefix
-    const cachePrefix = `dashboard:${userElectionId}:`;
+    // Fetch candidates and votes
+    const sqlCandidates = `
+      SELECT candidates.*, parties.party, parties.logo, positions.position, 
+             COALESCE(SUM(votes.vote), 0) AS vote
+      FROM candidates
+      JOIN parties ON candidates.party_id = parties.id
+      JOIN positions ON candidates.position_id = positions.id
+      LEFT JOIN votes ON candidates.id = votes.candidate_id
+      WHERE candidates.election_id = $1
+      GROUP BY candidates.id, parties.party, parties.logo, positions.position
+    `;
 
-    // Check cache
-    const cachedCandidates = await redis.get(cachePrefix + "candidates");
-    const cachedTotalVotes = await redis.get(cachePrefix + "totalVotes");
+    const sqlTotalVotesPerPosition = `
+      SELECT positions.position, COALESCE(SUM(votes.vote), 0) AS totalVotes
+      FROM candidates
+      JOIN positions ON candidates.position_id = positions.id
+      LEFT JOIN votes ON candidates.id = votes.candidate_id
+      WHERE candidates.election_id = $1
+      GROUP BY positions.position
+    `;
+    const sqlTotalVotes = `
+    SELECT COALESCE(SUM(votes.vote), 0) AS totalVotes
+    FROM candidates
+    LEFT JOIN votes ON candidates.id = votes.candidate_id
+    WHERE candidates.election_id = $1
+  `;
+  
+    // Fetch total users
+    const totalUsersQuery = await pool.query(
+      `SELECT COUNT(*) AS totalUsers 
+       FROM auth 
+       JOIN users ON auth.user_id = users.id 
+       WHERE users.election_id = $1`,
+      [userElectionId]
+    );
 
-    if (cachedCandidates && cachedTotalVotes) {
-      // Fetch additional data since totalUsers is not cached
-      const totalUsersQuery = await pool.query(
-        `SELECT COUNT(*) AS totalUsers 
-         FROM auth 
-         JOIN users ON auth.user_id = users.id 
-         WHERE users.election_id = $1`,
-        [userElectionId]
-      );
+    const totalUsers = totalUsersQuery.rows[0].totalusers;
 
-      const totalUsers = totalUsersQuery.rows[0].totalusers;
+    // Fetch total votes per position
+    const totalVotesPerPositionQuery = await pool.query(
+      sqlTotalVotesPerPosition,
+      [userElectionId]
+    );
 
-      // Fetch role, user details, and elections
-      const [userRoleQuery, unreadCountQuery, userDetailsQuery, electionsQuery] =
-        await Promise.all([
-          pool.query(
-            "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
-            [req.session.userId]
-          ),
-          pool.query(
-            "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = (SELECT username FROM auth WHERE user_id = $1) AND is_read = 0",
-            [req.session.userId]
-          ),
-          pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId]),
-          pool.query("SELECT * FROM elections"),
-        ]);
-
-      return res.render("dashboard", {
-        totalUsers,
-        candidates: JSON.parse(cachedCandidates),
-        totalVotes: JSON.parse(cachedTotalVotes),
-        groupedCandidates: JSON.parse(cachedCandidates).reduce((acc, candidate) => {
-          acc[candidate.position] = acc[candidate.position] || [];
-          acc[candidate.position].push(candidate);
-          return acc;
-        }, {}),
-        elections: electionsQuery.rows,
-        selectedElection: userElectionId,
-        role: userRoleQuery.rows[0]?.role,
-        unreadCount: unreadCountQuery.rows[0]?.unreadcount || 0,
-        user: userDetailsQuery.rows[0],
-        profilePicture: req.session.profilePicture,
-      });
-    }
-
-    // Fetch all needed data from DB if cache misses
-    const [candidatesQuery, totalVotesQuery, totalVotesPerPositionQuery] = await Promise.all([
-      pool.query(
-        `SELECT candidates.*, parties.party, parties.logo, positions.position, 
-                COALESCE(SUM(votes.vote), 0) AS vote
-         FROM candidates
-         JOIN parties ON candidates.party_id = parties.id
-         JOIN positions ON candidates.position_id = positions.id
-         LEFT JOIN votes ON candidates.id = votes.candidate_id
-         WHERE candidates.election_id = $1
-         GROUP BY candidates.id, parties.party, parties.logo, positions.position`,
-        [userElectionId]
-      ),
-      pool.query(
-        `SELECT COALESCE(SUM(votes.vote), 0) AS totalVotes
-         FROM candidates
-         LEFT JOIN votes ON candidates.id = votes.candidate_id
-         WHERE candidates.election_id = $1`,
-        [userElectionId]
-      ),
-      pool.query(
-        `SELECT positions.position, COALESCE(SUM(votes.vote), 0) AS totalVotes
-         FROM candidates
-         JOIN positions ON candidates.position_id = positions.id
-         LEFT JOIN votes ON candidates.id = votes.candidate_id
-         WHERE candidates.election_id = $1
-         GROUP BY positions.position`,
-        [userElectionId]
-      ),
-    ]);
-
-    let totalVotes = totalVotesQuery.rows[0]?.totalvotes || 0;
-
-    // Compute votes per position
-    let totalVotesMap = {};
+    const totalVotesMap = {};
     totalVotesPerPositionQuery.rows.forEach((row) => {
       totalVotesMap[row.position] = row.totalvotes || 0;
     });
+
+    // Fetch candidates
+    const candidatesQuery = await pool.query(sqlCandidates, [userElectionId]);
 
     let candidates = candidatesQuery.rows.map((candidate) => ({
       ...candidate,
@@ -315,43 +254,55 @@ app.get("/dashboard", async (req, res) => {
           : 0,
     }));
 
-    // Store results in cache
-    await Promise.all([
-      redis.set(cachePrefix + "candidates", JSON.stringify(candidates), "EX", 3600),
-      redis.set(cachePrefix + "totalVotes", JSON.stringify(totalVotes), "EX", 3600),
-    ]);
+    // Calculate total votes
+    const totalVotesQuery = await pool.query(sqlTotalVotes, [userElectionId]);
+    const totalVotes = totalVotesQuery.rows[0].totalvotes || 0;
+    
 
-    let groupedCandidates = candidates.reduce((acc, candidate) => {
-      acc[candidate.position] = acc[candidate.position] || [];
+    // Group candidates by position
+    const groupedCandidates = candidates.reduce((acc, candidate) => {
+      if (!acc[candidate.position]) {
+        acc[candidate.position] = [];
+      }
       acc[candidate.position].push(candidate);
       return acc;
     }, {});
 
-    // Fetch additional user data
-    const totalUsersQuery = await pool.query(
-      `SELECT COUNT(*) AS totalUsers 
-       FROM auth 
-       JOIN users ON auth.user_id = users.id 
-       WHERE users.election_id = $1`,
-      [userElectionId]
+    // Fetch user role
+    const userRoleQuery = await pool.query(
+      "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
+      [req.session.userId]
     );
 
-    const totalUsers = totalUsersQuery.rows[0]?.totalusers;
+    // Fetch user data
+    const userQuery = await pool.query(
+      "SELECT username FROM auth WHERE user_id = $1",
+      [req.session.userId]
+    );
 
-    const [userRoleQuery, unreadCountQuery, userDetailsQuery, electionsQuery] =
-      await Promise.all([
-        pool.query(
-          "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
-          [req.session.userId]
-        ),
-        pool.query(
-          "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = (SELECT username FROM auth WHERE user_id = $1) AND is_read = 0",
-          [req.session.userId]
-        ),
-        pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId]),
-        pool.query("SELECT * FROM elections"),
-      ]);
+    if (userQuery.rows.length === 0) {
+      return res.status(404).send("User not found");
+    }
 
+    const username = userQuery.rows[0].username;
+
+    // Fetch unread notifications count
+    const unreadCountQuery = await pool.query(
+      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+      [username]
+    );
+
+    // Fetch user details
+    const userDetailsQuery = await pool.query(
+      "SELECT * FROM users WHERE id = $1",
+      [req.session.userId]
+    );
+
+    // Fetch all elections
+    const electionsQuery = await pool.query("SELECT * FROM elections");
+
+    const profilePicture = req.session.profilePicture;
+    console.log('TotalVotes', totalVotes);
     res.render("dashboard", {
       totalUsers,
       candidates,
@@ -362,9 +313,8 @@ app.get("/dashboard", async (req, res) => {
       role: userRoleQuery.rows[0]?.role,
       unreadCount: unreadCountQuery.rows[0]?.unreadcount || 0,
       user: userDetailsQuery.rows[0],
-      profilePicture: req.session.profilePicture,
+      profilePicture,
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).send("Internal Server Error");
@@ -372,10 +322,7 @@ app.get("/dashboard", async (req, res) => {
 });
 
 
-
 // ============================ VOTERS GET ROUTE ================================
-
-
 
 
 
@@ -385,80 +332,50 @@ app.get("/voters", async (req, res) => {
   }
 
   try {
-    // Check Redis cache for the current user
-    const userCache = await redis.get(`user:${req.session.userId}`);
-    let user;
-    
-    if (userCache) {
-      user = JSON.parse(userCache); // If user data is cached
-    } else {
-      // If not cached, fetch the current user's data from the database
-      const currentUserSql = `
-        SELECT users.*, roles.role, auth.username
-        FROM users
-        JOIN roles ON users.role_id = roles.id
-        JOIN auth ON users.id = auth.user_id
-        WHERE users.id = $1
-      `;
-      const userResult = await pool.query(currentUserSql, [req.session.userId]);
-      
-      if (userResult.rows.length === 0) {
-        return res.status(404).send("User not found");
+    // Fetch the current user's data
+    const currentUserSql = `
+      SELECT users.*, roles.role, auth.username
+      FROM users
+      JOIN roles ON users.role_id = roles.id
+      JOIN auth ON users.id = auth.user_id
+      WHERE users.id = $1
+    `;
+    const userResult = await pool.query(currentUserSql, [req.session.userId]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).send("User not found");
+    }
+
+    let user = userResult.rows[0];
+    user.profile_picture = user.profile_picture ? Buffer.from(user.profile_picture).toString("base64") : null;
+
+    // Fetch election settings
+    const electionSettingsSql = `SELECT * FROM election_settings WHERE election_id = $1`;
+    const electionSettingsResult = await pool.query(electionSettingsSql, [user.election_id]);
+
+    const registrationTiming = electionSettingsResult.rows[0];
+    console.log("Registration Timing:", registrationTiming);
+
+    // Fetch all users
+    const allUsersSql = `
+      SELECT users.*, roles.role, auth.username, elections.election
+      FROM users 
+      JOIN roles ON users.role_id = roles.id
+      JOIN elections ON users.election_id = elections.id
+      JOIN auth ON users.id = auth.user_id
+    `;
+    const usersResult = await pool.query(allUsersSql);
+    let users = usersResult.rows;
+
+    users.forEach((user) => {
+      if (user.profile_picture) {
+        user.profile_picture = Buffer.from(user.profile_picture).toString("base64");
       }
-
-      user = userResult.rows[0];
-      user.profile_picture = user.profile_picture ? Buffer.from(user.profile_picture).toString("base64") : null;
-
-      // Cache the user data in Redis for 1 hour
-      await redis.set(`user:${req.session.userId}`, JSON.stringify(user), 'EX', 3600);
-    }
-
-    // Fetch election settings, check Redis cache first
-    const electionSettingsCache = await redis.get(`electionSettings:${user.election_id}`);
-    let registrationTiming;
-
-    if (electionSettingsCache) {
-      registrationTiming = JSON.parse(electionSettingsCache);
-    } else {
-      const electionSettingsSql = `SELECT * FROM election_settings WHERE election_id = $1`;
-      const electionSettingsResult = await pool.query(electionSettingsSql, [user.election_id]);
-
-      registrationTiming = electionSettingsResult.rows[0];
-
-      // Cache the election settings in Redis for 1 hour
-      await redis.set(`electionSettings:${user.election_id}`, JSON.stringify(registrationTiming), 'EX', 3600);
-    }
-
-    // Fetch all users (store in Redis as well to cache results)
-    const allUsersCache = await redis.get("allUsers");
-    let users;
-
-    if (allUsersCache) {
-      users = JSON.parse(allUsersCache); // If data is cached
-    } else {
-      const allUsersSql = `
-        SELECT users.*, roles.role, auth.username, elections.election
-        FROM users 
-        JOIN roles ON users.role_id = roles.id
-        JOIN elections ON users.election_id = elections.id
-        JOIN auth ON users.id = auth.user_id
-      `;
-      const usersResult = await pool.query(allUsersSql);
-      users = usersResult.rows;
-
-      users.forEach((user) => {
-        if (user.profile_picture) {
-          user.profile_picture = Buffer.from(user.profile_picture).toString("base64");
-        }
-      });
-
-      // Cache the users data in Redis for 1 hour
-      await redis.set("allUsers", JSON.stringify(users), 'EX', 3600);
-    }
+    });
 
     const voteStatus = user.has_voted ? "Voted" : "Not Voted";
 
-    // Fetch role data
+    // Fetch user role
     const userRoleResult = await pool.query(
       "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
       [req.session.userId]
@@ -501,6 +418,9 @@ app.get("/voters", async (req, res) => {
     const registrationStartTime = registrationTiming.registration_start_time;
     const registrationEndTime = registrationTiming.registration_end_time;
 
+    console.log("Registration Start time:", registrationStartTime);
+    console.log("Registration End time:", registrationEndTime);
+
     const currentDate = registrationStartTime.split("T")[0];
     const fullCurrentTime = `${currentDate}T${currentTime}`;
 
@@ -531,7 +451,6 @@ app.get("/voters", async (req, res) => {
 
 
 
-
 app.get("/admin/voters", async (req, res) => {
   if (!req.session.userId) {
     return res.redirect("/login");
@@ -547,6 +466,7 @@ app.get("/admin/voters", async (req, res) => {
       JOIN auth ON users.id = auth.user_id
       WHERE users.id = $1
     `;
+
     const { rows: currentUserRows } = await pool.query(currentUserQuery, [
       req.session.userId,
     ]);
@@ -592,22 +512,16 @@ app.get("/admin/voters", async (req, res) => {
       return res.status(404).send("User not found");
     }
 
-    // Check for unread notifications count from Redis cache first
-    let unreadCount = await redis.get(`unreadCount:${authUser.username}`);
-    if (!unreadCount) {
-      // Fetch unread notifications count from the database if not in cache
-      const unreadCountQuery = `
-        SELECT COUNT(*) AS "unreadCount" 
-        FROM notifications 
-        WHERE username = $1 AND is_read = 0
-      `;
-      const { rows: unreadCountRows } = await pool.query(unreadCountQuery, [
-        authUser.username,
-      ]);
-      unreadCount = unreadCountRows[0].unreadCount;
-      // Store the unread count in Redis for future requests
-      redis.set(`unreadCount:${authUser.username}`, unreadCount, "EX", 3600); // Set an expiration of 1 hour
-    }
+    // Fetch unread notifications count
+    const unreadCountQuery = `
+      SELECT COUNT(*) AS "unreadCount" 
+      FROM notifications 
+      WHERE username = $1 AND is_read = 0
+    `;
+    const { rows: unreadCountRows } = await pool.query(unreadCountQuery, [
+      authUser.username,
+    ]);
+    const unreadCount = unreadCountRows[0].unreadCount;
 
     const profilePicture = req.session.profilePicture;
 
@@ -628,6 +542,7 @@ app.get("/admin/voters", async (req, res) => {
       WHERE users.election_id = $1 AND roles.role != 'Super Admin'
       ORDER BY users.id DESC
     `;
+
     const { rows: adminUsers } = await pool.query(adminAllUsersQuery, [
       userData.election_id,
     ]);
@@ -650,6 +565,7 @@ app.get("/admin/voters", async (req, res) => {
       JOIN elections ON users.election_id = elections.id
       WHERE users.id = $1
     `;
+
     const { rows: userElectionRows } = await pool.query(userElectionQuery, [
       req.session.userId,
     ]);
@@ -697,7 +613,6 @@ app.get("/admin/voters", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
 
 
 // =============================== VOTERS POST ROUTE ==================================
@@ -1026,31 +941,19 @@ app.get("/create/party", async (req, res) => {
       return res.redirect("/login");
     }
 
-    // Check if the party data is already cached in Redis
-    const cachedParties = await redis.get("parties");
-    
-    let parties;
-    if (cachedParties) {
-      // If data is in cache, parse and use it
-      parties = JSON.parse(cachedParties);
-    } else {
-      // If data is not in cache, fetch from database
-      const partiesResult = await pool.query(
-        `SELECT parties.*, elections.election 
-         FROM parties 
-         JOIN elections ON parties.election_id = elections.id`
-      );
+    // Fetch all parties with election names
+    const partiesResult = await pool.query(
+      `SELECT parties.*, elections.election 
+       FROM parties 
+       JOIN elections ON parties.election_id = elections.id`
+    );
 
-      parties = partiesResult.rows.map((party) => {
-        if (party.logo) {
-          party.logo = party.logo.toString("base64");
-        }
-        return party;
-      });
-
-      // Cache the fetched data in Redis for 1 hour (3600 seconds)
-      await redis.setex("parties", 3600, JSON.stringify(parties));
-    }
+    const parties = partiesResult.rows.map((party) => {
+      if (party.logo) {
+        party.logo = party.logo.toString("base64");
+      }
+      return party;
+    });
 
     const profilePicture = req.session.profilePicture;
 
@@ -1134,7 +1037,6 @@ app.get("/create/party", async (req, res) => {
 
 
 
-
 app.post("/create/party", upload.single("logo"), (req, res) => {
   const { election, party } = req.body;
   const logo = req.file ? req.file.buffer : null;
@@ -1202,35 +1104,13 @@ app.get("/add/position", async (req, res) => {
 
     const profilePicture = req.session.profilePicture;
 
-    // Cache prefix
-    const cachePrefix = `positions:${req.session.userId}:`;
-
-    // Check if positions and elections are cached
-    const cachedPositions = await redis.get(cachePrefix + "positions");
-    const cachedElections = await redis.get(cachePrefix + "elections");
-
-    let positions, elections;
-    
-    if (cachedPositions && cachedElections) {
-      // Parse cached data if available
-      positions = JSON.parse(cachedPositions);
-      elections = JSON.parse(cachedElections);
-    } else {
-      // Fetch positions and elections from the database if not cached
-      const positionsResult = await pool.query(
-        `SELECT positions.*, elections.election
-         FROM positions 
-         JOIN elections ON positions.election_id = elections.id`
-      );
-      positions = positionsResult.rows;
-
-      const electionsResult = await pool.query("SELECT * FROM elections");
-      elections = electionsResult.rows;
-
-      // Store fetched data in Redis cache for 1 hour (3600 seconds)
-      await redis.set(cachePrefix + "positions", JSON.stringify(positions), "EX", 3600);
-      await redis.set(cachePrefix + "elections", JSON.stringify(elections), "EX", 3600);
-    }
+    // Fetch all positions with election names
+    const positionsResult = await pool.query(
+      `SELECT positions.*, elections.election
+       FROM positions 
+       JOIN elections ON positions.election_id = elections.id`
+    );
+    const positions = positionsResult.rows;
 
     // Fetch user role
     const userRoleResult = await pool.query(
@@ -1286,6 +1166,10 @@ app.get("/add/position", async (req, res) => {
     );
     const userElectionData = userElectionDataResult.rows[0];
 
+    // Fetch all elections
+    const electionsResult = await pool.query("SELECT * FROM elections");
+    const elections = electionsResult.rows;
+
     // Render the page
     res.render("position.ejs", {
       positions,
@@ -1302,7 +1186,6 @@ app.get("/add/position", async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
-
 
 
 app.post("/add/position", async (req, res) => {
@@ -1374,33 +1257,17 @@ app.get("/candidate/registration", async (req, res) => {
       return res.redirect("/login");
     }
 
-    // Check Redis cache for parties
-    let parties = await redis.get("parties");
-    if (!parties) {
-      // If not in cache, fetch from database and store in cache
-      const { rows } = await pool.query("SELECT * FROM parties");
-      parties = rows;
-      await redis.set("parties", JSON.stringify(parties), "EX", 3600); // Cache for 1 hour
-    } else {
-      parties = JSON.parse(parties);
-    }
+    // Fetch parties
+    const { rows: parties } = await pool.query("SELECT * FROM parties");
 
-    // Check Redis cache for roles
-    let roles = await redis.get("roles");
-    if (!roles) {
-      // If not in cache, fetch from database and store in cache
-      const { rows } = await pool.query("SELECT * FROM roles LIMIT 1 OFFSET 1");
-      if (rows.length === 0) {
-        return res.status(404).send("Second role not found");
-      }
-      roles = rows[0];
-      await redis.set("roles", JSON.stringify(roles), "EX", 3600); // Cache for 1 hour
-    } else {
-      roles = JSON.parse(roles);
+    // Fetch second role (LIMIT 1 OFFSET 1 gets the second role)
+    const { rows: roles } = await pool.query("SELECT * FROM roles LIMIT 1 OFFSET 1");
+    if (roles.length === 0) {
+      return res.status(404).send("Second role not found");
     }
-    const secondRole = roles;
+    const secondRole = roles[0];
 
-    // Fetch positions from database as Redis caching may not apply here
+    // Fetch positions
     const { rows: positions } = await pool.query("SELECT * FROM positions");
 
     // Fetch user role
@@ -1420,41 +1287,30 @@ app.get("/candidate/registration", async (req, res) => {
     }
     const user = userData[0];
 
-    // Fetch unread notifications count from Redis cache
-    let unreadCount = await redis.get(`unreadCount:${user.username}`);
-    if (!unreadCount) {
-      const { rows: unreadNotifications } = await pool.query(
-        "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-        [user.username]
-      );
-      unreadCount = unreadNotifications[0].unreadcount;
-      await redis.set(`unreadCount:${user.username}`, unreadCount, "EX", 3600); // Cache for 1 hour
-    } else {
-      unreadCount = parseInt(unreadCount, 10);
-    }
+    // Fetch unread notifications count
+    const { rows: unreadNotifications } = await pool.query(
+      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+      [user.username]
+    );
+    const unreadCount = unreadNotifications[0].unreadcount;
 
     // Fetch candidates
-    let candidates = await redis.get("candidates");
-    if (!candidates) {
-      // If not in cache, fetch from database and store in cache
-      const { rows } = await pool.query(`
-        SELECT candidates.*, parties.party, parties.logo, positions.position, votes.vote AS vote, elections.election AS candidate_election
-        FROM candidates
-        JOIN parties ON candidates.party_id = parties.id 
-        JOIN positions ON candidates.position_id = positions.id
-        LEFT JOIN votes ON candidates.id = votes.candidate_id
-        JOIN elections ON candidates.election_id = elections.id
-        ORDER BY candidates.id DESC
-      `);
-      candidates = rows.map(candidate => ({
-        ...candidate,
-        photo: candidate.photo ? candidate.photo.toString("base64") : null,
-        logo: candidate.logo ? candidate.logo.toString("base64") : null,
-      }));
-      await redis.set("candidates", JSON.stringify(candidates), "EX", 3600); // Cache for 1 hour
-    } else {
-      candidates = JSON.parse(candidates);
-    }
+    let { rows: candidates } = await pool.query(`
+      SELECT candidates.*, parties.party, parties.logo, positions.position, votes.vote AS vote, elections.election AS candidate_election
+      FROM candidates
+      JOIN parties ON candidates.party_id = parties.id 
+      JOIN positions ON candidates.position_id = positions.id
+      LEFT JOIN votes ON candidates.id = votes.candidate_id
+      JOIN elections ON candidates.election_id = elections.id
+      ORDER BY candidates.id DESC
+    `);
+    
+    // Convert images to base64
+    candidates = candidates.map(candidate => ({
+      ...candidate,
+      photo: candidate.photo ? candidate.photo.toString("base64") : null,
+      logo: candidate.logo ? candidate.logo.toString("base64") : null,
+    }));
 
     // Fetch user details from users table
     const { rows: userTableData } = await pool.query(
@@ -1463,30 +1319,17 @@ app.get("/candidate/registration", async (req, res) => {
     );
     const userTable = userTableData[0];
 
-    // Fetch parties and positions for Admin based on election_id
-    let Adminparties = await redis.get(`Adminparties:${userTable.election_id}`);
-    if (!Adminparties) {
-      const { rows: partiesData } = await pool.query(
-        "SELECT * FROM parties WHERE election_id = $1",
-        [userTable.election_id]
-      );
-      Adminparties = partiesData;
-      await redis.set(`Adminparties:${userTable.election_id}`, JSON.stringify(Adminparties), "EX", 3600); // Cache for 1 hour
-    } else {
-      Adminparties = JSON.parse(Adminparties);
-    }
+    // Fetch parties for Admin based on election_id
+    const { rows: Adminparties } = await pool.query(
+      "SELECT * FROM parties WHERE election_id = $1",
+      [userTable.election_id]
+    );
 
-    let Adminpositions = await redis.get(`Adminpositions:${userTable.election_id}`);
-    if (!Adminpositions) {
-      const { rows: positionsData } = await pool.query(
-        "SELECT * FROM positions WHERE election_id = $1",
-        [userTable.election_id]
-      );
-      Adminpositions = positionsData;
-      await redis.set(`Adminpositions:${userTable.election_id}`, JSON.stringify(Adminpositions), "EX", 3600); // Cache for 1 hour
-    } else {
-      Adminpositions = JSON.parse(Adminpositions);
-    }
+    // Fetch positions for Admin based on election_id
+    const { rows: Adminpositions } = await pool.query(
+      "SELECT * FROM positions WHERE election_id = $1",
+      [userTable.election_id]
+    );
 
     // Fetch all elections
     const { rows: elections } = await pool.query("SELECT * FROM elections");
@@ -1501,28 +1344,27 @@ app.get("/candidate/registration", async (req, res) => {
     );
 
     // Fetch Admin candidates for specific election
-    let Admincandidates = await redis.get(`Admincandidates:${userTable.election_id}`);
-    if (!Admincandidates) {
-      const { rows } = await pool.query(
-        `SELECT candidates.*, parties.party, parties.logo, positions.position, votes.vote AS vote, elections.election AS candidate_election
-        FROM candidates
-        JOIN parties ON candidates.party_id = parties.id 
-        JOIN positions ON candidates.position_id = positions.id
-        LEFT JOIN votes ON candidates.id = votes.candidate_id
-        JOIN elections ON candidates.election_id = elections.id
-        WHERE candidates.election_id = $1
-        ORDER BY candidates.id DESC`,
-        [userTable.election_id]
-      );
-      Admincandidates = rows.map(candidate => ({
-        ...candidate,
-        photo: candidate.photo ? candidate.photo.toString("base64") : null,
-        logo: candidate.logo ? candidate.logo.toString("base64") : null,
-      }));
-      await redis.set(`Admincandidates:${userTable.election_id}`, JSON.stringify(Admincandidates), "EX", 3600); // Cache for 1 hour
-    } else {
-      Admincandidates = JSON.parse(Admincandidates);
-    }
+    let { rows: Admincandidates } = await pool.query(
+      `SELECT candidates.*, parties.party, parties.logo, positions.position, votes.vote AS vote, elections.election AS candidate_election
+      FROM candidates
+      JOIN parties ON candidates.party_id = parties.id 
+      JOIN positions ON candidates.position_id = positions.id
+      LEFT JOIN votes ON candidates.id = votes.candidate_id
+      JOIN elections ON candidates.election_id = elections.id
+      WHERE candidates.election_id = $1
+      ORDER BY candidates.id DESC`,
+      [userTable.election_id]
+    );
+
+    // Convert Admin candidates images to base64
+    Admincandidates = Admincandidates.map(candidate => ({
+      ...candidate,
+      photo: candidate.photo ? candidate.photo.toString("base64") : null,
+      logo: candidate.logo ? candidate.logo.toString("base64") : null,
+    }));
+
+    console.log("User Election Data:", userElectionData);
+
 
     res.render("candidate-registration", {
       parties,
@@ -1544,7 +1386,6 @@ app.get("/candidate/registration", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-
 
 
 // UPDATE Candidate
@@ -1755,213 +1596,241 @@ app.post("/candidate/registration", upload.single("photo"), async (req, res) => 
 });
 
 
+
 app.get("/my/profile", (req, res) => {
   if (!req.session.userId) {
     return res.redirect("/login");
   }
 
-  // Try to fetch the profile data from Redis cache first
-  redis.get(`user_profile_${req.session.userId}`, (err, cachedData) => {
-    if (cachedData) {
-      // If cached data exists, parse it and send the response
-      const cachedUser = JSON.parse(cachedData);
-      const voteStatus = cachedUser.has_voted ? "Voted" : "Not Voted";
+  const sql = `
+    SELECT users.*, roles.role, auth.username
+    FROM users
+    JOIN roles ON users.role_id = roles.id
+    JOIN auth ON users.id = auth.user_id
+    WHERE users.id = $1
+  `;
 
-      res.render("profile", {
-        user: cachedUser,
-        voteStatus,
-        unreadCount: cachedUser.unreadCount,
-        profilePicture: cachedUser.profile_picture,
-        formattedDOB: cachedUser.formattedDOB,
-      });
-    } else {
-      // If no cached data, fetch from database
-      const sql = `
-        SELECT users.*, roles.role, auth.username
-        FROM users
-        JOIN roles ON users.role_id = roles.id
-        JOIN auth ON users.id = auth.user_id
-        WHERE users.id = $1
-      `;
-
-      pool.query(sql, [req.session.userId], (err, result) => {
-        if (err) {
-          return res.status(500).send("An error occurred");
-        }
-        if (result.rows.length === 0) {
-          return res.status(404).send("User not found");
-        }
-
-        const user = result.rows[0];
-        console.log('profile user data', user);
-
-        const DOB = new Date(user.dob);
-        const formattedDOB = DOB.toISOString().split('T')[0];
-
-        console.log("Profile new dob", formattedDOB);
-
-        user.profile_picture = user.profile_picture.toString("base64");
-
-        // Check if the user has voted
-        const voteStatus = user.has_voted ? "Voted" : "Not Voted";
-
-        // Fetch unread notifications count
-        pool.query(
-          "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-          [user.username],
-          (err, countResult) => {
-            if (err) {
-              return res
-                .status(500)
-                .send("Error fetching unread notifications count");
-            }
-
-            // Prepare the data for caching
-            const userProfileData = {
-              ...user,
-              formattedDOB,
-              unreadCount: countResult.rows[0].unreadCount,
-            };
-
-            // Cache the data in Redis for future use
-            redis.setex(
-              `user_profile_${req.session.userId}`,
-              3600, // Cache expiration time (1 hour)
-              JSON.stringify(userProfileData)
-            );
-
-            const profilePicture = req.session.profilePicture;
-
-            res.render("profile", {
-              user: userProfileData,
-              voteStatus,
-              unreadCount: countResult.rows[0].unreadCount,
-              profilePicture,
-              formattedDOB
-            });
-          }
-        );
-      });
+  pool.query(sql, [req.session.userId], (err, result) => {
+    if (err) {
+      return res.status(500).send("An error occurred");
     }
+    if (result.rows.length === 0) {
+      return res.status(404).send("User not found");
+    }
+
+    const user = result.rows[0];
+console.log('profile user data', user);
+
+const DOB = new Date(user.dob);
+
+const formattedDOB = DOB.toISOString().split('T')[0]; 
+
+console.log("Profile new dob", formattedDOB);
+
+    user.profile_picture = user.profile_picture.toString("base64");
+
+    // Check if the user has voted
+    const voteStatus = user.has_voted ? "Voted" : "Not Voted";
+
+    pool.query(
+      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+      [user.username],
+      (err, countResult) => {
+        if (err) {
+          return res
+            .status(500)
+            .send("Error fetching unread notifications count");
+        }
+
+        const profilePicture = req.session.profilePicture;
+
+        res.render("profile", {
+          user,
+          voteStatus,
+          unreadCount: countResult.rows[0].unreadCount,
+          profilePicture,
+          formattedDOB
+        });
+      }
+    );
   });
 });
 
 
-
-app.get("/vote", async (req, res) => {
+app.get("/vote", (req, res) => {
   if (!req.session.userId) {
     return res.redirect("/login");
   }
 
-  try {
-    // Check Redis Cache First
-    const cachedData = await redis.get(`vote_page_${req.session.userId}`);
-    if (cachedData) {
-      const cachedResponse = JSON.parse(cachedData);
-
-      // If unreadCount is missing, fetch it and update cache
-      if (typeof cachedResponse.unreadCount === 'undefined') {
-        const unreadResult = await pool.query(
-          `SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0`,
-          [req.session.username]
-        );
-        cachedResponse.unreadCount = unreadResult.rows[0].unreadcount;
-
-        // Update Redis with the new unreadCount
-        await redis.setex(`vote_page_${req.session.userId}`, 3600, JSON.stringify(cachedResponse));
-
-        return res.render("vote", cachedResponse);
+  pool.query(
+    `SELECT * FROM users WHERE id = $1`,
+    [req.session.userId],
+    (err, user) => {
+      if (err) {
+        return res.status(500).send("Error retrieving user data");
       }
-      
-      return res.render("vote", cachedResponse);
-    }
 
-    // If no cache, fetch data from database
-    const userQuery = await pool.query(
-      `SELECT users.id, users.election_id, users.role_id, roles.role, auth.username
-       FROM users 
-       JOIN roles ON users.role_id = roles.id
-       JOIN auth ON users.id = auth.user_id
-       WHERE users.id = $1`,
-      [req.session.userId]
-    );
+      const ElectionId = user.rows[0].election_id;
 
-    if (!userQuery.rows.length) {
-      return res.status(404).send("User not found");
-    }
+      const sql = `
+        SELECT candidates.id, candidates.first_name, candidates.last_name, candidates.middle_name, candidates.photo, positions.position, parties.party, COALESCE(votes.vote, 0) AS vote
+        FROM candidates
+        JOIN positions ON candidates.position_id = positions.id
+        JOIN parties ON candidates.party_id = parties.id
+        LEFT JOIN votes ON candidates.id = votes.candidate_id
+        WHERE candidates.election_id = $1
+      `;
 
-    const user = userQuery.rows[0];
-    const { election_id, role, username } = user;
+      pool.query(sql, [ElectionId], (err, candidates) => {
+        if (err) {
+          return res.status(500).send("Error fetching candidates data");
+        }
 
-    // Fetch candidates and group by position
-    const candidatesQuery = await pool.query(
-      `SELECT candidates.id, candidates.first_name, candidates.last_name, candidates.middle_name, candidates.photo, 
-              positions.position, parties.party, COALESCE(votes.vote, 0) AS vote
-       FROM candidates
-       JOIN positions ON candidates.position_id = positions.id
-       JOIN parties ON candidates.party_id = parties.id
-       LEFT JOIN votes ON candidates.id = votes.candidate_id
-       WHERE candidates.election_id = $1`,
-      [election_id]
-    );
+        const profilePicture = req.session.profilePicture;
 
-    const groupedCandidates = candidatesQuery.rows.reduce((acc, candidate) => {
-      if (!acc[candidate.position]) acc[candidate.position] = [];
-      acc[candidate.position].push({
-        ...candidate,
-        photo: candidate.photo.toString("base64"),
+        candidates.rows = candidates.rows.map((candidate) => {
+          return {
+            ...candidate,
+            photo: candidate.photo.toString("base64"),
+          };
+        });
+
+        pool.query(
+          `SELECT users.role_id, roles.role 
+           FROM users 
+           JOIN roles ON users.role_id = roles.id 
+           WHERE users.id = $1`,
+          [req.session.userId],
+          (err, userRole) => {
+            if (err) {
+              return res.status(500).send("Error fetching user role");
+            }
+
+            pool.query(
+              `SELECT username FROM auth WHERE user_id = $1`,
+              [req.session.userId],
+              (err, user) => {
+                if (err) {
+                  return res.status(500).send("Error fetching user data");
+                }
+
+                if (!user.rows.length) {
+                  return res.status(404).send("User not found");
+                }
+
+                const groupedCandidates = candidates.rows.reduce(
+                  (acc, candidate) => {
+                    if (!acc[candidate.position]) {
+                      acc[candidate.position] = [];
+                    }
+                    acc[candidate.position].push(candidate);
+                    return acc;
+                  },
+                  {}
+                );
+
+                const userId = req.session.userId;
+
+                pool.query(
+                  `SELECT election_id FROM users WHERE id = $1`,
+                  [userId],
+                  (err, userElection) => {
+                    if (err) {
+                      return res.status(500).send("Error fetching election ID");
+                    }
+
+                    if (!userElection.rows.length) {
+                      return res.status(404).send("Election ID not found");
+                    }
+
+                    const userElectionId = userElection.rows[0].election_id;
+
+                    pool.query(
+                      `SELECT * FROM candidates WHERE election_id = $1`,
+                      [userElectionId],
+                      (err, candidates) => {
+                        if (err) {
+                          return res.status(500).send("Error fetching candidates");
+                        }
+
+                        pool.query(
+                          `SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0`,
+                          [user.rows[0].username],
+                          (err, countResult) => {
+                            if (err) {
+                              return res.status(500).send("Error fetching unread notifications count");
+                            }
+
+                            pool.query(
+                              `SELECT * FROM users WHERE id = $1`,
+                              [req.session.userId],
+                              (err, users) => {
+                                if (err) {
+                                  return res.status(500).send("Error fetching user data");
+                                }
+                                if (!users.rows.length) {
+                                  return res.send("User data not found");
+                                }
+
+                                const userElectionID = users.rows[0].election_id;
+
+                                pool.query(
+                                  `SELECT * FROM users WHERE id = $1`,
+                                  [req.session.userId],
+                                  (err, user) => {
+                                    if (err) {
+                                      return res.status(500).send("Error fetching user data");
+                                    }
+
+                                    pool.query(
+                                      `SELECT start_time, end_time FROM election_settings WHERE election_id = $1`,
+                                      [user.rows[0].election_id],
+                                      (err, electionTiming) => {
+                                        if (err) {
+                                          return res.status(500).send("Error fetching election timing");
+                                        }
+
+                                        const currentTime = new Date().toISOString();
+
+                                        const startTime = electionTiming.rows[0].start_time;
+                                        const endTime = electionTiming.rows[0].end_time;
+
+                                        const start = new Date(startTime);
+                                        const end = new Date(endTime);
+                                        const current = new Date(currentTime);
+
+                                        res.render("vote", {
+                                          candidates: candidates.rows,
+                                          role: userRole.rows[0].role,
+                                          profilePicture,
+                                          unreadCount: countResult.rows[0].unreadcount,
+                                          user: user.rows[0],
+                                          groupedCandidates,
+                                          userElectionID,
+                                          start,
+                                          end,
+                                          current,
+                                        });
+                                      }
+                                    );
+                                  }
+                                );
+                              }
+                            );
+                          }
+                        );
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
       });
-      return acc;
-    }, {});
-
-    // Get unread notifications count
-    const unreadQuery = await pool.query(
-      `SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0`,
-      [username]
-    );
-    const unreadCount = unreadQuery.rows[0].unreadcount;
-
-    // Fetch election timing
-    const electionTimingQuery = await pool.query(
-      `SELECT start_time, end_time FROM election_settings WHERE election_id = $1`,
-      [election_id]
-    );
-
-    if (!electionTimingQuery.rows.length) {
-      return res.status(404).send("Election timing not found");
     }
-
-    const { start_time, end_time } = electionTimingQuery.rows[0];
-    const start = new Date(start_time);
-    const end = new Date(end_time);
-    const current = new Date();
-
-    // Prepare Data for Rendering
-    const votePageData = {
-      candidates: candidatesQuery.rows,
-      role,
-      profilePicture: req.session.profilePicture,
-      unreadCount,
-      user,
-      groupedCandidates,
-      userElectionID: election_id,
-      start,
-      end,
-      current,
-    };
-
-    // Cache Data in Redis
-    await redis.setex(`vote_page_${req.session.userId}`, 3600, JSON.stringify(votePageData));
-
-    // Render Page
-    res.render("vote", votePageData);
-  } catch (err) {
-    console.error("Error in /vote route:", err);
-    res.status(500).send("Internal Server Error");
-  }
+  );
 });
-
-
 
 
 
@@ -2118,73 +1987,45 @@ app.get("/voter/setting", (req, res) => {
     return res.redirect("/login");
   }
 
-  // Check Redis cache for user data and unread notifications count
-  redis.get(`user:${req.session.userId}`, (err, cachedUserData) => {
-    if (cachedUserData) {
-      const user = JSON.parse(cachedUserData);
+  const sql = `
+    SELECT users.*, roles.role, auth.username
+    FROM users
+    JOIN roles ON users.role_id = roles.id
+    JOIN auth ON users.id = auth.user_id
+    WHERE users.id = $1
+  `;
 
-      redis.get(`unreadCount:${user.username}`, (err, cachedUnreadCount) => {
-        if (cachedUnreadCount) {
-          const unreadCount = parseInt(cachedUnreadCount);
-          const profilePicture = req.session.profilePicture;
-
-          return res.render("voter-setting", {
-            unreadCount,
-            profilePicture,
-            user,
-          });
-        }
-      });
-    } else {
-      const sql = `
-        SELECT users.*, roles.role, auth.username
-        FROM users
-        JOIN roles ON users.role_id = roles.id
-        JOIN auth ON users.id = auth.user_id
-        WHERE users.id = $1
-      `;
-
-      pool.query(sql, [req.session.userId], (err, result) => {
-        if (err) {
-          return res.status(500).send("An error occurred");
-        }
-
-        if (!result.rows.length) {
-          return res.status(404).send("User not found");
-        }
-
-        const user = result.rows[0];
-
-        // Cache user data in Redis
-        redis.setex(`user:${user.id}`, 3600, JSON.stringify(user));
-
-        pool.query(
-          "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-          [user.username],
-          (err, countResult) => {
-            if (err) {
-              return res.status(500).send("Error fetching unread notifications count");
-            }
-
-            const unreadCount = parseInt(countResult.rows[0].unreadcount);
-
-            // Cache unread notification count in Redis
-            redis.setex(`unreadCount:${user.username}`, 3600, unreadCount);
-
-            const profilePicture = req.session.profilePicture;
-
-            res.render("voter-setting", {
-              unreadCount,
-              profilePicture,
-              user,
-            });
-          }
-        );
-      });
+  pool.query(sql, [req.session.userId], (err, result) => {
+    if (err) {
+      return res.status(500).send("An error occurred");
     }
+
+    if (!result.rows.length) {
+      return res.status(404).send("User not found");
+    }
+
+    const user = result.rows[0];
+
+    pool.query(
+      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+      [user.username],
+      (err, countResult) => {
+        if (err) {
+          return res.status(500).send("Error fetching unread notifications count");
+        }
+
+        const unreadCount = parseInt(countResult.rows[0].unreadcount);
+        const profilePicture = req.session.profilePicture;
+
+        res.render("voter-setting", {
+          unreadCount,
+          profilePicture,
+          user,
+        });
+      }
+    );
   });
 });
-
 
 
 // POST ROUTE FOR UPDATING THE USER PASSWORD FROM THE SEETING PAGE
@@ -2281,68 +2122,48 @@ app.get("/create/election", (req, res) => {
 
   const profilePicture = req.session.profilePicture;
 
-  // Check Redis for user role cache
-  redis.get(`userRole:${req.session.userId}`, (err, cachedUserRole) => {
-    if (cachedUserRole) {
-      const userRole = JSON.parse(cachedUserRole);
+  pool.query(
+    `SELECT users.role_id, roles.role 
+     FROM users 
+     JOIN roles ON users.role_id = roles.id 
+     WHERE users.id = $1`,
+    [req.session.userId],
+    (err, userRoleResult) => {
+      if (err) {
+        return res.status(500).send("Error fetching user role");
+      }
 
-      // Check Redis for elections data cache
-      redis.get("electionsData", (err, cachedElections) => {
-        if (cachedElections) {
-          const elections = JSON.parse(cachedElections);
+      pool.query(
+        `SELECT elections.*, election_settings.*
+         FROM elections
+         JOIN election_settings ON elections.id = election_settings.election_id`,
+        [],
+        (err, electionsResult) => {
+          if (err) {
+            return res.status(500).send("Error fetching elections");
+          }
 
-          // Check Redis for unread notifications count cache
-          redis.get(`unreadCount:${req.session.userId}`, (err, cachedUnreadCount) => {
-            if (cachedUnreadCount) {
-              const unreadCount = parseInt(cachedUnreadCount);
+          pool.query(
+            `SELECT username FROM auth WHERE user_id = $1`,
+            [req.session.userId],
+            (err, userResult) => {
+              if (err) {
+                return res.status(500).send("Error fetching user");
+              }
 
-              // Check Redis for user data cache
-              redis.get(`userData:${req.session.userId}`, (err, cachedUserData) => {
-                if (cachedUserData) {
-                  const userData = JSON.parse(cachedUserData);
-                  return res.render("election", {
-                    profilePicture,
-                    role: userRole.role,
-                    elections,
-                    user: userData,
-                    unreadCount,
-                  });
-                } else {
-                  // Fetch user data if not in cache
-                  pool.query(
-                    `SELECT * FROM users WHERE id = $1`,
-                    [req.session.userId],
-                    (err, userDataResult) => {
-                      if (err) {
-                        return res.status(500).send("Error fetching user data");
-                      }
+              if (!userResult.rows.length) {
+                return res.status(404).send("User not found");
+              }
 
-                      if (!userDataResult.rows.length) {
-                        return res.status(404).send("User data not found");
-                      }
+              const elections = electionsResult.rows;
+              const username = userResult.rows[0].username;
 
-                      const userData = userDataResult.rows[0];
-                      // Cache the user data in Redis for future requests
-                      redis.setex(`userData:${req.session.userId}`, 3600, JSON.stringify(userData));
-
-                      res.render("election", {
-                        profilePicture,
-                        role: userRole.role,
-                        elections,
-                        user: userData,
-                        unreadCount,
-                      });
-                    }
-                  );
-                }
-              });
-            } else {
-              // Fetch unread notifications count from database if not cached
+              // Fetch unread notifications count
               pool.query(
                 `SELECT COUNT(*) AS unreadCount 
                  FROM notifications 
-                 WHERE username = $1 AND is_read = 0`,
-                [req.session.username],
+                 WHERE username = $1 AND is_read = 0`, // Changed `0` to `false`
+                [username],
                 (err, countResult) => {
                   if (err) {
                     return res
@@ -2350,49 +2171,14 @@ app.get("/create/election", (req, res) => {
                       .send("Error fetching unread notifications count");
                   }
 
-                  const unreadCount = parseInt(countResult.rows[0].unreadcount);
-
-                  // Cache the unread notifications count in Redis
-                  redis.setex(`unreadCount:${req.session.userId}`, 3600, unreadCount);
-
-                  res.render("election", {
-                    profilePicture,
-                    role: userRole.role,
-                    elections,
-                    user: userDataResult.rows[0],
-                    unreadCount,
-                  });
-                }
-              );
-            }
-          });
-        } else {
-          // Fetch elections data if not cached
-          pool.query(
-            `SELECT elections.*, election_settings.*
-             FROM elections
-             JOIN election_settings ON elections.id = election_settings.election_id`,
-            [],
-            (err, electionsResult) => {
-              if (err) {
-                return res.status(500).send("Error fetching elections");
-              }
-
-              const elections = electionsResult.rows;
-              // Cache the elections data in Redis
-              redis.setex("electionsData", 3600, JSON.stringify(elections));
-
-              // Check Redis for unread notifications count cache
-              redis.get(`unreadCount:${req.session.userId}`, (err, cachedUnreadCount) => {
-                if (cachedUnreadCount) {
-                  const unreadCount = parseInt(cachedUnreadCount);
-
                   pool.query(
                     `SELECT * FROM users WHERE id = $1`,
                     [req.session.userId],
                     (err, userDataResult) => {
                       if (err) {
-                        return res.status(500).send("Error fetching user data");
+                        return res
+                          .status(500)
+                          .send("Error fetching user from the users table");
                       }
 
                       if (!userDataResult.rows.length) {
@@ -2401,97 +2187,11 @@ app.get("/create/election", (req, res) => {
 
                       res.render("election", {
                         profilePicture,
-                        role: userRole.role,
+                        role: userRoleResult.rows[0].role,
                         elections,
                         user: userDataResult.rows[0],
-                        unreadCount,
+                        unreadCount: countResult.rows[0].unreadcount,
                       });
-                    }
-                  );
-                }
-              });
-            }
-          );
-        }
-      });
-    } else {
-      // Fetch user role from database if not cached
-      pool.query(
-        `SELECT users.role_id, roles.role 
-         FROM users
-         JOIN roles ON users.role_id = roles.id 
-         WHERE users.id = $1`,
-        [req.session.userId],
-        (err, userRoleResult) => {
-          if (err) {
-            return res.status(500).send("Error fetching user role");
-          }
-
-          // Cache the user role in Redis
-          redis.setex(`userRole:${req.session.userId}`, 3600, JSON.stringify(userRoleResult.rows[0]));
-
-          // Continue with the remaining logic
-          pool.query(
-            `SELECT elections.*, election_settings.*
-             FROM elections
-             JOIN election_settings ON elections.id = election_settings.election_id`,
-            [],
-            (err, electionsResult) => {
-              if (err) {
-                return res.status(500).send("Error fetching elections");
-              }
-
-              pool.query(
-                `SELECT username FROM auth WHERE user_id = $1`,
-                [req.session.userId],
-                (err, userResult) => {
-                  if (err) {
-                    return res.status(500).send("Error fetching user");
-                  }
-
-                  if (!userResult.rows.length) {
-                    return res.status(404).send("User not found");
-                  }
-
-                  const elections = electionsResult.rows;
-                  const username = userResult.rows[0].username;
-
-                  // Fetch unread notifications count
-                  pool.query(
-                    `SELECT COUNT(*) AS unreadCount 
-                     FROM notifications 
-                     WHERE username = $1 AND is_read = 0`,
-                    [username],
-                    (err, countResult) => {
-                      if (err) {
-                        return res
-                          .status(500)
-                          .send("Error fetching unread notifications count");
-                      }
-
-                      pool.query(
-                        `SELECT * FROM users WHERE id = $1`,
-                        [req.session.userId],
-                        (err, userDataResult) => {
-                          if (err) {
-                            return res
-                              .status(500)
-                              .send("Error fetching user from the users table");
-                          }
-
-                          if (!userDataResult.rows.length) {
-                            return res.status(404).send("User data not found");
-                          }
-
-                          res.render("election", {
-                            profilePicture,
-                            role: userRoleResult.rows[0].role,
-                            elections,
-                            user: userDataResult.rows[0],
-                            unreadCount: countResult.rows[0].unreadcount,
-                          });
-                        }
-                      );
                     }
                   );
                 }
@@ -2501,9 +2201,8 @@ app.get("/create/election", (req, res) => {
         }
       );
     }
-  });
+  );
 });
-
 
 
 //============================== ELECTION POST ROUTE ===============================
@@ -2636,83 +2335,74 @@ app.post("/delete/election/:id", (req, res) => {
   });
 });
 
-
 app.get("/vote/analysis", (req, res) => {
   if (!req.session.userId) {
     return res.redirect("/login");
   }
 
-  // Redis caching for current user data
-  redis.get(`user:${req.session.userId}:data`, (err, cachedUserData) => {
-    if (err) {
-      console.error("Error fetching user data from Redis:", err);
-    }
+  pool.query(
+    "SELECT * FROM users WHERE id = $1",
+    [req.session.userId],
+    (err, currentUserResult) => {
+      if (err) {
+        console.error("Error fetching current user data:", err);
+        return res.status(500).send("Error fetching current user data");
+      }
 
-    if (cachedUserData) {
-      console.log("User data retrieved from Redis.");
-      const currentUser = JSON.parse(cachedUserData);
-      fetchCandidatesData(currentUser);
-    } else {
-      pool.query(
-        "SELECT * FROM users WHERE id = $1",
-        [req.session.userId],
-        (err, currentUserResult) => {
-          if (err) {
-            console.error("Error fetching current user data:", err);
-            return res.status(500).send("Error fetching current user data");
-          }
+      if (!currentUserResult.rows.length) {
+        return res.status(404).send("User not found");
+      }
 
-          if (!currentUserResult.rows.length) {
-            return res.status(404).send("User not found");
-          }
+      const currentUser = currentUserResult.rows[0];
+      console.log("Current user data", currentUser.election_id);
 
-          const currentUser = currentUserResult.rows[0];
-
-          // Cache the user data in Redis for faster access next time
-          redis.setex(
-            `user:${req.session.userId}:data`, 
-            3600,  // Cache for 1 hour
-            JSON.stringify(currentUser)
-          );
-          fetchCandidatesData(currentUser);
-        }
-      );
-    }
-
-    function fetchCandidatesData(currentUser) {
       const positionsQuery = `
-        SELECT positions.position, candidates.first_name, candidates.middle_name, 
-               candidates.last_name, COALESCE(SUM(votes.vote), 0) AS vote
-        FROM candidates
-        JOIN positions ON candidates.position_id = positions.id
-        LEFT JOIN votes ON candidates.id = votes.candidate_id
-        WHERE candidates.election_id = $1
-        GROUP BY positions.position, candidates.id
-        ORDER BY positions.position, candidates.last_name
-      `;
+  SELECT positions.position, candidates.first_name, candidates.middle_name, 
+         candidates.last_name, COALESCE(SUM(votes.vote), 0) AS vote
+  FROM candidates
+  JOIN positions ON candidates.position_id = positions.id
+  LEFT JOIN votes ON candidates.id = votes.candidate_id
+  WHERE candidates.election_id = $1
+  GROUP BY positions.position, candidates.id
+  ORDER BY positions.position, candidates.last_name
+`;
 
-      pool.query(positionsQuery, [currentUser.election_id], (err, candidatesResult) => {
-        if (err) {
-          console.error("Error fetching candidates data:", err);
-          return res.status(500).send("Error fetching candidates data");
-        }
+pool.query(positionsQuery, [currentUser.election_id], (err, candidatesResult) => {
+  if (err) {
+    console.error("Error fetching candidates data:", err);
+    return res.status(500).send("Error fetching candidates data");
+  }
 
-        const groupedData = {};
+  const groupedData = {};
 
-        candidatesResult.rows.forEach((candidate) => {
-          const position = candidate.position.trim().replace(/\s+/g, ' ');
-          const candidateName = `${candidate.first_name} ${candidate.middle_name || ""} ${candidate.last_name}`.trim();
+  candidatesResult.rows.forEach((candidate) => {
+    // Normalize position by trimming spaces and replacing multiple spaces with a single one
+    const position = candidate.position.trim().replace(/\s+/g, ' ');
 
-          if (!groupedData[position]) {
-            groupedData[position] = { labels: [], votes: [] };
-          }
+    // Log the position for debugging
+    console.log(`Processing position: "${position}"`);
 
-          groupedData[position].labels.push(candidateName);
-          groupedData[position].votes.push(candidate.vote);
-        });
+    const candidateName = `${candidate.first_name} ${
+      candidate.middle_name || ""
+    } ${candidate.last_name}`.trim();
 
-        // Emit real-time updates with socket.io
-        io.emit('voteUpdate', { groupedData });
+    // Log the candidate name for debugging
+    console.log(`Candidate Name: "${candidateName}"`);
+
+    // Ensure position exists in groupedData
+    if (!groupedData[position]) {
+      groupedData[position] = { labels: [], votes: [] };
+    }
+
+    // Add candidate to the corresponding position
+    groupedData[position].labels.push(candidateName);
+    groupedData[position].votes.push(candidate.vote);
+  });
+
+  // Log groupedData to verify the result
+  console.log("Grouped Data:", groupedData);
+
+  // Proceed with rendering or further processing the groupedData
 
         pool.query(
           "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
@@ -2736,6 +2426,7 @@ app.get("/vote/analysis", (req, res) => {
 
                 const username = userResult.rows[0].username;
 
+                // Fetch unread notifications count
                 pool.query(
                   "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
                   [username],
@@ -2757,7 +2448,7 @@ app.get("/vote/analysis", (req, res) => {
                         }
 
                         res.render("vote-analysis", {
-                          groupedData: JSON.stringify(groupedData),
+                          groupedData: JSON.stringify(groupedData), // Pass data as JSON to the template
                           profilePicture: req.session.profilePicture,
                           role: userRoleResult.rows[0].role,
                           unreadCount: countResult.rows[0].unreadcount,
@@ -2773,12 +2464,129 @@ app.get("/vote/analysis", (req, res) => {
         );
       });
     }
-  });
+  );
 });
 
 
 
 
+// GET route to create notification
+app.get("/create/notification", async (req, res) => {
+  if (
+    !req.session.userId ||
+    (req.session.userRole !== "Super Admin" && req.session.userRole !== "Admin")
+  ) {
+    return res.redirect("/login");
+  }
+
+  try {
+    // Fetch current user's data
+    const currentUserSql = `
+      SELECT users.*, roles.role, auth.username
+      FROM users
+      JOIN roles ON users.role_id = roles.id
+      JOIN auth ON users.id = auth.user_id
+      WHERE users.id = $1
+    `;
+    const currentUserResult = await pool.query(currentUserSql, [req.session.userId]);
+    const user = currentUserResult.rows[0];
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    user.profile_picture = user.profile_picture.toString("base64");
+
+    // Fetch all users
+    const allUsersSql = `
+      SELECT users.*, roles.role, auth.username
+      FROM users
+      JOIN roles ON users.role_id = roles.id
+      JOIN auth ON users.id = auth.user_id
+      ORDER BY users.id DESC
+    `;
+    const allUsersResult = await pool.query(allUsersSql);
+    const users = allUsersResult.rows;
+
+    // Encode profile pictures for all users
+    users.forEach((user) => {
+      if (user.profile_picture) {
+        user.profile_picture = user.profile_picture.toString("base64");
+      }
+    });
+
+    const voteStatus = user.has_voted ? "Voted" : "Not Voted";
+
+    // Fetch user role
+    const userRoleSql = `
+      SELECT users.role_id, roles.role 
+      FROM users 
+      JOIN roles ON users.role_id = roles.id 
+      WHERE users.id = $1
+    `;
+    const userRoleResult = await pool.query(userRoleSql, [req.session.userId]);
+    const userRole = userRoleResult.rows[0];
+
+    // Fetch roles
+    const rolesSql = `SELECT * FROM roles`;
+    const rolesResult = await pool.query(rolesSql);
+    const roles = rolesResult.rows;
+
+    // Fetch username from auth table
+    const userAuthSql = `
+      SELECT username 
+      FROM auth 
+      WHERE user_id = $1
+    `;
+    const userAuthResult = await pool.query(userAuthSql, [req.session.userId]);
+    const username = userAuthResult.rows[0].username;
+
+    // Fetch unread notifications count
+    const unreadCountSql = `
+      SELECT COUNT(*) AS unreadCount 
+      FROM notifications 
+      WHERE username = $1 AND is_read = 0
+    `;
+    const unreadCountResult = await pool.query(unreadCountSql, [username]);
+    const unreadCount = unreadCountResult.rows[0].unreadcount;
+
+    // Fetch user profile
+    const userProfileSql = `SELECT * FROM users WHERE id = $1`;
+    const userProfileResult = await pool.query(userProfileSql, [req.session.userId]);
+    const profilePicture = req.session.profilePicture;
+
+    // Fetch elections data
+    const electionsSql = `SELECT * FROM elections`;
+    const electionsResult = await pool.query(electionsSql);
+    const elections = electionsResult.rows;
+
+    // Fetch user election data
+    const userElectionDataSql = `
+      SELECT users.*, elections.election AS election_name
+      FROM users
+      JOIN elections ON users.election_id = elections.id
+      WHERE users.id = $1
+    `;
+    const userElectionDataResult = await pool.query(userElectionDataSql, [req.session.userId]);
+    const userElectionData = userElectionDataResult.rows;
+
+    res.render("create-notification", {
+      users,
+      currentUser: user,
+      profilePicture,
+      voteStatus,
+      role: userRole.role,
+      roles,
+      unreadCount,
+      user,
+      elections,
+      userElectionData,
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    return res.status(500).send("An error occurred");
+  }
+});
 
 // POST route to create notification
 app.post("/create/notification", async (req, res) => {
@@ -2854,132 +2662,6 @@ app.post("/create/notification", async (req, res) => {
 });
 
 
-app.get("/create/notification", async (req, res) => {
-  if (
-    !req.session.userId ||
-    (req.session.userRole !== "Super Admin" && req.session.userRole !== "Admin")
-  ) {
-    return res.redirect("/login");
-  }
-
-  try {
-    // Fetch current user's data
-    const currentUserSql = `
-      SELECT users.*, roles.role, auth.username
-      FROM users
-      JOIN roles ON users.role_id = roles.id
-      JOIN auth ON users.id = auth.user_id
-      WHERE users.id = $1
-    `;
-    const currentUserResult = await pool.query(currentUserSql, [req.session.userId]);
-    const user = currentUserResult.rows[0];
-
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
-
-    user.profile_picture = user.profile_picture.toString("base64");
-
-    // Fetch all users
-    const allUsersSql = `
-      SELECT users.*, roles.role, auth.username
-      FROM users
-      JOIN roles ON users.role_id = roles.id
-      JOIN auth ON users.id = auth.user_id
-      ORDER BY users.id DESC
-    `;
-    const allUsersResult = await pool.query(allUsersSql);
-    const users = allUsersResult.rows;
-
-    // Encode profile pictures for all users
-    users.forEach((user) => {
-      if (user.profile_picture) {
-        user.profile_picture = user.profile_picture.toString("base64");
-      }
-    });
-
-    const voteStatus = user.has_voted ? "Voted" : "Not Voted";
-
-    // Fetch user role
-    const userRoleSql = `
-      SELECT users.role_id, roles.role 
-      FROM users 
-      JOIN roles ON users.role_id = roles.id 
-      WHERE users.id = $1
-    `;
-    const userRoleResult = await pool.query(userRoleSql, [req.session.userId]);
-    const userRole = userRoleResult.rows[0];
-
-    // Fetch roles
-    const rolesSql = `SELECT * FROM roles`;
-    const rolesResult = await pool.query(rolesSql);
-    const roles = rolesResult.rows;
-
-    // Fetch username from auth table
-    const userAuthSql = `
-      SELECT username 
-      FROM auth 
-      WHERE user_id = $1
-    `;
-    const userAuthResult = await pool.query(userAuthSql, [req.session.userId]);
-    const username = userAuthResult.rows[0].username;
-
-    // Check Redis cache for unread notifications count
-    const cachedUnreadCount = await redis.get(`unreadCount:${username}`);
-    let unreadCount = cachedUnreadCount;
-
-    if (!unreadCount) {
-      // Fetch unread notifications count from DB if not cached
-      const unreadCountSql = `
-        SELECT COUNT(*) AS unreadCount 
-        FROM notifications 
-        WHERE username = $1 AND is_read = 0
-      `;
-      const unreadCountResult = await pool.query(unreadCountSql, [username]);
-      unreadCount = unreadCountResult.rows[0].unreadCount;
-
-      // Cache the result in Redis for 1 hour
-      await redis.setex(`unreadCount:${username}`, 3600, unreadCount);
-    }
-
-    // Fetch user profile
-    const userProfileSql = `SELECT * FROM users WHERE id = $1`;
-    const userProfileResult = await pool.query(userProfileSql, [req.session.userId]);
-    const profilePicture = req.session.profilePicture;
-
-    // Fetch elections data
-    const electionsSql = `SELECT * FROM elections`;
-    const electionsResult = await pool.query(electionsSql);
-    const elections = electionsResult.rows;
-
-    // Fetch user election data
-    const userElectionDataSql = `
-      SELECT users.*, elections.election AS election_name
-      FROM users
-      JOIN elections ON users.election_id = elections.id
-      WHERE users.id = $1
-    `;
-    const userElectionDataResult = await pool.query(userElectionDataSql, [req.session.userId]);
-    const userElectionData = userElectionDataResult.rows;
-
-    res.render("create-notification", {
-      users,
-      currentUser: user,
-      profilePicture,
-      voteStatus,
-      role: userRole.role,
-      roles,
-      unreadCount,
-      user,
-      elections,
-      userElectionData,
-    });
-  } catch (err) {
-    console.error("Error:", err);
-    return res.status(500).send("An error occurred");
-  }
-});
-
 app.get("/notifications", (req, res) => {
   // Ensure the user is logged in
   if (!req.session.userId) {
@@ -3023,58 +2705,19 @@ app.get("/notifications", (req, res) => {
                   .send("Error updating notification status");
               }
 
-              // Fetch the unread notifications count from Redis cache
-              redis.get(`unreadCount:${user.username}`, (err, cachedUnreadCount) => {
-                if (err) {
-                  return res.status(500).send("Error fetching unread notifications count from cache");
-                }
+              // Fetch the unread notifications count
+              pool.query(
+                "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+                [user.username],
+                (err, countResult) => {
+                  if (err) {
+                    return res
+                      .status(500)
+                      .send("Error fetching unread notifications count");
+                  }
 
-                let unreadCount = cachedUnreadCount;
+                  const unreadCount = countResult.rows[0].unreadCount;
 
-                if (!unreadCount) {
-                  // Fetch unread notifications count from DB if not cached
-                  pool.query(
-                    "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-                    [user.username],
-                    (err, countResult) => {
-                      if (err) {
-                        return res
-                          .status(500)
-                          .send("Error fetching unread notifications count");
-                      }
-
-                      unreadCount = countResult.rows[0].unreadCount;
-
-                      // Cache the result in Redis for 1 hour
-                      redis.setex(`unreadCount:${user.username}`, 3600, unreadCount);
-
-                      // Fetch user profile information
-                      pool.query(
-                        "SELECT * FROM users WHERE id = $1",
-                        [req.session.userId],
-                        (err, userDataResult) => {
-                          if (err) {
-                            return res
-                              .status(500)
-                              .send("Error fetching user from the user table");
-                          }
-
-                          const userData = userDataResult.rows[0];
-
-                          // Render the notifications page
-                          res.render("notification", {
-                            username: user.username,
-                            userId: req.session.userId,
-                            notifications,
-                            profilePicture: req.session.profilePicture,
-                            userData,
-                            unreadCount: unreadCount,
-                          });
-                        }
-                      );
-                    }
-                  );
-                } else {
                   // Fetch user profile information
                   pool.query(
                     "SELECT * FROM users WHERE id = $1",
@@ -3100,7 +2743,7 @@ app.get("/notifications", (req, res) => {
                     }
                   );
                 }
-              });
+              );
             }
           );
         }
@@ -3109,6 +2752,7 @@ app.get("/notifications", (req, res) => {
   );
 });
 
+  
 io.on("connection", (socket) => {
   console.log("A user connected");
 
@@ -3124,42 +2768,22 @@ io.on("connection", (socket) => {
 
         socket.join(user.username);
 
-        // Emit the count of unread notifications from Redis cache
-       redis.get(`unreadCount:${user.username}`, (err, cachedUnreadCount) => {
-         if (err) {
-           console.error("Error fetching unread notifications count:", err);
-           return;
-         }
+        // Emit the count of unread notifications
+       pool.query(
+          "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+          [user.username],
+          (err, countResult) => {
+            if (err) {
+              console.error("Error fetching unread notifications count:", err);
+              return;
+            }
 
-         if (!cachedUnreadCount) {
-           // Fetch unread notifications count from DB if not cached
-           pool.query(
-             "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-             [user.username],
-             (err, countResult) => {
-               if (err) {
-                 console.error("Error fetching unread notifications count:", err);
-                 return;
-               }
-
-               const unreadCount = countResult.rows[0].unreadCount;
-
-               // Cache the result in Redis for 1 hour
-               redis.setex(`unreadCount:${user.username}`, 3600, unreadCount);
-
-               io.to(user.username).emit(
-                 "unread-notifications-count",
-                 unreadCount
-               );
-             }
-           );
-         } else {
-           io.to(user.username).emit(
-             "unread-notifications-count",
-             cachedUnreadCount
-           );
-         }
-       });
+            io.to(user.username).emit(
+              "unread-notifications-count",
+              countResult.unreadCount
+            );
+          }
+        );
       }
     );
   });
@@ -3168,7 +2792,6 @@ io.on("connection", (socket) => {
     console.log("A user disconnected");
   });
 });
-
 
 // Listen for new notifications and emit them to the specific user
 // Server-side socket.io configuration
@@ -3188,98 +2811,28 @@ const secretSavedToken = process.env.SECRET_TOKEN;
 app.get("/create/user", (req, res) => {
   const token = req.query.token;
 
+
+
   if (token !== secretSavedToken) {
     return res.status(403).send("Access Denied");
   } else {
-    // Check if elections data is in Redis
-    redis.get("elections", (err, electionsCache) => {
+    pool.query("SELECT * FROM elections", [], (err, electionResult) => {
       if (err) {
-        console.error("Error fetching elections from Redis:", err);
-        return res.status(500).send("Error fetching elections data");
+        return res.status(500).send("Error Fetching elections");
       }
+      pool.query("SELECT * FROM roles", [], (err, roleResult) => {
+        if (err) {
+          return res.status(500).send("Internal Server Error");
+        }
 
-      if (electionsCache) {
-        // If elections data is cached in Redis, parse and send it
-        const electionResult = JSON.parse(electionsCache);
-
-        // Check if roles data is in Redis
-        redis.get("roles", (err, rolesCache) => {
-          if (err) {
-            console.error("Error fetching roles from Redis:", err);
-            return res.status(500).send("Error fetching roles data");
-          }
-
-          if (rolesCache) {
-            // If roles data is cached in Redis, parse and send it
-            const roleResult = JSON.parse(rolesCache);
-            res.render("createUser", {
-              roles: roleResult, 
-              elections: electionResult, 
-            });
-          } else {
-            // Fetch roles from the database if not in Redis
-            pool.query("SELECT * FROM roles", [], (err, roleResult) => {
-              if (err) {
-                return res.status(500).send("Internal Server Error");
-              }
-
-              // Cache roles data in Redis
-              redis.set("roles", JSON.stringify(roleResult.rows));
-
-              res.render("createUser", {
-                roles: roleResult.rows, 
-                elections: electionResult, 
-              });
-            });
-          }
+        res.render("createUser", {
+          roles: roleResult.rows, 
+          elections: electionResult.rows, 
         });
-      } else {
-        // Fetch elections from the database if not in Redis
-        pool.query("SELECT * FROM elections", [], (err, electionResult) => {
-          if (err) {
-            return res.status(500).send("Error Fetching elections");
-          }
-
-          // Cache elections data in Redis
-          redis.set("elections", JSON.stringify(electionResult.rows));
-
-          // Now check for roles data in Redis
-          redis.get("roles", (err, rolesCache) => {
-            if (err) {
-              console.error("Error fetching roles from Redis:", err);
-              return res.status(500).send("Error fetching roles data");
-            }
-
-            if (rolesCache) {
-              // If roles data is cached in Redis, parse and send it
-              const roleResult = JSON.parse(rolesCache);
-              res.render("createUser", {
-                roles: roleResult, 
-                elections: electionResult.rows, 
-              });
-            } else {
-              // Fetch roles from the database if not in Redis
-              pool.query("SELECT * FROM roles", [], (err, roleResult) => {
-                if (err) {
-                  return res.status(500).send("Internal Server Error");
-                }
-
-                // Cache roles data in Redis
-                redis.set("roles", JSON.stringify(roleResult.rows));
-
-                res.render("createUser", {
-                  roles: roleResult.rows, 
-                  elections: electionResult.rows, 
-                });
-              });
-            }
-          });
-        });
-      }
+      });
     });
   }
 });
-
 
 
 // =============================== VOTERS POST ROUTE ==================================
@@ -3387,264 +2940,153 @@ app.post("/create/user", upload.single("photo"), (req, res) => {
   });
 });
 
-function getVotePercentage(positionId, electionId, callback) {
-  const queryTotalVotes = `
-      SELECT candidates.id, candidates.first_name, candidates.middle_name, candidates.last_name, 
-             COALESCE(SUM(votes.vote), 0) AS vote_count
-      FROM candidates
-      LEFT JOIN votes ON candidates.id = votes.candidate_id
-      WHERE candidates.position_id = $1 AND candidates.election_id = $2
-      GROUP BY candidates.id;
-  `;
-
-  pool.query(queryTotalVotes, [positionId, electionId], (err, result) => {
-      if (err) {
-          console.error('Error fetching votes:', err);
-          return callback(err, null);
-      }
-
-      const rows = result.rows;
-      const totalVotes = rows.reduce((sum, candidate) => sum + Number(candidate.vote_count), 0);
-
-      console.log("The totalVotes", totalVotes);
-
-
-      if (totalVotes === 0) {
-          return callback(null, rows.map(candidate => ({
-              id: candidate.id,
-              name: `${candidate.first_name} ${candidate.middle_name} ${candidate.last_name}`,
-              votes: 0,
-              percentage: "00.00"
-          })));
-      }
-
-      // Compute vote percentages
-      const results = rows.map(candidate => ({
-          id: candidate.id,
-          name: `${candidate.first_name} ${candidate.middle_name} ${candidate.last_name}`,
-          votes: candidate.vote_count,
-          percentage: ((candidate.vote_count / totalVotes) * 100).toFixed(2)
-      }));
-
-      callback(null, results);
-  });
-}
-
-
-
-
-app.get("/party-dashboard", async (req, res) => {
+app.get("/party-dashboard", (req, res) => {
   if (!req.session.userId || req.session.userRole !== "Candidate") {
-      return res.redirect("/login");
+    return res.redirect("/login");
   }
 
-  try {
-    // Check if the current user data is cached
-    const cachedUserData = await redis.get(`user:${req.session.userId}`);
-    
-    if (cachedUserData) {
-      const currentUser = JSON.parse(cachedUserData);
-      console.log("Current Logged-in candidate (from Redis)", currentUser);
-      
-      // Get other cached data (e.g., roles, elections)
-      const cachedRoles = await redis.get("roles");
-      const cachedElections = await redis.get("elections");
-      const cachedUnreadCount = await redis.get(`unreadCount:${req.session.userId}`);
-
-      // Use cached data if available
-      if (cachedRoles && cachedElections && cachedUnreadCount) {
-        const roleResult = JSON.parse(cachedRoles);
-        const electionsResult = JSON.parse(cachedElections);
-        const unreadCount = JSON.parse(cachedUnreadCount);
-
-        // Continue with rendering
-        renderDashboard(res, currentUser, roleResult, electionsResult, unreadCount);
-        return;
+  pool.query(
+    "SELECT * FROM candidates WHERE user_id = $1",
+    [req.session.userId],
+    (err, currentUserResult) => {
+      if (err) {
+        console.error("Error fetching current user:", err);
+        return res.status(500).send("An error occurred");
       }
-    }
+      if (currentUserResult.rows.length === 0) {
+        return res.status(404).send("User not found");
+      }
 
-    // Query the current user if not in Redis
-    pool.query("SELECT * FROM candidates WHERE user_id = $1", [req.session.userId], (err, currentUserResult) => {
-        if (err) {
-            console.error("Error fetching current user:", err);
-            return res.status(500).send("An error occurred");
-        }
+      const currentUser = currentUserResult.rows[0];
+      console.log("Current Logged-in candidate", currentUser);
 
-        if (currentUserResult.rows.length === 0) {
-            return res.status(404).send("User not found");
-        }
+      pool.query(
+        `SELECT candidates.*, parties.*, users.*
+        FROM candidates
+        JOIN parties ON candidates.party_id = parties.id
+        JOIN users ON candidates.user_id = users.id
+        WHERE candidates.election_id = $1 AND candidates.user_id = $2`,
+        [currentUser.election_id, currentUser.user_id],
+        (err, userResult) => {
+          if (err) {
+            console.error(`Error fetching current candidate for election_id ${currentUser.election_id}:`, err);
+            return res.status(500).send("An error occurred while fetching candidate data.");
+          }
 
-        const currentUser = currentUserResult.rows[0];
-        console.log("Current Logged-in candidate", currentUser);
+          if (userResult.rows.length === 0) {
+            return res.status(404).send("Candidate not found for the specified election.");
+          }
 
-        // Cache current user data in Redis
-        redis.set(`user:${req.session.userId}`, JSON.stringify(currentUser));
+          const user = userResult.rows[0];
+          user.photo = user.photo ? user.photo.toString("base64") : null;
+          user.logo = user.logo ? user.logo.toString("base64") : null;
 
-        pool.query(
-            `SELECT candidates.*, parties.*, users.*
+          console.log("Current Candidate Data", user);
+
+          pool.query(
+            `SELECT candidates.*, parties.*, positions.position, votes.*
             FROM candidates
             JOIN parties ON candidates.party_id = parties.id
-            JOIN users ON candidates.user_id = users.id
-            WHERE candidates.election_id = $1 AND candidates.user_id = $2`,
-            [currentUser.election_id, currentUser.user_id],
-            (err, userResult) => {
-                if (err) {
-                    console.error(`Error fetching current candidate for election_id ${currentUser.election_id}:`, err);
-                    return res.status(500).send("An error occurred while fetching candidate data.");
+            JOIN positions ON candidates.position_id = positions.id
+            LEFT JOIN votes ON candidates.id = votes.candidate_id
+            WHERE candidates.party_id = $1 AND candidates.election_id = $2`,
+            [user.party_id, user.election_id],
+            (err, allCandidatesResult) => {
+              if (err) {
+                console.error("Error fetching all candidates:", err);
+                return res.status(500).send("An error occurred while fetching all candidates");
+              }
+
+              const users = allCandidatesResult.rows;
+
+              users.forEach((user) => {
+                if (user.photo) {
+                  user.photo = user.photo.toString("base64");
                 }
 
-                if (userResult.rows.length === 0) {
-                    return res.status(404).send("Candidate not found for the specified election.");
+                if (user.logo) {
+                  user.logo = user.logo.toString("base64");
                 }
+              });
 
-                const user = userResult.rows[0];
-                user.photo = user.photo ? user.photo.toString("base64") : null;
-                user.logo = user.logo ? user.logo.toString("base64") : null;
+              console.log("All candidates", users);
 
-                console.log("Current Candidate Data", user);
+              const voteStatus = user.has_voted ? "Voted" : "Not Voted";
 
-                pool.query(
-                    `SELECT candidates.*, parties.*, positions.position, votes.*
-                    FROM candidates
-                    JOIN parties ON candidates.party_id = parties.id
-                    JOIN positions ON candidates.position_id = positions.id
-                    LEFT JOIN votes ON candidates.id = votes.candidate_id
-                    WHERE candidates.party_id = $1 AND candidates.election_id = $2`,
-                    [user.party_id, user.election_id],
-                    (err, allCandidatesResult) => {
+              pool.query(
+                "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
+                [req.session.userId],
+                (err, userRoleResult) => {
+                  if (err) {
+                    return res.status(500).send("Error fetching user role");
+                  }
+
+                  const userRole = userRoleResult.rows[0];
+
+                  pool.query("SELECT * FROM roles", (err, rolesResult) => {
+                    if (err) {
+                      return res.status(500).send("internal server error");
+                    }
+
+                    pool.query(
+                      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+                      [user.username],
+                      (err, countResult) => {
                         if (err) {
-                            console.error("Error fetching all candidates:", err);
-                            return res.status(500).send("An error occurred while fetching all candidates");
+                          return res.status(500).send("Error fetching unread notifications count");
                         }
 
-                        const users = allCandidatesResult.rows;
+                        const profilePicture = req.session.profilePicture;
 
-                        users.forEach((user) => {
-                            if (user.photo) {
-                                user.photo = user.photo.toString("base64");
-                            }
-
-                            if (user.logo) {
-                                user.logo = user.logo.toString("base64");
-                            }
-                        });
-
-                        // Get vote percentages for each position and candidate
-                        let votePercentageData = {};
-                        async.each(users, (user, callback) => {
-                            getVotePercentage(user.position_id, user.election_id, (err, percentages) => {
-                                if (err) {
-                                    console.error('Error getting vote percentages:', err);
-                                    return callback(err);
-                                }
-                                votePercentageData[user.position_id] = percentages;
-                                callback();
-                            });
-                        }, async (err) => {
+                        pool.query(
+                          "SELECT * FROM elections",
+                          (err, electionsResult) => {
                             if (err) {
-                                console.error('Error processing vote percentages:', err);
-                                return res.status(500).send("Error processing vote percentages.");
+                              return res.status(500).send("There was an error getting the elections data");
                             }
 
-                            // Cache vote percentages temporarily in Redis
-                            await redis.set(`votePercentage:${currentUser.election_id}`, JSON.stringify(votePercentageData));
-
-                            // Check for user roles, notifications, and elections data
                             pool.query(
-                                "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
-                                [req.session.userId],
-                                (err, userRoleResult) => {
-                                    if (err) {
-                                        return res.status(500).send("Error fetching user role");
-                                    }
-
-                                    const userRole = userRoleResult.rows[0];
-
-                                    pool.query("SELECT * FROM roles", (err, rolesResult) => {
-                                        if (err) {
-                                            return res.status(500).send("internal server error");
-                                        }
-
-                                        // Cache roles in Redis
-                                        redis.set("roles", JSON.stringify(rolesResult.rows));
-
-                                        pool.query(
-                                            "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-                                            [user.username],
-                                            (err, countResult) => {
-                                                if (err) {
-                                                    return res.status(500).send("Error fetching unread notifications count");
-                                                }
-
-                                                const profilePicture = req.session.profilePicture;
-
-                                                pool.query(
-                                                    "SELECT * FROM elections",
-                                                    (err, electionsResult) => {
-                                                        if (err) {
-                                                            return res.status(500).send("There was an error getting the elections data");
-                                                        }
-
-                                                        // Cache elections data
-                                                        redis.set("elections", JSON.stringify(electionsResult.rows));
-
-                                                        pool.query(
-                                                            `SELECT users.*, elections.election AS election_name
-                                                            FROM users
-                                                            JOIN elections ON users.election_id = elections.id
-                                                            WHERE users.id = $1`,
-                                                            [req.session.userId],
-                                                            (err, userElectionDataResult) => {
-                                                                if (err) {
-                                                                    console.error("Error getting the user election name:", err);
-                                                                    return res.send("Error getting the userElectionName");
-                                                                }
-
-                                                                const elections = electionsResult.rows;
-                                                                const userElectionData = userElectionDataResult.rows;
-
-                                                                // Render the dashboard with cached data
-                                                                renderDashboard(res, currentUser, userRole, rolesResult.rows, countResult.rows[0].unreadcount, user, elections, userElectionData, votePercentageData);
-                                                            }
-                                                        );
-                                                    }
-                                                );
-                                            }
-                                        );
-                                    });
+                              `SELECT users.*, elections.election AS election_name
+                              FROM users
+                              JOIN elections ON users.election_id = elections.id
+                              WHERE users.id = $1`,
+                              [req.session.userId],
+                              (err, userElectionDataResult) => {
+                                if (err) {
+                                  console.error("Error getting the user election name:", err);
+                                  return res.send("Error getting the userElectionName");
                                 }
+
+                                const elections = electionsResult.rows;
+                                const userElectionData = userElectionDataResult.rows;
+
+                                res.render("party-dashboard", {
+                                  users,
+                                  profilePicture,
+                                  voteStatus,
+                                  role: userRole.role,
+                                  roles: rolesResult.rows,
+                                  unreadCount: countResult.rows[0].unreadcount,
+                                  user,
+                                  elections,
+                                  userElectionData,
+                                });
+                              }
                             );
-                        });
-                    }
-                );
+                          }
+                        );
+                      }
+                    );
+                  });
+                }
+              );
             }
-        );
-    });
-  } catch (err) {
-    console.error("Error with Redis or querying:", err);
-    return res.status(500).send("Internal Server Error");
-  }
+          );
+        }
+      );
+    }
+  );
 });
-
-function renderDashboard(res, currentUser, userRole, roles, unreadCount, user, elections, userElectionData, votePercentageData) {
-    res.render("party-dashboard", {
-        users: user,
-        profilePicture: req.session.profilePicture,
-        voteStatus: user.has_voted ? "Voted" : "Not Voted",
-        role: userRole.role,
-        roles: roles,
-        unreadCount: unreadCount,
-        user: user,
-        elections: elections,
-        userElectionData: userElectionData,
-        votePercentageData: votePercentageData
-    });
-}
-
-
-
-
-
 
 
 // Downloading registered voters and election results list
@@ -3659,115 +3101,94 @@ app.get("/voters-record", (req, res) => {
     return res.redirect("/login");
   }
 
-  // Check Redis cache for voters data
-  redis.get('votersData', (err, cachedData) => {
-    if (cachedData) {
-      console.log("Serving from cache");
-      const data = JSON.parse(cachedData);
-      return res.render("voters-record", {
-        allVotersData: data.allVotersData,
-        role: data.role,
-        roles: data.roles,
-        unreadCount: data.unreadCount,
-        user: data.user,
-        profilePicture: data.profilePicture,
-      });
-    }
+  pool.query(
+    "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
+    [req.session.userId],
+    (err, userRole) => {
+      if (err) {
+        return res.status(500).send("Error fetching user role");
+      }
 
-    // If not in cache, query the database
-    pool.query(
-      "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
-      [req.session.userId],
-      (err, userRole) => {
+      pool.query("SELECT * FROM roles", [], (err, roles) => {
         if (err) {
-          return res.status(500).send("Error fetching user role");
+          return res.status(500).send("Internal server error");
         }
 
-        pool.query("SELECT * FROM roles", [], (err, roles) => {
-          if (err) {
-            return res.status(500).send("Internal server error");
-          }
-
-          pool.query(
-            "SELECT * FROM users WHERE id = $1",
-            [req.session.userId],
-            (err, currentUser) => {
-              if (err) {
-                console.error("Error fetching current user:", err);
-                return res.status(500).send("An error occurred");
-              }
-              if (currentUser.rows.length === 0) {
-                return res.status(404).send("User not found");
-              }
-
-              pool.query(
-                `SELECT auth.*, users.*, elections.election 
-                FROM auth
-                JOIN users ON auth.user_id = users.id
-                JOIN elections ON users.election_id = elections.id
-                WHERE users.election_id = $1`,
-                [currentUser.rows[0].election_id],
-                (err, allVotersData) => {
-                  if (err) {
-                    console.error("Error fetching voters:", err);
-                    return res.status(500).send("An error occurred");
-                  }
-
-                  pool.query(
-                    "SELECT users.* FROM users WHERE users.election_id = $1 AND users.id = $2",
-                    [currentUser.rows[0].election_id, currentUser.rows[0].id],
-                    (err, user) => {
-                      if (err) {
-                        console.error(`Error fetching current candidate:`, err);
-                        return res
-                          .status(500)
-                          .send("An error occurred while fetching candidate data.");
-                      }
-
-                      if (user.rows.length === 0) {
-                        return res
-                          .status(404)
-                          .send("Candidate not found for the specified election.");
-                      }
-
-                      pool.query(
-                        "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-                        [user.rows[0].username],
-                        (err, countResult) => {
-                          if (err) {
-                            return res
-                              .status(500)
-                              .send("Error fetching unread notifications count");
-                          }
-                          const profilePicture = req.session.profilePicture;
-
-                          // Cache the response in Redis for 10 minutes
-                          const responseData = {
-                            allVotersData: allVotersData.rows,
-                            role: userRole.rows[0].role,
-                            roles: roles.rows,
-                            unreadCount: countResult.rows[0].unreadCount,
-                            user: user.rows[0],
-                            profilePicture,
-                          };
-                          redis.setex('votersData', 600, JSON.stringify(responseData));
-
-                          // Return the response
-                          res.render("voters-record", responseData);
-                        }
-                      );
-                    }
-                  );
-                }
-              );
+        pool.query(
+          "SELECT * FROM users WHERE id = $1",
+          [req.session.userId],
+          (err, currentUser) => {
+            if (err) {
+              console.error("Error fetching current user:", err);
+              return res.status(500).send("An error occurred");
             }
-          );
-        });
-      }
-    );
-  });
-});
+            if (currentUser.rows.length === 0) {
+              return res.status(404).send("User not found");
+            }
 
+            pool.query(
+              `SELECT auth.*, users.*, elections.election 
+              FROM auth
+              JOIN users ON auth.user_id = users.id
+              JOIN elections ON users.election_id = elections.id
+              WHERE users.election_id = $1`,
+              [currentUser.rows[0].election_id],
+              (err, allVotersData) => {
+                if (err) {
+                  console.error("Error fetching voters:", err);
+                  return res.status(500).send("An error occurred");
+                }
+
+                pool.query(
+                  "SELECT users.* FROM users WHERE users.election_id = $1 AND users.id = $2",
+                  [currentUser.rows[0].election_id, currentUser.rows[0].id],
+                  (err, user) => {
+                    if (err) {
+                      console.error(
+                        `Error fetching current candidate for election_id ${currentUser.rows[0].election_id}:`,
+                        err
+                      );
+                      return res
+                        .status(500)
+                        .send("An error occurred while fetching candidate data.");
+                    }
+
+                    if (user.rows.length === 0) {
+                      return res
+                        .status(404)
+                        .send("Candidate not found for the specified election.");
+                    }
+
+                    pool.query(
+                      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+                      [user.rows[0].username],
+                      (err, countResult) => {
+                        if (err) {
+                          return res
+                            .status(500)
+                            .send("Error fetching unread notifications count");
+                        }
+                        const profilePicture = req.session.profilePicture;
+                        res.render("voters-record", {
+                          allVotersData: allVotersData.rows,
+                          role: userRole.rows[0].role,
+                          roles: roles.rows,
+                          unreadCount: countResult.rows[0].unreadCount,
+                          user: user.rows[0],
+                          profilePicture,
+                        });
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      });
+    }
+  );
+});
 
 // Download CSV route
 app.get("/download/csv", (req, res) => {
@@ -3844,111 +3265,94 @@ app.get("/election-record", (req, res) => {
     return res.redirect("/login");
   }
 
-  redis.get('electionData', (err, cachedData) => {
-    if (cachedData) {
-      console.log("Serving election data from cache");
-      const data = JSON.parse(cachedData);
-      return res.render("election-record", {
-        allCandidateData: data.allCandidateData,
-        role: data.role,
-        roles: data.roles,
-        unreadCount: data.unreadCount,
-        user: data.user,
-        profilePicture: data.profilePicture,
-      });
-    }
+  pool.query(
+    "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
+    [req.session.userId],
+    (err, userRole) => {
+      if (err) {
+        return res.status(500).send("Error fetching user role");
+      }
 
-    pool.query(
-      "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
-      [req.session.userId],
-      (err, userRole) => {
+      pool.query("SELECT * FROM roles", [], (err, roles) => {
         if (err) {
-          return res.status(500).send("Error fetching user role");
+          return res.status(500).send("Internal server error");
         }
 
-        pool.query("SELECT * FROM roles", [], (err, roles) => {
-          if (err) {
-            return res.status(500).send("Internal server error");
-          }
-
-          pool.query(
-            "SELECT * FROM users WHERE id = $1",
-            [req.session.userId],
-            (err, currentUser) => {
-              if (err) {
-                console.error("Error fetching current user:", err);
-                return res.status(500).send("Error fetching current user:");
-              }
-              if (currentUser.rows.length === 0) {
-                return res.status(404).send("User not found");
-              }
-
-              pool.query(
-                `SELECT candidates.*, COALESCE(votes.vote, 0) AS vote, positions.position, parties.party
-                FROM candidates
-                LEFT JOIN votes ON candidates.id = votes.candidate_id
-                LEFT JOIN positions ON candidates.position_id = positions.id
-                LEFT JOIN parties ON candidates.party_id = parties.id
-                WHERE candidates.election_id = $1`,
-                [currentUser.rows[0].election_id],
-                (err, allCandidateData) => {
-                  if (err) {
-                    console.error("Error fetching candidate info:", err);
-                    return res.status(500).send("Error fetching candidate info:");
-                  }
-
-                  pool.query(
-                    "SELECT users.* FROM users WHERE users.election_id = $1 AND users.id = $2",
-                    [currentUser.rows[0].election_id, currentUser.rows[0].id],
-                    (err, user) => {
-                      if (err) {
-                        console.error(`Error fetching current candidate:`, err);
-                        return res
-                          .status(500)
-                          .send("An error occurred while fetching candidate data.");
-                      }
-
-                      if (user.rows.length === 0) {
-                        return res
-                          .status(404)
-                          .send("Candidate not found for the specified election.");
-                      }
-
-                      pool.query(
-                        "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-                        [user.rows[0].username],
-                        (err, countResult) => {
-                          if (err) {
-                            return res
-                              .status(500)
-                              .send("Error fetching unread notifications count");
-                          }
-                          const profilePicture = req.session.profilePicture;
-
-                          // Cache the response in Redis for 10 minutes
-                          const responseData = {
-                            allCandidateData: allCandidateData.rows,
-                            role: userRole.rows[0].role,
-                            roles: roles.rows,
-                            unreadCount: countResult.rows[0].unreadCount,
-                            user: user.rows[0],
-                            profilePicture,
-                          };
-                          redis.setex('electionData', 600, JSON.stringify(responseData));
-
-                          res.render("election-record", responseData);
-                        }
-                      );
-                    }
-                  );
-                }
-              );
+        pool.query(
+          "SELECT * FROM users WHERE id = $1",
+          [req.session.userId],
+          (err, currentUser) => {
+            if (err) {
+              console.error("Error fetching current user:", err);
+              return res.status(500).send("Error fetching current user:");
             }
-          );
-        });
-      }
-    );
-  });
+            if (currentUser.rows.length === 0) {
+              return res.status(404).send("User not found");
+            }
+
+            pool.query(
+              `SELECT candidates.*, COALESCE(votes.vote, 0) AS vote, positions.position, parties.party
+              FROM candidates
+             LEFT JOIN votes ON candidates.id = votes.candidate_id
+            LEFT JOIN positions ON candidates.position_id = positions.id
+            LEFT JOIN parties ON candidates.party_id = parties.id
+              WHERE candidates.election_id = $1`,
+              [currentUser.rows[0].election_id],
+              (err, allCandidateData) => {
+                if (err) {
+                  console.error("Error fetching candidate info:", err);
+                  return res.status(500).send("Error fetching candidate info:");
+                }
+
+                pool.query(
+                  "SELECT users.* FROM users WHERE users.election_id = $1 AND users.id = $2",
+                  [currentUser.rows[0].election_id, currentUser.rows[0].id],
+                  (err, user) => {
+                    if (err) {
+                      console.error(
+                        `Error fetching current candidate for election_id ${currentUser.rows[0].election_id}:`,
+                        err
+                      );
+                      return res
+                        .status(500)
+                        .send("An error occurred while fetching candidate data.");
+                    }
+
+                    if (user.rows.length === 0) {
+                      return res
+                        .status(404)
+                        .send("Candidate not found for the specified election.");
+                    }
+
+                    pool.query(
+                      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+                      [user.rows[0].username],
+                      (err, countResult) => {
+                        if (err) {
+                          return res
+                            .status(500)
+                            .send("Error fetching unread notifications count");
+                        }
+                        const profilePicture = req.session.profilePicture;
+                        res.render("election-record", {
+                          allCandidateData: allCandidateData.rows,
+                          role: userRole.rows[0].role,
+                          roles: roles.rows,
+                          unreadCount: countResult.rows[0].unreadCount,
+                          user: user.rows[0],
+                          profilePicture,
+                        });
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      });
+    }
+  );
 });
 
 // Election result download CSV route
