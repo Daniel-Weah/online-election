@@ -375,6 +375,48 @@
     notificationBox.style.transform = 'translateX(-500px)';
     setTimeout(() => notificationBox.style.display = 'none', 300); 
   }, 3000);
+
+
+
+    document.getElementById("positionForm").addEventListener("submit", async function (event) {
+      event.preventDefault(); 
+
+      const formData = new FormData(this);
+      
+      try {
+        const response = await fetch("/add/position", {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Success!",
+            text: result.message,
+            showConfirmButton: false,
+            timer: 2000
+          }).then(() => {
+            location.reload(); // Reload the page to reflect changes
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: result.message
+          });
+        }
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Something went wrong! Please try again."
+        });
+      }
+    });
+
 });
            </script>
 

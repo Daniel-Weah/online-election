@@ -1198,12 +1198,13 @@ app.post("/add/position", async (req, res) => {
       [positionID, election, Position, position_description, candidate_age_eligibility]
     );
 
-    res.status(200).send(`${Position} Position created successfully`);
+    res.status(200).json({ success: true, message: `${Position} Position created successfully` });
   } catch (err) {
     console.error("Error inserting position:", err);
-    res.status(500).send("Internal server error");
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
+
 
 
 app.post("/update/position", async (req, res) => {
