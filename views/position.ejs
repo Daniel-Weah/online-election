@@ -118,9 +118,9 @@
                 <h1 class="mb-4" style="text-align: center;margin-top: 10px;">Party Position</h1>
                 <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">My Position</h3>
 
-                <form method="post" action="/add/position" id="positionForm" autocomplete="off">
+                <form action="/add/position" method="post" id="positionForm" autocomplete="off" enctype="application/x-www-form-urlencoded">
                     <div class="col-12 mb-3">
-                        <label for="role" class="form-label">Election:</label>
+                        <label for="election" class="form-label">Election:</label>
                         <select id="election" name="election" class="form-select" required>
                             <% elections.forEach(election => { %>
                                 <option value="<%= election.id %>"><%= election.election %></option>
@@ -129,14 +129,14 @@
                     </div>
                     <div class="col-12">
                         <div class="form-floating mb-3">
-                          <input type="text" class="form-control" name="Position" id="position" placeholder="Positon" required>
-                          <label for="userName" class="form-label">Position </label>
+                          <input type="text" class="form-control" name="position" id="position" placeholder="Positon" required>
+                          <label for="position" class="form-label">Position </label>
                         </div>
                       </div>
                       <div class="col-12">
                         <div class="form-floating mb-3">
-                          <input type="text" class="form-control" name="position_description" id="position Description" placeholder="Positon Description" required>
-                          <label for="Position Description" class="form-label">Position Description</label>
+                            <input type="text" class="form-control" name="position_description" id="position_description" placeholder="Position Description" required>
+                            <label for="position_description" class="form-label">Position Description</label>                            
                         </div>
                       </div>
 
@@ -212,7 +212,7 @@
                     <h1 class="mb-4" style="text-align: center;margin-top: 10px;">Party Position</h1>
                     <h3 class="fs-6 fw-normal text-secondary m-0 mb-3">My Position</h3>
     
-                    <form method="post" action="/add/position" id="positionForm" autocomplete="off">
+                    <form method="post" action="/add/position" id="positionForm" autocomplete="off" enctype="application/x-www-form-urlencoded">
                         <div class="col-12">
                             <div class="form-floating mb-3">
                                 <input type="text" class="form-control" name="electionName" id="election" value="<%= userElectionData.election_name %>" disabled required>
@@ -225,7 +225,7 @@
                                
                         <div class="col-12">
                             <div class="form-floating mb-3">
-                              <input type="text" class="form-control" name="Position" id="position" placeholder="Positon" required>
+                              <input type="text" class="form-control" name="position" id="position" placeholder="Positon" required>
                               <label for="userName" class="form-label">Position </label>
                             </div>
                           </div>
@@ -376,48 +376,64 @@
     setTimeout(() => notificationBox.style.display = 'none', 300); 
   }, 3000);
 
+});
+           </script>
 
+           <script>
+console.log(document.getElementById("election").value);
 
-    document.getElementById("positionForm").addEventListener("submit", async function (event) {
-      event.preventDefault(); 
+document.getElementById("positionForm").addEventListener('submit', (e) => {
+    e.preventDefault(); 
 
-      const formData = new FormData(this);
-      
-      try {
-        const response = await fetch("/add/position", {
-          method: "POST",
-          body: formData
-        });
+    const formData = new FormData(e.target);
+    
+    // Debugging: Log form values
+    for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+    }
 
-        const result = await response.json();
-
-        if (result.success) {
-          Swal.fire({
-            icon: "success",
-            title: "Success!",
-            text: result.message,
+    fetch('/add/position', {
+        method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams(new FormData(e.target)) 
+    })
+    .then(response => response.json())  // Ensure we get JSON response
+    .then(data => {
+        console.log(data);
+        if (data.success) {
+            Swal.fire({
+                title: 'Position Added Successfully!',
+                text: 'Your position was added successfully.',
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 2000
+            }).then(() => {
+                document.getElementById('positionForm').reset();
+            });
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: data.message || 'There was a problem sending your information.',
+                icon: 'error',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+    })
+    .catch(error => {
+        console.log('Fetch error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'There was a problem sending your information. Please try again later.',
+            icon: 'error',
             showConfirmButton: false,
             timer: 2000
-          }).then(() => {
-            location.reload(); // Reload the page to reflect changes
-          });
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: result.message
-          });
-        }
-      } catch (error) {
-        Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: "Something went wrong! Please try again."
         });
-      }
     });
-
 });
+
            </script>
 
    <!-- <script src="/js/party.js"></script> -->

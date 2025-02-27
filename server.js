@@ -36,11 +36,13 @@ app.set("view engine", "ejs");
 
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(express.urlencoded({ extended: true }));
+// app.use(express.json());
 
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true })); // Parses URL-encoded form data
+app.use(express.json()); // Parses JSON data
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -1190,18 +1192,24 @@ app.get("/add/position", async (req, res) => {
 
 app.post("/add/position", async (req, res) => {
   try {
-    const { election, Position, position_description, candidate_age_eligibility } = req.body;
-    const positionID = uuidv4();
+      console.log("Received Data:", req.body); // Debugging
 
-    await pool.query(
-      "INSERT INTO positions (id, election_id, position, position_description, candidate_age_eligibility) VALUES ($1, $2, $3, $4, $5)",
-      [positionID, election, Position, position_description, candidate_age_eligibility]
-    );
+      const { election, position, position_description, candidate_age_eligibility } = req.body;
+      if (!election || !position || !position_description || !candidate_age_eligibility) {
+          return res.status(400).json({ success: false, message: "All fields are required." });
+      }
 
-    res.status(200).json({ success: true, message: `${Position} Position created successfully` });
-  } catch (err) {
-    console.error("Error inserting position:", err);
-    res.status(500).json({ success: false, message: "Internal server error" });
+      const positionID = uuidv4();
+
+      await pool.query(
+          "INSERT INTO positions (id, election_id, position, position_description, candidate_age_eligibility) VALUES ($1, $2, $3, $4, $5)",
+          [positionID, election, position, position_description, candidate_age_eligibility]
+      );
+
+      res.status(200).json({ success: true, message: `${position} Position created successfully` });
+  } catch (error) {
+      console.error("Database Insert Error:", error);
+      res.status(500).json({ success: false, message: "Database insert failed" });
   }
 });
 
