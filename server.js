@@ -14,8 +14,7 @@ const fs = require("fs");
 const { Parser } = require("json2csv");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
-const { Pool } = require('pg');
-
+const { Pool } = require("pg");
 
 const app = express();
 
@@ -25,7 +24,7 @@ app.use(
     resave: false,
     saveUninitialized: true,
   })
-); 
+);
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -48,25 +47,26 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const pool = new Pool({
-  user: 'avnadmin',
-  host: process.env.DATABASE_HOST, 
-  database: 'defaultdb',
-  password: process.env.DATABASE_PASS, 
+  user: "avnadmin",
+  host: process.env.DATABASE_HOST,
+  database: "defaultdb",
+  password: process.env.DATABASE_PASS,
   port: 15368,
   ssl: {
-    rejectUnauthorized: false, 
+    rejectUnauthorized: false,
   },
 });
 
-
-
-pool.connect()
-  .then(() => console.log('Connected to aiven PostgreSQL database successfully!'))
-  .catch(err => console.error('Error connecting to aiven PostgreSQL database:', err));
+pool
+  .connect()
+  .then(() =>
+    console.log("Connected to aiven PostgreSQL database successfully!")
+  )
+  .catch((err) =>
+    console.error("Error connecting to aiven PostgreSQL database:", err)
+  );
 
 module.exports = pool;
-
-
 
 app.use((req, res, next) => {
   req.io = io;
@@ -119,59 +119,62 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  pool.query("SELECT * FROM auth WHERE username = $1", [username], (err, result) => {
-    if (err) {
-      return res.status(500).send("Internal Server Error");
-    }
-
-    const user = result.rows[0]; // Extract the first user from the result set
-    if (!user) {
-      return res.render("login", {
-        errorMessage: "Invalid username or password",
-      });
-    }
-
-    bcrypt.compare(password, user.password, (err, isMatch) => {
+  pool.query(
+    "SELECT * FROM auth WHERE username = $1",
+    [username],
+    (err, result) => {
       if (err) {
         return res.status(500).send("Internal Server Error");
       }
-      if (!isMatch) {
+
+      const user = result.rows[0]; // Extract the first user from the result set
+      if (!user) {
         return res.render("login", {
           errorMessage: "Invalid username or password",
         });
       }
 
-      // Fetch user data and role
-      pool.query(
-        `SELECT users.*, roles.role AS role_name
+      bcrypt.compare(password, user.password, (err, isMatch) => {
+        if (err) {
+          return res.status(500).send("Internal Server Error");
+        }
+        if (!isMatch) {
+          return res.render("login", {
+            errorMessage: "Invalid username or password",
+          });
+        }
+
+        // Fetch user data and role
+        pool.query(
+          `SELECT users.*, roles.role AS role_name
         FROM users
         JOIN roles ON users.role_id = roles.id
         WHERE users.id = $1`,
-        [user.user_id],
-        (err, userDataResult) => {
-          if (err) {
-            return res.status(500).send("Internal Server Error");
+          [user.user_id],
+          (err, userDataResult) => {
+            if (err) {
+              return res.status(500).send("Internal Server Error");
+            }
+
+            const userData = userDataResult.rows[0];
+
+            if (!userData) {
+              return res.status(500).send("User data not found.");
+            }
+
+            req.session.userId = user.user_id;
+            req.session.profilePicture = userData.profile_picture
+              ? userData.profile_picture.toString("base64")
+              : null; // Handle null case
+            req.session.userRole = userData.role_name;
+
+            res.redirect("/dashboard");
           }
-
-          const userData = userDataResult.rows[0];
-
-          if (!userData) {
-            return res.status(500).send("User data not found.");
-          }
-
-          req.session.userId = user.user_id;
-          req.session.profilePicture = userData.profile_picture
-            ? userData.profile_picture.toString("base64")
-            : null; // Handle null case
-          req.session.userRole = userData.role_name;
-
-          res.redirect("/dashboard");
-        }
-      );
-    });
-  });
+        );
+      });
+    }
+  );
 });
-
 
 app.get("/dashboard", async (req, res) => {
   if (!req.session.userId) {
@@ -187,8 +190,7 @@ app.get("/dashboard", async (req, res) => {
       [req.session.userId]
     );
 
-    const userElectionId =
-      electionId || userElectionQuery.rows[0]?.election_id;
+    const userElectionId = electionId || userElectionQuery.rows[0]?.election_id;
 
     if (!userElectionId) {
       return res.status(404).send("Election not selected or registered");
@@ -220,7 +222,7 @@ app.get("/dashboard", async (req, res) => {
     LEFT JOIN votes ON candidates.id = votes.candidate_id
     WHERE candidates.election_id = $1
   `;
-  
+
     // Fetch total users
     const totalUsersQuery = await pool.query(
       `SELECT COUNT(*) AS totalUsers 
@@ -259,7 +261,6 @@ app.get("/dashboard", async (req, res) => {
     // Calculate total votes
     const totalVotesQuery = await pool.query(sqlTotalVotes, [userElectionId]);
     const totalVotes = totalVotesQuery.rows[0].totalvotes || 0;
-    
 
     // Group candidates by position
     const groupedCandidates = candidates.reduce((acc, candidate) => {
@@ -300,11 +301,53 @@ app.get("/dashboard", async (req, res) => {
       [req.session.userId]
     );
 
+    const currentUserSql = `
+    SELECT users.*, roles.role, auth.username
+    FROM users
+    JOIN roles ON users.role_id = roles.id
+    JOIN auth ON users.id = auth.user_id
+    WHERE users.id = $1
+  `;
+  const userResult = await pool.query(currentUserSql, [req.session.userId]);
+
+  if (userResult.rows.length === 0) {
+    return res.status(404).send("User not found");
+  }
+
+  let user = userResult.rows[0];
+  user.profile_picture = user.profile_picture
+    ? Buffer.from(user.profile_picture).toString("base64")
+    : null;
+    // Fetch election settings
+    const electionSettingsSql = `SELECT * FROM election_settings WHERE election_id = $1`;
+    const electionSettingsResult = await pool.query(electionSettingsSql, [
+      user.election_id,
+    ]);
+
+    const registrationTiming = electionSettingsResult.rows[0];
+    console.log("Registration Timing:", registrationTiming);
+
+    const currentTime = new Date().toLocaleTimeString("en-US", {
+      hour12: false,
+    });
+    const electionStartTime = registrationTiming.start_time;
+    const electionEndTime = registrationTiming.end_time;
+
+    console.log("Election Start time:", electionStartTime);
+    console.log("Election End time:", electionEndTime);
+
+    const currentDate = electionStartTime.split("T")[0];
+    const fullCurrentTime = `${currentDate}T${currentTime}`;
+
+    const start = new Date(electionStartTime);
+    const end = new Date(electionEndTime);
+    const current = new Date(fullCurrentTime);
+
     // Fetch all elections
     const electionsQuery = await pool.query("SELECT * FROM elections");
 
     const profilePicture = req.session.profilePicture;
-    console.log('TotalVotes', totalVotes);
+    console.log("TotalVotes", totalVotes);
     res.render("dashboard", {
       totalUsers,
       candidates,
@@ -316,6 +359,9 @@ app.get("/dashboard", async (req, res) => {
       unreadCount: unreadCountQuery.rows[0]?.unreadcount || 0,
       user: userDetailsQuery.rows[0],
       profilePicture,
+      current,
+      start,
+      end
     });
   } catch (err) {
     console.error(err);
@@ -323,13 +369,13 @@ app.get("/dashboard", async (req, res) => {
   }
 });
 
-
 // ============================ VOTERS GET ROUTE ================================
 
-
-
 app.get("/voters", async (req, res) => {
-  if (!req.session.userId || (req.session.userRole !== "Super Admin" && req.session.userRole !== "Admin")) {
+  if (
+    !req.session.userId ||
+    (req.session.userRole !== "Super Admin" && req.session.userRole !== "Admin")
+  ) {
     return res.redirect("/login");
   }
 
@@ -349,11 +395,15 @@ app.get("/voters", async (req, res) => {
     }
 
     let user = userResult.rows[0];
-    user.profile_picture = user.profile_picture ? Buffer.from(user.profile_picture).toString("base64") : null;
+    user.profile_picture = user.profile_picture
+      ? Buffer.from(user.profile_picture).toString("base64")
+      : null;
 
     // Fetch election settings
     const electionSettingsSql = `SELECT * FROM election_settings WHERE election_id = $1`;
-    const electionSettingsResult = await pool.query(electionSettingsSql, [user.election_id]);
+    const electionSettingsResult = await pool.query(electionSettingsSql, [
+      user.election_id,
+    ]);
 
     const registrationTiming = electionSettingsResult.rows[0];
     console.log("Registration Timing:", registrationTiming);
@@ -371,7 +421,9 @@ app.get("/voters", async (req, res) => {
 
     users.forEach((user) => {
       if (user.profile_picture) {
-        user.profile_picture = Buffer.from(user.profile_picture).toString("base64");
+        user.profile_picture = Buffer.from(user.profile_picture).toString(
+          "base64"
+        );
       }
     });
 
@@ -396,7 +448,10 @@ app.get("/voters", async (req, res) => {
     const allRoles = allRolesResult.rows;
 
     // Fetch username
-    const usernameResult = await pool.query("SELECT username FROM auth WHERE user_id = $1", [req.session.userId]);
+    const usernameResult = await pool.query(
+      "SELECT username FROM auth WHERE user_id = $1",
+      [req.session.userId]
+    );
     const username = usernameResult.rows[0]?.username;
 
     if (!username) {
@@ -413,10 +468,15 @@ app.get("/voters", async (req, res) => {
     const profilePicture = req.session.profilePicture;
 
     // Fetch current user data
-    const currentUserDataResult = await pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    const currentUserDataResult = await pool.query(
+      "SELECT * FROM users WHERE id = $1",
+      [req.session.userId]
+    );
     const currentUser = currentUserDataResult.rows[0];
 
-    const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false });
+    const currentTime = new Date().toLocaleTimeString("en-US", {
+      hour12: false,
+    });
     const registrationStartTime = registrationTiming.registration_start_time;
     const registrationEndTime = registrationTiming.registration_end_time;
 
@@ -449,9 +509,6 @@ app.get("/voters", async (req, res) => {
     return res.status(500).send("An error occurred while fetching data");
   }
 });
-
-
-
 
 app.get("/admin/voters", async (req, res) => {
   if (!req.session.userId) {
@@ -576,12 +633,16 @@ app.get("/admin/voters", async (req, res) => {
     console.log("User Election Data:", userElectionData);
 
     const electionSettingsSql = `SELECT * FROM election_settings WHERE election_id = $1`;
-    const electionSettingsResult = await pool.query(electionSettingsSql, [user.election_id]);
+    const electionSettingsResult = await pool.query(electionSettingsSql, [
+      user.election_id,
+    ]);
 
     const registrationTiming = electionSettingsResult.rows[0];
     console.log("Registration Timing:", registrationTiming);
 
-    const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false });
+    const currentTime = new Date().toLocaleTimeString("en-US", {
+      hour12: false,
+    });
     const registrationStartTime = registrationTiming.registration_start_time;
     const registrationEndTime = registrationTiming.registration_end_time;
 
@@ -608,7 +669,7 @@ app.get("/admin/voters", async (req, res) => {
       userElectionData,
       start,
       end,
-      current
+      current,
     });
   } catch (err) {
     console.error("Error:", err);
@@ -616,13 +677,26 @@ app.get("/admin/voters", async (req, res) => {
   }
 });
 
-
 // =============================== VOTERS POST ROUTE ==================================
 app.post("/voters", upload.single("photo"), async (req, res) => {
-  const { firstname, middlename, lastname, dob, username, role, election, password } = req.body;
+  const {
+    firstname,
+    middlename,
+    lastname,
+    dob,
+    username,
+    role,
+    election,
+    password,
+  } = req.body;
 
   if (firstname.length < 3 || lastname.length < 3) {
-    return res.status(400).json({ success: false, message: "First Name or Last Name must be at least 3 characters" });
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: "First Name or Last Name must be at least 3 characters",
+      });
   }
 
   const photo = req.file ? req.file.buffer : null;
@@ -636,15 +710,25 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
     );
 
     if (existingVoter.rows.length > 0) {
-      return res.status(400).json({ success: false, message: `The username '${username}' is already taken.` });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: `The username '${username}' is already taken.`,
+        });
     }
 
     // Get election age eligibility
-    const electionResult = await pool.query("SELECT * FROM elections WHERE id = $1", [election]);
+    const electionResult = await pool.query(
+      "SELECT * FROM elections WHERE id = $1",
+      [election]
+    );
     const electionEligibility = electionResult.rows[0];
 
     if (!electionEligibility) {
-      return res.status(400).json({ success: false, message: "Election eligibility not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Election eligibility not found" });
     }
 
     const voterAgeEligibility = electionEligibility.voter_age_eligibility;
@@ -652,11 +736,22 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
     // Calculate user's age
     const userDOB = new Date(dob);
     const today = new Date();
-    const age = today.getFullYear() - userDOB.getFullYear() - 
-      (today.getMonth() < userDOB.getMonth() || (today.getMonth() === userDOB.getMonth() && today.getDate() < userDOB.getDate()) ? 1 : 0);
+    const age =
+      today.getFullYear() -
+      userDOB.getFullYear() -
+      (today.getMonth() < userDOB.getMonth() ||
+      (today.getMonth() === userDOB.getMonth() &&
+        today.getDate() < userDOB.getDate())
+        ? 1
+        : 0);
 
     if (age < voterAgeEligibility) {
-      return res.status(400).json({ success: false, message: `You must be at least ${voterAgeEligibility} years old to register.` });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: `You must be at least ${voterAgeEligibility} years old to register.`,
+        });
     }
 
     // Hash password
@@ -671,7 +766,16 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
     `;
-    const userInsertResult = await pool.query(insertUserQuery, [votersID, firstname, middlename, lastname, dob, photo, role, election]);
+    const userInsertResult = await pool.query(insertUserQuery, [
+      votersID,
+      firstname,
+      middlename,
+      lastname,
+      dob,
+      photo,
+      role,
+      election,
+    ]);
 
     if (userInsertResult.rowCount === 0) {
       throw new Error("User insertion failed");
@@ -683,7 +787,13 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
       INSERT INTO auth(id, username, password, user_id, election_id) 
       VALUES ($1, $2, $3, $4, $5)
     `;
-    const authInsertResult = await pool.query(insertAuthQuery, [authID, username, hashedPassword, votersID, election]);
+    const authInsertResult = await pool.query(insertAuthQuery, [
+      authID,
+      username,
+      hashedPassword,
+      votersID,
+      election,
+    ]);
 
     if (authInsertResult.rowCount === 0) {
       throw new Error("Auth insertion failed");
@@ -693,7 +803,13 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
     const notificationMessage = `Hi ${firstname} ${middlename} ${lastname} (${username}), you have successfully registered for ${electionEligibility.election}!`;
     await pool.query(
       "INSERT INTO notifications (id, username, election, message, title, created_at) VALUES ($1, $2, $3, $4, $5, NOW())",
-      [uuidv4(), username, election, notificationMessage, "Registration Successful"]
+      [
+        uuidv4(),
+        username,
+        election,
+        notificationMessage,
+        "Registration Successful",
+      ]
     );
 
     // Commit transaction if everything is successful
@@ -706,8 +822,12 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
       created_at: new Date(),
     });
 
-    res.status(201).json({ success: true, message: `${username} has successfully been registered` });
-
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: `${username} has successfully been registered`,
+      });
   } catch (err) {
     // Rollback transaction if an error occurs
     await pool.query("ROLLBACK");
@@ -715,7 +835,6 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
 
 // Delete user
 app.post("/delete/user/:id", (req, res) => {
@@ -731,24 +850,31 @@ app.post("/delete/user/:id", (req, res) => {
         return res.redirect("/voters?error=Error Deleting User");
       }
 
-      pool.query("DELETE FROM candidates WHERE user_id = $1", [id], function (err) {
-        if (err) {
-          console.error("Error deleting user:", err.message);
-          return res.redirect("/voters?error=Error Deleting User");
-        }
-
-        pool.query("DELETE FROM user_votes WHERE user_id = $1", [id], function (err) {
+      pool.query(
+        "DELETE FROM candidates WHERE user_id = $1",
+        [id],
+        function (err) {
           if (err) {
             console.error("Error deleting user:", err.message);
             return res.redirect("/voters?error=Error Deleting User");
           }
-        res.redirect("/voters?success=User Deleted Successfully!");
-      });
+
+          pool.query(
+            "DELETE FROM user_votes WHERE user_id = $1",
+            [id],
+            function (err) {
+              if (err) {
+                console.error("Error deleting user:", err.message);
+                return res.redirect("/voters?error=Error Deleting User");
+              }
+              res.redirect("/voters?success=User Deleted Successfully!");
+            }
+          );
+        }
+      );
     });
   });
 });
-});
-
 
 // Mark user as voted
 app.post("/voted/user/:id", (req, res) => {
@@ -839,22 +965,30 @@ app.post("/admin/delete/user/:id", (req, res) => {
         return res.redirect("/admin/voters?error=Error Deleting User");
       }
 
-      pool.query("DELETE FROM candidates WHERE user_id = $1", [id], function (err) {
-        if (err) {
-          console.error("Error deleting user:", err.message);
-          return res.redirect("/admin/voters?error=Error Deleting User");
-        }
-
-        pool.query("DELETE FROM user_votes WHERE user_id = $1", [id], function (err) {
+      pool.query(
+        "DELETE FROM candidates WHERE user_id = $1",
+        [id],
+        function (err) {
           if (err) {
             console.error("Error deleting user:", err.message);
             return res.redirect("/admin/voters?error=Error Deleting User");
           }
-        res.redirect("/admin/voters?success=User Deleted Successfully!");
-      });
+
+          pool.query(
+            "DELETE FROM user_votes WHERE user_id = $1",
+            [id],
+            function (err) {
+              if (err) {
+                console.error("Error deleting user:", err.message);
+                return res.redirect("/admin/voters?error=Error Deleting User");
+              }
+              res.redirect("/admin/voters?success=User Deleted Successfully!");
+            }
+          );
+        }
+      );
     });
   });
-});
 });
 
 app.post("/admin/voted/user/:id", (req, res) => {
@@ -870,7 +1004,7 @@ app.post("/admin/voted/user/:id", (req, res) => {
       }
       pool.query(
         "INSERT INTO user_votes (id, user_id) VALUES($1, $2)",
-        [votedID,id],
+        [votedID, id],
         function (err) {
           if (err) {
             console.error("Error inserting vote:", err.message);
@@ -930,15 +1064,14 @@ app.post("/admin/update/user", (req, res) => {
   );
 });
 
-
 // ================================= VOTERS ENDS =====================================
-
 
 app.get("/create/party", async (req, res) => {
   try {
     if (
       !req.session.userId ||
-      (req.session.userRole !== "Super Admin" && req.session.userRole !== "Admin")
+      (req.session.userRole !== "Super Admin" &&
+        req.session.userRole !== "Admin")
     ) {
       return res.redirect("/login");
     }
@@ -1036,9 +1169,6 @@ app.get("/create/party", async (req, res) => {
   }
 });
 
-
-
-
 app.post("/create/party", upload.single("logo"), (req, res) => {
   const { election, party } = req.body;
   const logo = req.file ? req.file.buffer : null;
@@ -1094,12 +1224,12 @@ app.post("/delete/party/:id", (req, res) => {
   });
 });
 
-
 app.get("/add/position", async (req, res) => {
   try {
     if (
       !req.session.userId ||
-      (req.session.userRole !== "Super Admin" && req.session.userRole !== "Admin")
+      (req.session.userRole !== "Super Admin" &&
+        req.session.userRole !== "Admin")
     ) {
       return res.redirect("/login");
     }
@@ -1189,31 +1319,51 @@ app.get("/add/position", async (req, res) => {
   }
 });
 
-
 app.post("/add/position", async (req, res) => {
   try {
-      console.log("Received Data:", req.body); // Debugging
+    console.log("Received Data:", req.body); // Debugging
 
-      const { election, position, position_description, candidate_age_eligibility } = req.body;
-      if (!election || !position || !position_description || !candidate_age_eligibility) {
-          return res.status(400).json({ success: false, message: "All fields are required." });
-      }
+    const {
+      election,
+      position,
+      position_description,
+      candidate_age_eligibility,
+    } = req.body;
+    if (
+      !election ||
+      !position ||
+      !position_description ||
+      !candidate_age_eligibility
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required." });
+    }
 
-      const positionID = uuidv4();
+    const positionID = uuidv4();
 
-      await pool.query(
-          "INSERT INTO positions (id, election_id, position, position_description, candidate_age_eligibility) VALUES ($1, $2, $3, $4, $5)",
-          [positionID, election, position, position_description, candidate_age_eligibility]
-      );
+    await pool.query(
+      "INSERT INTO positions (id, election_id, position, position_description, candidate_age_eligibility) VALUES ($1, $2, $3, $4, $5)",
+      [
+        positionID,
+        election,
+        position,
+        position_description,
+        candidate_age_eligibility,
+      ]
+    );
 
-      res.status(200).json({ success: true, message: `${position} Position created successfully` });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: `${position} Position created successfully`,
+      });
   } catch (error) {
-      console.error("Database Insert Error:", error);
-      res.status(500).json({ success: false, message: "Database insert failed" });
+    console.error("Database Insert Error:", error);
+    res.status(500).json({ success: false, message: "Database insert failed" });
   }
 });
-
-
 
 app.post("/update/position", async (req, res) => {
   try {
@@ -1235,12 +1385,13 @@ app.post("/update/position", async (req, res) => {
   }
 });
 
-
 app.post("/delete/position/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    const result = await pool.query("DELETE FROM positions WHERE id = $1", [id]);
+    const result = await pool.query("DELETE FROM positions WHERE id = $1", [
+      id,
+    ]);
 
     if (result.rowCount === 0) {
       return res.redirect("/add/position?error=Position not found");
@@ -1253,15 +1404,14 @@ app.post("/delete/position/:id", async (req, res) => {
   }
 });
 
-
 //======================== CANDIDATE REGISTRATION ROUTES =============================
-
 
 app.get("/candidate/registration", async (req, res) => {
   try {
     if (
       !req.session.userId ||
-      (req.session.userRole !== "Super Admin" && req.session.userRole !== "Admin")
+      (req.session.userRole !== "Super Admin" &&
+        req.session.userRole !== "Admin")
     ) {
       return res.redirect("/login");
     }
@@ -1270,7 +1420,9 @@ app.get("/candidate/registration", async (req, res) => {
     const { rows: parties } = await pool.query("SELECT * FROM parties");
 
     // Fetch second role (LIMIT 1 OFFSET 1 gets the second role)
-    const { rows: roles } = await pool.query("SELECT * FROM roles LIMIT 1 OFFSET 1");
+    const { rows: roles } = await pool.query(
+      "SELECT * FROM roles LIMIT 1 OFFSET 1"
+    );
     if (roles.length === 0) {
       return res.status(404).send("Second role not found");
     }
@@ -1313,9 +1465,9 @@ app.get("/candidate/registration", async (req, res) => {
       JOIN elections ON candidates.election_id = elections.id
       ORDER BY candidates.id DESC
     `);
-    
+
     // Convert images to base64
-    candidates = candidates.map(candidate => ({
+    candidates = candidates.map((candidate) => ({
       ...candidate,
       photo: candidate.photo ? candidate.photo.toString("base64") : null,
       logo: candidate.logo ? candidate.logo.toString("base64") : null,
@@ -1366,14 +1518,13 @@ app.get("/candidate/registration", async (req, res) => {
     );
 
     // Convert Admin candidates images to base64
-    Admincandidates = Admincandidates.map(candidate => ({
+    Admincandidates = Admincandidates.map((candidate) => ({
       ...candidate,
       photo: candidate.photo ? candidate.photo.toString("base64") : null,
       logo: candidate.logo ? candidate.logo.toString("base64") : null,
     }));
 
     console.log("User Election Data:", userElectionData);
-
 
     res.render("candidate-registration", {
       parties,
@@ -1395,7 +1546,6 @@ app.get("/candidate/registration", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-
 
 // UPDATE Candidate
 app.post("/update/candidate", async (req, res) => {
@@ -1427,10 +1577,14 @@ app.post("/update/candidate", async (req, res) => {
       [first_name, middle_name, last_name, user_id]
     );
 
-    res.redirect("/candidate/registration?success=Candidate record updated successfully!");
+    res.redirect(
+      "/candidate/registration?success=Candidate record updated successfully!"
+    );
   } catch (err) {
     console.error("Error updating candidate:", err.message);
-    res.redirect("/candidate/registration?error=Error updating candidate record");
+    res.redirect(
+      "/candidate/registration?error=Error updating candidate record"
+    );
   }
 });
 
@@ -1458,153 +1612,178 @@ app.post("/delete/candidate/:id", async (req, res) => {
     // Commit transaction
     await pool.query("COMMIT");
 
-    res.redirect("/candidate/registration?success=Candidate record deleted successfully!");
+    res.redirect(
+      "/candidate/registration?success=Candidate record deleted successfully!"
+    );
   } catch (err) {
     await pool.query("ROLLBACK"); // Rollback transaction in case of an error
     console.error("Error deleting candidate:", err.message);
-    res.redirect("/candidate/registration?error=Error deleting candidate record");
+    res.redirect(
+      "/candidate/registration?error=Error deleting candidate record"
+    );
   }
 });
 
+app.post(
+  "/candidate/registration",
+  upload.single("photo"),
+  async (req, res) => {
+    const {
+      firstname,
+      middlename,
+      lastname,
+      party,
+      position,
+      election,
+      username,
+      password,
+      role,
+      DOB,
+    } = req.body;
+    const photo = req.file ? req.file.buffer : null;
 
+    const candidateID = uuidv4();
+    const userID = uuidv4();
+    const authID = uuidv4();
 
+    try {
+      // Fetch voter age eligibility from positions table
+      const positionResult = await pool.query(
+        `SELECT candidate_age_eligibility FROM positions WHERE election_id = $1 AND id = $2`,
+        [election, position]
+      );
 
-app.post("/candidate/registration", upload.single("photo"), async (req, res) => {
-  const {
-    firstname,
-    middlename,
-    lastname,
-    party,
-    position,
-    election,
-    username,
-    password,
-    role,
-    DOB,
-  } = req.body;
-  const photo = req.file ? req.file.buffer : null;
+      if (positionResult.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Candidate eligibility not found",
+        });
+      }
 
-  const candidateID = uuidv4();
-  const userID = uuidv4();
-  const authID = uuidv4();
+      const candidateAgeEligibility =
+        positionResult.rows[0].candidate_age_eligibility;
 
-  try {
-    // Fetch voter age eligibility from positions table
-    const positionResult = await pool.query(
-      `SELECT candidate_age_eligibility FROM positions WHERE election_id = $1 AND id = $2`,
-      [election, position]
-    );
+      // Calculate the user's age
+      const candidateDOB = new Date(DOB);
+      const today = new Date();
+      const age =
+        today.getFullYear() -
+        candidateDOB.getFullYear() -
+        (today.getMonth() < candidateDOB.getMonth() ||
+        (today.getMonth() === candidateDOB.getMonth() &&
+          today.getDate() < candidateDOB.getDate())
+          ? 1
+          : 0);
 
-    if (positionResult.rows.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Candidate eligibility not found",
-      });
-    }
+      if (age < candidateAgeEligibility) {
+        return res.status(400).json({
+          success: false,
+          message: `Candidate must be at least ${candidateAgeEligibility} years old to register for this election.`,
+        });
+      }
 
-    const candidateAgeEligibility = positionResult.rows[0].candidate_age_eligibility;
+      // Check if username already exists
+      const existingUser = await pool.query(
+        `SELECT 1 FROM auth WHERE username = $1 AND election_id = $2`,
+        [username, election]
+      );
 
-    // Calculate the user's age
-    const candidateDOB = new Date(DOB);
-    const today = new Date();
-    const age =
-      today.getFullYear() -
-      candidateDOB.getFullYear() -
-      (today.getMonth() < candidateDOB.getMonth() ||
-      (today.getMonth() === candidateDOB.getMonth() &&
-        today.getDate() < candidateDOB.getDate())
-        ? 1
-        : 0);
+      if (existingUser.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `The username '${username}' is already taken. Please choose a different username.`,
+        });
+      }
 
-    if (age < candidateAgeEligibility) {
-      return res.status(400).json({
-        success: false,
-        message: `Candidate must be at least ${candidateAgeEligibility} years old to register for this election.`,
-      });
-    }
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Check if username already exists
-    const existingUser = await pool.query(
-      `SELECT 1 FROM auth WHERE username = $1 AND election_id = $2`,
-      [username, election]
-    );
+      // Fetch election name
+      const electionResult = await pool.query(
+        "SELECT election FROM elections WHERE id = $1",
+        [election]
+      );
 
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `The username '${username}' is already taken. Please choose a different username.`,
-      });
-    }
+      const electionName =
+        electionResult.rows.length > 0
+          ? electionResult.rows[0].election
+          : "the election";
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+      // Start transaction
+      await pool.query("BEGIN");
 
-    // Fetch election name
-    const electionResult = await pool.query(
-      "SELECT election FROM elections WHERE id = $1",
-      [election]
-    );
-
-    const electionName = electionResult.rows.length > 0 ? electionResult.rows[0].election : "the election";
-
-    // Start transaction
-    await pool.query("BEGIN");
-
-    // Insert into users table
-    await pool.query(
-      `INSERT INTO users (id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) 
+      // Insert into users table
+      await pool.query(
+        `INSERT INTO users (id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [userID, firstname, middlename, lastname, DOB, photo, role, election]
-    );
+        [userID, firstname, middlename, lastname, DOB, photo, role, election]
+      );
 
-    // Insert into auth table
-    await pool.query(
-      `INSERT INTO auth (id, username, password, user_id, election_id) 
+      // Insert into auth table
+      await pool.query(
+        `INSERT INTO auth (id, username, password, user_id, election_id) 
        VALUES ($1, $2, $3, $4, $5)`,
-      [authID, username, hashedPassword, userID, election]
-    );
+        [authID, username, hashedPassword, userID, election]
+      );
 
-    // Insert into candidates table
-    await pool.query(
-      `INSERT INTO candidates (id, first_name, middle_name, last_name, party_id, position_id, photo, election_id, user_id) 
+      // Insert into candidates table
+      await pool.query(
+        `INSERT INTO candidates (id, first_name, middle_name, last_name, party_id, position_id, photo, election_id, user_id) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [candidateID, firstname, middlename, lastname, party, position, photo, election, userID]
-    );
+        [
+          candidateID,
+          firstname,
+          middlename,
+          lastname,
+          party,
+          position,
+          photo,
+          election,
+          userID,
+        ]
+      );
 
-    // Send notification
-    const currentTime = new Date();
-    const notificationMessage = `Hi ${firstname} ${middlename} ${lastname} (${username}), congratulations on successfully registering for ${electionName} using our online election voting system! Your vote is powerful and can shape the future. Stay tuned for any important updates regarding the election process.`;
-    const notificationTitle = "Registration Successful";
+      // Send notification
+      const currentTime = new Date();
+      const notificationMessage = `Hi ${firstname} ${middlename} ${lastname} (${username}), congratulations on successfully registering for ${electionName} using our online election voting system! Your vote is powerful and can shape the future. Stay tuned for any important updates regarding the election process.`;
+      const notificationTitle = "Registration Successful";
 
-    await pool.query(
-      `INSERT INTO notifications (id, username, election, message, title, created_at) 
+      await pool.query(
+        `INSERT INTO notifications (id, username, election, message, title, created_at) 
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [uuidv4(), username, election, notificationMessage, notificationTitle, currentTime]
-    );
+        [
+          uuidv4(),
+          username,
+          election,
+          notificationMessage,
+          notificationTitle,
+          currentTime,
+        ]
+      );
 
-    io.to(username).emit("new-notification", {
-      message: notificationMessage,
-      title: notificationTitle,
-      created_at: currentTime,
-    });
+      io.to(username).emit("new-notification", {
+        message: notificationMessage,
+        title: notificationTitle,
+        created_at: currentTime,
+      });
 
-    // Commit transaction
-    await pool.query("COMMIT");
+      // Commit transaction
+      await pool.query("COMMIT");
 
-    res.status(200).json({
-      success: true,
-      message: `Candidate, ${firstname} ${middlename} ${lastname} has been registered.`,
-    });
-  } catch (err) {
-    await pool.query("ROLLBACK"); // Rollback transaction in case of an error
-    console.error("Error registering candidate:", err.message);
-    res.status(500).json({
-      success: false,
-      message: "There was a problem registering the candidate. Please try again later.",
-    });
+      res.status(200).json({
+        success: true,
+        message: `Candidate, ${firstname} ${middlename} ${lastname} has been registered.`,
+      });
+    } catch (err) {
+      await pool.query("ROLLBACK"); // Rollback transaction in case of an error
+      console.error("Error registering candidate:", err.message);
+      res.status(500).json({
+        success: false,
+        message:
+          "There was a problem registering the candidate. Please try again later.",
+      });
+    }
   }
-});
-
-
+);
 
 app.get("/my/profile", (req, res) => {
   if (!req.session.userId) {
@@ -1628,13 +1807,13 @@ app.get("/my/profile", (req, res) => {
     }
 
     const user = result.rows[0];
-console.log('profile user data', user);
+    console.log("profile user data", user);
 
-const DOB = new Date(user.dob);
+    const DOB = new Date(user.dob);
 
-const formattedDOB = DOB.toISOString().split('T')[0]; 
+    const formattedDOB = DOB.toISOString().split("T")[0];
 
-console.log("Profile new dob", formattedDOB);
+    console.log("Profile new dob", formattedDOB);
 
     user.profile_picture = user.profile_picture.toString("base64");
 
@@ -1658,13 +1837,12 @@ console.log("Profile new dob", formattedDOB);
           voteStatus,
           unreadCount: countResult.rows[0].unreadCount,
           profilePicture,
-          formattedDOB
+          formattedDOB,
         });
       }
     );
   });
 });
-
 
 app.get("/vote", (req, res) => {
   if (!req.session.userId) {
@@ -1759,7 +1937,9 @@ app.get("/vote", (req, res) => {
                       [userElectionId],
                       (err, candidates) => {
                         if (err) {
-                          return res.status(500).send("Error fetching candidates");
+                          return res
+                            .status(500)
+                            .send("Error fetching candidates");
                         }
 
                         pool.query(
@@ -1767,7 +1947,11 @@ app.get("/vote", (req, res) => {
                           [user.rows[0].username],
                           (err, countResult) => {
                             if (err) {
-                              return res.status(500).send("Error fetching unread notifications count");
+                              return res
+                                .status(500)
+                                .send(
+                                  "Error fetching unread notifications count"
+                                );
                             }
 
                             pool.query(
@@ -1775,20 +1959,25 @@ app.get("/vote", (req, res) => {
                               [req.session.userId],
                               (err, users) => {
                                 if (err) {
-                                  return res.status(500).send("Error fetching user data");
+                                  return res
+                                    .status(500)
+                                    .send("Error fetching user data");
                                 }
                                 if (!users.rows.length) {
                                   return res.send("User data not found");
                                 }
 
-                                const userElectionID = users.rows[0].election_id;
+                                const userElectionID =
+                                  users.rows[0].election_id;
 
                                 pool.query(
                                   `SELECT * FROM users WHERE id = $1`,
                                   [req.session.userId],
                                   (err, user) => {
                                     if (err) {
-                                      return res.status(500).send("Error fetching user data");
+                                      return res
+                                        .status(500)
+                                        .send("Error fetching user data");
                                     }
 
                                     pool.query(
@@ -1796,13 +1985,20 @@ app.get("/vote", (req, res) => {
                                       [user.rows[0].election_id],
                                       (err, electionTiming) => {
                                         if (err) {
-                                          return res.status(500).send("Error fetching election timing");
+                                          return res
+                                            .status(500)
+                                            .send(
+                                              "Error fetching election timing"
+                                            );
                                         }
 
-                                        const currentTime = new Date().toISOString();
+                                        const currentTime =
+                                          new Date().toISOString();
 
-                                        const startTime = electionTiming.rows[0].start_time;
-                                        const endTime = electionTiming.rows[0].end_time;
+                                        const startTime =
+                                          electionTiming.rows[0].start_time;
+                                        const endTime =
+                                          electionTiming.rows[0].end_time;
 
                                         const start = new Date(startTime);
                                         const end = new Date(endTime);
@@ -1812,7 +2008,8 @@ app.get("/vote", (req, res) => {
                                           candidates: candidates.rows,
                                           role: userRole.rows[0].role,
                                           profilePicture,
-                                          unreadCount: countResult.rows[0].unreadcount,
+                                          unreadCount:
+                                            countResult.rows[0].unreadcount,
                                           user: user.rows[0],
                                           groupedCandidates,
                                           userElectionID,
@@ -1840,8 +2037,6 @@ app.get("/vote", (req, res) => {
     }
   );
 });
-
-
 
 app.post("/vote", upload.none(), async (req, res) => {
   const { electionID } = req.body;
@@ -1891,7 +2086,8 @@ app.post("/vote", upload.none(), async (req, res) => {
 
     // Record that the user has voted
     await client.query("INSERT INTO user_votes (id, user_id) VALUES ($1, $2)", [
-      userVotesID,userId,
+      userVotesID,
+      userId,
     ]);
 
     // Update user vote status
@@ -1907,7 +2103,9 @@ app.post("/vote", upload.none(), async (req, res) => {
 
     if (userResult.rows.length === 0) {
       await client.release();
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     const username = userResult.rows[0].username;
@@ -1919,7 +2117,14 @@ app.post("/vote", upload.none(), async (req, res) => {
     await client.query(
       `INSERT INTO notifications (id,username, election, message, title, created_at) 
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [userVotesID, username, electionID, notificationMessage, notificationTitle, currentTime]
+      [
+        userVotesID,
+        username,
+        electionID,
+        notificationMessage,
+        notificationTitle,
+        currentTime,
+      ]
     );
 
     await client.query("COMMIT"); // Commit transaction
@@ -1946,12 +2151,8 @@ app.post("/vote", upload.none(), async (req, res) => {
   }
 });
 
-
 app.get("/forget-password", (req, res) => {
-  if (
-    !req.session.userId ||
-    (req.session.userRole !== "Super Admin")
-  ) {
+  if (!req.session.userId || req.session.userRole !== "Super Admin") {
     return res.redirect("/login");
   }
   res.render("forget-password");
@@ -1961,34 +2162,56 @@ app.post("/forget-password", (req, res) => {
   const { username, password, passwordConfirm } = req.body;
 
   if (password !== passwordConfirm) {
-    return res.status(400).json({ success: false, message: "Passwords do not match" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Passwords do not match" });
   }
 
-  pool.query("SELECT * FROM auth WHERE username = $1", [username], (err, result) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: "An error occurred" });
-    }
-
-    if (!result.rows.length) {
-      return res.status(404).json({ success: false, message: "Username does not exist" });
-    }
-
-    bcrypt.hash(password, 10, (err, hash) => {
+  pool.query(
+    "SELECT * FROM auth WHERE username = $1",
+    [username],
+    (err, result) => {
       if (err) {
-        return res.status(500).json({ success: false, message: "An error occurred" });
+        return res
+          .status(500)
+          .json({ success: false, message: "An error occurred" });
       }
 
-      pool.query("UPDATE auth SET password = $1 WHERE username = $2", [hash, username], (err) => {
+      if (!result.rows.length) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Username does not exist" });
+      }
+
+      bcrypt.hash(password, 10, (err, hash) => {
         if (err) {
-          return res.status(500).json({ success: false, message: "An error occurred" });
+          return res
+            .status(500)
+            .json({ success: false, message: "An error occurred" });
         }
 
-        return res.status(200).json({ success: true, message: "Password Updated Successfully" });
-      });
-    });
-  });
-});
+        pool.query(
+          "UPDATE auth SET password = $1 WHERE username = $2",
+          [hash, username],
+          (err) => {
+            if (err) {
+              return res
+                .status(500)
+                .json({ success: false, message: "An error occurred" });
+            }
 
+            return res
+              .status(200)
+              .json({
+                success: true,
+                message: "Password Updated Successfully",
+              });
+          }
+        );
+      });
+    }
+  );
+});
 
 // VOTER SETTING PAGE ROUTE
 app.get("/voter/setting", (req, res) => {
@@ -2020,7 +2243,9 @@ app.get("/voter/setting", (req, res) => {
       [user.username],
       (err, countResult) => {
         if (err) {
-          return res.status(500).send("Error fetching unread notifications count");
+          return res
+            .status(500)
+            .send("Error fetching unread notifications count");
         }
 
         const unreadCount = parseInt(countResult.rows[0].unreadcount);
@@ -2036,90 +2261,131 @@ app.get("/voter/setting", (req, res) => {
   });
 });
 
-
 // POST ROUTE FOR UPDATING THE USER PASSWORD FROM THE SEETING PAGE
 app.post("/setting/forget-password", (req, res) => {
   const { username, password, passwordConfirm } = req.body;
 
   if (password !== passwordConfirm) {
-    return res.status(400).json({ success: false, message: "Passwords do not match" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Passwords do not match" });
   }
 
-  pool.query("SELECT * FROM auth WHERE username = $1 AND user_id = $2", [username, req.session.userId], (err, result) => {
-    if (err) {
-      return res.status(500).send("An error occurred");
-    }
-
-    if (!result.rows.length) {
-      return res.status(404).json({ success: false, message: "Invalid username." });
-    }
-
-    const user = result.rows[0];
-
-    if (user.username !== username) {
-      return res.status(403).json({ success: false, message: "You are not authorized to change this password" });
-    }
-
-    bcrypt.hash(password, 10, (err, hash) => {
+  pool.query(
+    "SELECT * FROM auth WHERE username = $1 AND user_id = $2",
+    [username, req.session.userId],
+    (err, result) => {
       if (err) {
-        return res.status(500).json({ success: false, message: "An error occurred" });
+        return res.status(500).send("An error occurred");
       }
 
-      pool.query(
-        "UPDATE auth SET password = $1 WHERE username = $2 AND user_id = $3",
-        [hash, username, req.session.userId],
-        (err) => {
-          if (err) {
-            return res.status(500).json({ success: false, message: "An error occurred" });
-          }
+      if (!result.rows.length) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Invalid username." });
+      }
 
-          res.status(200).json({ success: true, message: "Password updated successfully" });
+      const user = result.rows[0];
+
+      if (user.username !== username) {
+        return res
+          .status(403)
+          .json({
+            success: false,
+            message: "You are not authorized to change this password",
+          });
+      }
+
+      bcrypt.hash(password, 10, (err, hash) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ success: false, message: "An error occurred" });
         }
-      );
-    });
-  });
-});
 
+        pool.query(
+          "UPDATE auth SET password = $1 WHERE username = $2 AND user_id = $3",
+          [hash, username, req.session.userId],
+          (err) => {
+            if (err) {
+              return res
+                .status(500)
+                .json({ success: false, message: "An error occurred" });
+            }
+
+            res
+              .status(200)
+              .json({
+                success: true,
+                message: "Password updated successfully",
+              });
+          }
+        );
+      });
+    }
+  );
+});
 
 // ROUTE FOR UPDATING THE USERNAME
 app.post("/setting/change/username", upload.none(), (req, res) => {
   const { username, Newusername, password } = req.body;
 
-  pool.query("SELECT * FROM auth WHERE user_id = $1", [req.session.userId], (err, result) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: "Internal server error" });
-    }
-
-    if (!result.rows.length) {
-      return res.status(404).json({ success: false, message: "User does not exist" });
-    }
-
-    const user = result.rows[0];
-
-    if (user.username !== username) {
-      return res.status(403).json({ success: false, message: "You are not authorized to change this username" });
-    }
-
-    bcrypt.compare(password, user.password, (err, match) => {
-      if (!match) {
-        return res.status(400).json({ success: false, message: "Incorrect password" });
+  pool.query(
+    "SELECT * FROM auth WHERE user_id = $1",
+    [req.session.userId],
+    (err, result) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ success: false, message: "Internal server error" });
       }
 
-      pool.query(
-        "UPDATE auth SET username = $1 WHERE username = $2 AND user_id = $3",
-        [Newusername, username, req.session.userId],
-        (err) => {
-          if (err) {
-            return res.status(500).json({ success: false, message: "Internal server error" });
-          }
+      if (!result.rows.length) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User does not exist" });
+      }
 
-          res.status(200).json({ success: true, message: "Username updated successfully!" });
+      const user = result.rows[0];
+
+      if (user.username !== username) {
+        return res
+          .status(403)
+          .json({
+            success: false,
+            message: "You are not authorized to change this username",
+          });
+      }
+
+      bcrypt.compare(password, user.password, (err, match) => {
+        if (!match) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Incorrect password" });
         }
-      );
-    });
-  });
-});
 
+        pool.query(
+          "UPDATE auth SET username = $1 WHERE username = $2 AND user_id = $3",
+          [Newusername, username, req.session.userId],
+          (err) => {
+            if (err) {
+              return res
+                .status(500)
+                .json({ success: false, message: "Internal server error" });
+            }
+
+            res
+              .status(200)
+              .json({
+                success: true,
+                message: "Username updated successfully!",
+              });
+          }
+        );
+      });
+    }
+  );
+});
 
 //========================== ELECTION BEGINS ==========================================
 
@@ -2213,12 +2479,9 @@ app.get("/create/election", (req, res) => {
   );
 });
 
-
 //============================== ELECTION POST ROUTE ===============================
 
 app.post("/create/election", async (req, res) => {
-
-
   const {
     election,
     start_time,
@@ -2234,8 +2497,8 @@ app.post("/create/election", async (req, res) => {
 
   try {
     // Begin transaction
-    await pool.query('BEGIN');
-    
+    await pool.query("BEGIN");
+
     // Insert into elections table
     const insertElectionQuery = `
       INSERT INTO elections (id, election, voter_age_eligibility)
@@ -2244,7 +2507,7 @@ app.post("/create/election", async (req, res) => {
     await pool.query(insertElectionQuery, [
       electionID,
       election,
-      voter_age_eligibility
+      voter_age_eligibility,
     ]);
 
     // Insert into election_settings table
@@ -2258,21 +2521,20 @@ app.post("/create/election", async (req, res) => {
       end_time,
       registration_start_time,
       registration_end_time,
-      electionID
+      electionID,
     ]);
 
     // Commit the transaction
-    await pool.query('COMMIT');
+    await pool.query("COMMIT");
 
     // Send success response
     res.status(200).json({
       success: true,
       message: `${election}, successfully created`,
     });
-
   } catch (err) {
     // In case of error, rollback the transaction
-    await pool.query('ROLLBACK');
+    await pool.query("ROLLBACK");
 
     console.log("Error: ", err);
     res.status(500).json({
@@ -2281,7 +2543,6 @@ app.post("/create/election", async (req, res) => {
     });
   }
 });
-
 
 app.post("/update/election", upload.none(), (req, res) => {
   const {
@@ -2376,108 +2637,113 @@ app.get("/vote/analysis", (req, res) => {
   ORDER BY positions.position, candidates.last_name
 `;
 
-pool.query(positionsQuery, [currentUser.election_id], (err, candidatesResult) => {
-  if (err) {
-    console.error("Error fetching candidates data:", err);
-    return res.status(500).send("Error fetching candidates data");
-  }
+      pool.query(
+        positionsQuery,
+        [currentUser.election_id],
+        (err, candidatesResult) => {
+          if (err) {
+            console.error("Error fetching candidates data:", err);
+            return res.status(500).send("Error fetching candidates data");
+          }
 
-  const groupedData = {};
+          const groupedData = {};
 
-  candidatesResult.rows.forEach((candidate) => {
-    // Normalize position by trimming spaces and replacing multiple spaces with a single one
-    const position = candidate.position.trim().replace(/\s+/g, ' ');
+          candidatesResult.rows.forEach((candidate) => {
+            // Normalize position by trimming spaces and replacing multiple spaces with a single one
+            const position = candidate.position.trim().replace(/\s+/g, " ");
 
-    // Log the position for debugging
-    console.log(`Processing position: "${position}"`);
+            // Log the position for debugging
+            console.log(`Processing position: "${position}"`);
 
-    const candidateName = `${candidate.first_name} ${
-      candidate.middle_name || ""
-    } ${candidate.last_name}`.trim();
+            const candidateName = `${candidate.first_name} ${
+              candidate.middle_name || ""
+            } ${candidate.last_name}`.trim();
 
-    // Log the candidate name for debugging
-    console.log(`Candidate Name: "${candidateName}"`);
+            // Log the candidate name for debugging
+            console.log(`Candidate Name: "${candidateName}"`);
 
-    // Ensure position exists in groupedData
-    if (!groupedData[position]) {
-      groupedData[position] = { labels: [], votes: [] };
-    }
-
-    // Add candidate to the corresponding position
-    groupedData[position].labels.push(candidateName);
-    groupedData[position].votes.push(candidate.vote);
-  });
-
-  // Log groupedData to verify the result
-  console.log("Grouped Data:", groupedData);
-
-  // Proceed with rendering or further processing the groupedData
-
-        pool.query(
-          "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
-          [req.session.userId],
-          (err, userRoleResult) => {
-            if (err) {
-              return res.status(500).send("Error fetching user role");
+            // Ensure position exists in groupedData
+            if (!groupedData[position]) {
+              groupedData[position] = { labels: [], votes: [] };
             }
 
-            pool.query(
-              "SELECT username FROM auth WHERE user_id = $1",
-              [req.session.userId],
-              (err, userResult) => {
-                if (err) {
-                  return res.status(500).send("Error fetching user");
-                }
+            // Add candidate to the corresponding position
+            groupedData[position].labels.push(candidateName);
+            groupedData[position].votes.push(candidate.vote);
+          });
 
-                if (!userResult.rows.length) {
-                  return res.status(404).send("User not found");
-                }
+          // Log groupedData to verify the result
+          console.log("Grouped Data:", groupedData);
 
-                const username = userResult.rows[0].username;
+          // Proceed with rendering or further processing the groupedData
 
-                // Fetch unread notifications count
-                pool.query(
-                  "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-                  [username],
-                  (err, countResult) => {
-                    if (err) {
-                      return res.status(500).send("Error fetching unread notifications count");
-                    }
-
-                    pool.query(
-                      "SELECT * FROM users WHERE id = $1",
-                      [req.session.userId],
-                      (err, userDataResult) => {
-                        if (err) {
-                          return res.status(500).send("Error fetching user from the user table");
-                        }
-
-                        if (!userDataResult.rows.length) {
-                          return res.status(404).send("User data not found");
-                        }
-
-                        res.render("vote-analysis", {
-                          groupedData: JSON.stringify(groupedData), // Pass data as JSON to the template
-                          profilePicture: req.session.profilePicture,
-                          role: userRoleResult.rows[0].role,
-                          unreadCount: countResult.rows[0].unreadcount,
-                          user: userDataResult.rows[0],
-                        });
-                      }
-                    );
-                  }
-                );
+          pool.query(
+            "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
+            [req.session.userId],
+            (err, userRoleResult) => {
+              if (err) {
+                return res.status(500).send("Error fetching user role");
               }
-            );
-          }
-        );
-      });
+
+              pool.query(
+                "SELECT username FROM auth WHERE user_id = $1",
+                [req.session.userId],
+                (err, userResult) => {
+                  if (err) {
+                    return res.status(500).send("Error fetching user");
+                  }
+
+                  if (!userResult.rows.length) {
+                    return res.status(404).send("User not found");
+                  }
+
+                  const username = userResult.rows[0].username;
+
+                  // Fetch unread notifications count
+                  pool.query(
+                    "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+                    [username],
+                    (err, countResult) => {
+                      if (err) {
+                        return res
+                          .status(500)
+                          .send("Error fetching unread notifications count");
+                      }
+
+                      pool.query(
+                        "SELECT * FROM users WHERE id = $1",
+                        [req.session.userId],
+                        (err, userDataResult) => {
+                          if (err) {
+                            return res
+                              .status(500)
+                              .send("Error fetching user from the user table");
+                          }
+
+                          if (!userDataResult.rows.length) {
+                            return res.status(404).send("User data not found");
+                          }
+
+                          res.render("vote-analysis", {
+                            groupedData: JSON.stringify(groupedData), // Pass data as JSON to the template
+                            profilePicture: req.session.profilePicture,
+                            role: userRoleResult.rows[0].role,
+                            unreadCount: countResult.rows[0].unreadcount,
+                            user: userDataResult.rows[0],
+                          });
+                        }
+                      );
+                    }
+                  );
+                }
+              );
+            }
+          );
+        }
+      );
     }
   );
 });
-
-
-
 
 // GET route to create notification
 app.get("/create/notification", async (req, res) => {
@@ -2497,7 +2763,9 @@ app.get("/create/notification", async (req, res) => {
       JOIN auth ON users.id = auth.user_id
       WHERE users.id = $1
     `;
-    const currentUserResult = await pool.query(currentUserSql, [req.session.userId]);
+    const currentUserResult = await pool.query(currentUserSql, [
+      req.session.userId,
+    ]);
     const user = currentUserResult.rows[0];
 
     if (!user) {
@@ -2561,7 +2829,9 @@ app.get("/create/notification", async (req, res) => {
 
     // Fetch user profile
     const userProfileSql = `SELECT * FROM users WHERE id = $1`;
-    const userProfileResult = await pool.query(userProfileSql, [req.session.userId]);
+    const userProfileResult = await pool.query(userProfileSql, [
+      req.session.userId,
+    ]);
     const profilePicture = req.session.profilePicture;
 
     // Fetch elections data
@@ -2576,7 +2846,9 @@ app.get("/create/notification", async (req, res) => {
       JOIN elections ON users.election_id = elections.id
       WHERE users.id = $1
     `;
-    const userElectionDataResult = await pool.query(userElectionDataSql, [req.session.userId]);
+    const userElectionDataResult = await pool.query(userElectionDataSql, [
+      req.session.userId,
+    ]);
     const userElectionData = userElectionDataResult.rows;
 
     res.render("create-notification", {
@@ -2637,7 +2909,14 @@ app.post("/create/notification", async (req, res) => {
         `;
         pool.query(
           insertNotificationSql,
-          [notificationID, user.username, election, sanitizedMessage, title, currentTime],
+          [
+            notificationID,
+            user.username,
+            election,
+            sanitizedMessage,
+            title,
+            currentTime,
+          ],
           (err) => {
             if (err) {
               return reject(err);
@@ -2670,7 +2949,6 @@ app.post("/create/notification", async (req, res) => {
   }
 });
 
-
 app.get("/notifications", (req, res) => {
   // Ensure the user is logged in
   if (!req.session.userId) {
@@ -2683,7 +2961,7 @@ app.get("/notifications", (req, res) => {
     [req.session.userId],
     (err, userResult) => {
       if (err) {
-        console.log('USER ERROR', err);
+        console.log("USER ERROR", err);
         return res.status(500).send("Error fetching user");
       }
 
@@ -2691,7 +2969,7 @@ app.get("/notifications", (req, res) => {
         return res.status(404).send("User not found");
       }
 
-      const user = userResult.rows[0];  // Extracting user data from the result
+      const user = userResult.rows[0]; // Extracting user data from the result
 
       // Fetch notifications for the current user
       pool.query(
@@ -2761,12 +3039,11 @@ app.get("/notifications", (req, res) => {
   );
 });
 
-  
 io.on("connection", (socket) => {
   console.log("A user connected");
 
   socket.on("join", (userId) => {
-   pool.query(
+    pool.query(
       "SELECT username FROM auth WHERE user_id = $1",
       [userId],
       (err, user) => {
@@ -2778,7 +3055,7 @@ io.on("connection", (socket) => {
         socket.join(user.username);
 
         // Emit the count of unread notifications
-       pool.query(
+        pool.query(
           "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
           [user.username],
           (err, countResult) => {
@@ -2820,8 +3097,6 @@ const secretSavedToken = process.env.SECRET_TOKEN;
 app.get("/create/user", (req, res) => {
   const token = req.query.token;
 
-
-
   if (token !== secretSavedToken) {
     return res.status(403).send("Access Denied");
   } else {
@@ -2835,14 +3110,13 @@ app.get("/create/user", (req, res) => {
         }
 
         res.render("createUser", {
-          roles: roleResult.rows, 
-          elections: electionResult.rows, 
+          roles: roleResult.rows,
+          elections: electionResult.rows,
         });
       });
     });
   }
 });
-
 
 // =============================== VOTERS POST ROUTE ==================================
 app.post("/create/user", upload.single("photo"), (req, res) => {
@@ -2978,12 +3252,19 @@ app.get("/party-dashboard", (req, res) => {
         [currentUser.election_id, currentUser.user_id],
         (err, userResult) => {
           if (err) {
-            console.error(`Error fetching current candidate for election_id ${currentUser.election_id}:`, err);
-            return res.status(500).send("An error occurred while fetching candidate data.");
+            console.error(
+              `Error fetching current candidate for election_id ${currentUser.election_id}:`,
+              err
+            );
+            return res
+              .status(500)
+              .send("An error occurred while fetching candidate data.");
           }
 
           if (userResult.rows.length === 0) {
-            return res.status(404).send("Candidate not found for the specified election.");
+            return res
+              .status(404)
+              .send("Candidate not found for the specified election.");
           }
 
           const user = userResult.rows[0];
@@ -3003,7 +3284,9 @@ app.get("/party-dashboard", (req, res) => {
             (err, allCandidatesResult) => {
               if (err) {
                 console.error("Error fetching all candidates:", err);
-                return res.status(500).send("An error occurred while fetching all candidates");
+                return res
+                  .status(500)
+                  .send("An error occurred while fetching all candidates");
               }
 
               const users = allCandidatesResult.rows;
@@ -3042,7 +3325,9 @@ app.get("/party-dashboard", (req, res) => {
                       [user.username],
                       (err, countResult) => {
                         if (err) {
-                          return res.status(500).send("Error fetching unread notifications count");
+                          return res
+                            .status(500)
+                            .send("Error fetching unread notifications count");
                         }
 
                         const profilePicture = req.session.profilePicture;
@@ -3051,7 +3336,11 @@ app.get("/party-dashboard", (req, res) => {
                           "SELECT * FROM elections",
                           (err, electionsResult) => {
                             if (err) {
-                              return res.status(500).send("There was an error getting the elections data");
+                              return res
+                                .status(500)
+                                .send(
+                                  "There was an error getting the elections data"
+                                );
                             }
 
                             pool.query(
@@ -3062,12 +3351,18 @@ app.get("/party-dashboard", (req, res) => {
                               [req.session.userId],
                               (err, userElectionDataResult) => {
                                 if (err) {
-                                  console.error("Error getting the user election name:", err);
-                                  return res.send("Error getting the userElectionName");
+                                  console.error(
+                                    "Error getting the user election name:",
+                                    err
+                                  );
+                                  return res.send(
+                                    "Error getting the userElectionName"
+                                  );
                                 }
 
                                 const elections = electionsResult.rows;
-                                const userElectionData = userElectionDataResult.rows;
+                                const userElectionData =
+                                  userElectionDataResult.rows;
 
                                 res.render("party-dashboard", {
                                   users,
@@ -3096,7 +3391,6 @@ app.get("/party-dashboard", (req, res) => {
     }
   );
 });
-
 
 // Downloading registered voters and election results list
 // Voters record route
@@ -3159,13 +3453,17 @@ app.get("/voters-record", (req, res) => {
                       );
                       return res
                         .status(500)
-                        .send("An error occurred while fetching candidate data.");
+                        .send(
+                          "An error occurred while fetching candidate data."
+                        );
                     }
 
                     if (user.rows.length === 0) {
                       return res
                         .status(404)
-                        .send("Candidate not found for the specified election.");
+                        .send(
+                          "Candidate not found for the specified election."
+                        );
                     }
 
                     pool.query(
@@ -3324,13 +3622,17 @@ app.get("/election-record", (req, res) => {
                       );
                       return res
                         .status(500)
-                        .send("An error occurred while fetching candidate data.");
+                        .send(
+                          "An error occurred while fetching candidate data."
+                        );
                     }
 
                     if (user.rows.length === 0) {
                       return res
                         .status(404)
-                        .send("Candidate not found for the specified election.");
+                        .send(
+                          "Candidate not found for the specified election."
+                        );
                     }
 
                     pool.query(
@@ -3450,24 +3752,34 @@ app.get("/create-role", (req, res) => {
 });
 app.post("/create-role", (req, res) => {
   console.log("Received data:", req.body); // Debugging log
-  
+
   const { role } = req.body;
-  
+
   if (!role) {
-    return res.status(400).json({ success: false, message: "Role is required" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Role is required" });
   }
 
   const roleID = uuidv4();
-  
+
   pool.query(
     "INSERT INTO roles (id, role) VALUES($1, $2)",
     [roleID, role],
     (err, result) => {
       if (err) {
         console.error("Database error:", err); // Log the actual error
-        return res.status(500).json({ success: false, message: "Error inserting role", error: err.message });
+        return res
+          .status(500)
+          .json({
+            success: false,
+            message: "Error inserting role",
+            error: err.message,
+          });
       }
-      return res.status(201).json({ success: true, message: "Role added successfully", roleID });
+      return res
+        .status(201)
+        .json({ success: true, message: "Role added successfully", roleID });
     }
   );
 });

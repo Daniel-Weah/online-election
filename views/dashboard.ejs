@@ -46,12 +46,42 @@
         <%- include('./layout/sidebar') -%>
         <%- include('./layout/navbar') -%>
     </header>
+    
 
     <div id="notification-box" style="display: none;">
       <p id="notification-message"></p>
     </div>
     
     <main style="margin-top: 70px " id="content-area">
+       <!-- Button trigger modal -->
+      
+      
+      <!-- Election Result Modal -->
+      <div class="modal fade " id="electionResultModal" tabindex="-1" aria-labelledby="electionResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white text-center">
+              <h5 class="modal-title w-100">Election Results</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="text-center">
+                <img src="/images/election.png" alt="Winner Icon" width="100">
+                <h2 class="mt-3 text-success">Congratulations!</h2>
+                <p class="lead">The election has concluded. Here are the results:</p>
+              </div>
+              
+              <div id="resultsContainer"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+     
+      
         <h1 class="mb-4" style="text-align: center; padding-top: 30px;">Election Result Dashboard</h1>
         <div class="container pt-2 bg-light">
           <div class="mb-3" style="margin: 20px;">
@@ -186,7 +216,77 @@
           }, 5000);
         }
       });
+
+// Ensure correct parsing of dates
+const startDate = new Date(<%- JSON.stringify(start) %>);
+const endDate = new Date(<%- JSON.stringify(end) %>);
+const currentDate = new Date();
+
+console.log("Current Date:", currentDate);
+console.log("Start Date:", startDate);
+console.log("End Date:", endDate);
+
+if (currentDate > endDate) {
+  window.onload = function () {
+    // Ensure groupedCandidates is parsed correctly
+    const groupedCandidates = <%= JSON.stringify(groupedCandidates) %>;
+
+    if (!groupedCandidates || Object.keys(groupedCandidates).length === 0) {
+      console.error("No election results available.");
+      return;
+    }
+
+    const resultsContainer = document.getElementById("resultsContainer");
+
+    if (!resultsContainer) {
+      console.error("Element with ID 'resultsContainer' not found.");
+      return;
+    }
+
+    resultsContainer.innerHTML = "";
+
+    Object.keys(groupedCandidates).forEach(position => {
+      let candidates = groupedCandidates[position];
+
+      // Sort candidates by votes in descending order
+      candidates.sort((a, b) => b.vote - a.vote);
+
+      // Get the winner (first in sorted list)
+      let winner = candidates[0];
+
+      let positionHTML = `
+        <div class="mb-4">
+          <h4 class="text-primary">${position}</h4>
+          <div class="alert alert-success text-center">
+            🏆 <strong>${winner.name}</strong> is the winner with <strong>${winner.vote}</strong> votes!
+          </div>
+          <ul class="list-group">
+            ${candidates.map(candidate => `
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                ${candidate.name}
+                <span class="badge bg-${candidate === winner ? 'success' : 'secondary'} rounded-pill">
+                  ${candidate.vote} votes
+                </span>
+              </li>`).join('')}
+          </ul>
+        </div>
+      `;
+
+      resultsContainer.innerHTML += positionHTML;
+    });
+
+    let electionModal = new bootstrap.Modal(document.getElementById('electionResultModal'));
+    electionModal.show();
+  };
+} else {
+  console.log("Election still in progress...");
+}
+
     </script>
+
+    
+
+
 
     <script src="/js/dashboard.js"></script>
 <%- include('layout/footer') %>
