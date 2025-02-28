@@ -360,8 +360,8 @@ app.get("/dashboard", async (req, res) => {
       user: userDetailsQuery.rows[0],
       profilePicture,
       current,
-      start,
-      end
+      start: new Date(start).toISOString(), 
+      end: new Date(end).toISOString() 
     });
   } catch (err) {
     console.error(err);

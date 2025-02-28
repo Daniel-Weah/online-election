@@ -218,9 +218,10 @@
       });
 
 // Ensure correct parsing of dates
-const startDate = new Date(<%- JSON.stringify(start) %>);
-const endDate = new Date(<%- JSON.stringify(end) %>);
+const startDate = new Date("<%= start %>");
+const endDate = new Date("<%= end %>");
 const currentDate = new Date();
+
 
 console.log("Current Date:", currentDate);
 console.log("Start Date:", startDate);
@@ -229,7 +230,7 @@ console.log("End Date:", endDate);
 if (currentDate > endDate) {
   window.onload = function () {
     // Ensure groupedCandidates is parsed correctly
-    const groupedCandidates = <%= JSON.stringify(groupedCandidates) %>;
+    const groupedCandidates = <%- JSON.stringify(groupedCandidates) %>;
 
     if (!groupedCandidates || Object.keys(groupedCandidates).length === 0) {
       console.error("No election results available.");
@@ -258,12 +259,12 @@ if (currentDate > endDate) {
         <div class="mb-4">
           <h4 class="text-primary">${position}</h4>
           <div class="alert alert-success text-center">
-            🏆 <strong>${winner.name}</strong> is the winner with <strong>${winner.vote}</strong> votes!
+            🏆 <strong>${winner.first_name} ${winner.middle_name} ${winner.last_name}</strong> is the winner with <strong>${winner.vote}</strong> votes!
           </div>
           <ul class="list-group">
             ${candidates.map(candidate => `
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                ${candidate.name}
+                ${candidate.first_name} ${candidate.middle_name} ${candidate.last_name}
                 <span class="badge bg-${candidate === winner ? 'success' : 'secondary'} rounded-pill">
                   ${candidate.vote} votes
                 </span>
