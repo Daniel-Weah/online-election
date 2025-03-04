@@ -100,8 +100,54 @@
         <!-- Sidebar -->
         <%- include('./layout/candidates') -%>
 
-            <!-- Navbar -->
-            <%- include('./layout/navbar') -%>
+        <nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+          <div class="container-fluid">
+              
+              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                  <i class="fas fa-bars"></i>
+              </button>
+      
+              <a class="navbar-brand" href="#">
+                  <img src="/images/election.png" height="45"  alt="" loading="lazy" />
+              </a>
+      
+              <ul class="navbar-nav ms-auto d-flex flex-row">
+                  <li class="nav-item dropdown">
+                      <a class="nav-link me-3 me-lg-0 dropdown-toggle hidden-arrow" href="#" id="notification" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-bell" style="font-size: 1.2rem;margin-top: 10px;"></i>
+                          <span class="badge rounded-pill badge-notification bg-danger"><%= unreadCount %></span>
+                      </a>
+                      <ul style="position: absolute" class="dropdown-menu dropdown-menu-end" aria-labelledby="notification">
+                          <li><a class="dropdown-item" href="/notifications">Notification</a></li>
+                      </ul>
+                  </li>
+                  
+                  </li>
+      
+                  <!-- Avatar -->
+                  <li class="nav-item dropdown">
+                      <a class="nav-link dropdown-toggle hidden-arrow d-flex align-items-center" href="#" id="profile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <img src="data:image/png;base64,<%=profilePicture%>" class="rounded-circle" height="40" width="40" loading="lazy" alt="user" /> &nbsp;
+                          <span id="fullName" title="<%= userTable.first_name%> <%= userTable.middle_name%> <%= userTable.last_name%>"><%= userTable.first_name%> <%= userTable.middle_name%> <%= userTable.last_name%></span>
+                      </a>
+                      <ul style="position: absolute" class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+                          <li><a class="dropdown-item" href="/my/profile">My profile</a></li>
+                          <li><a class="dropdown-item" href="/voter/setting">Settings</a></li>
+                          <li>
+                              <a class="dropdown-item" href="/logout" style="color: #f00;">
+                                <i class="fa-solid fa-right-to-bracket"></i> Logout
+                              </a>
+                            </li>
+                            
+                                            </ul>
+                  </li>
+                  
+              </ul>
+          </div>
+          <!-- Container wrapper -->
+           
+      </nav>
+      
     </header>z
     <main style="margin-top: 50px; padding-left: 0">
         <div class="container pt-2">

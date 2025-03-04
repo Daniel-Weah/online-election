@@ -37,6 +37,7 @@ document.getElementById('partyRegistrationForm').addEventListener('submit', (e) 
                 timer: 2000
             }).then(() => {
                 document.getElementById('partyRegistrationForm').reset();
+                window.location.reload();
             });
         } else {
             Swal.fire({

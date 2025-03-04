@@ -55,6 +55,31 @@
     overflow-x: scroll;
     margin-left: 10pc;
   }
+  #flexCheck{
+    cursor: pointer;
+}
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #b8c9e2; 
+    background-color: white; 
+    cursor: pointer;
+  }
+
+  .form-check-input:checked {
+    background-color: #007bff; 
+    border-color: #007bff;
+  }
+
+  .form-check-input:focus {
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+  #edit_btn {
+    display: block !important;
+    cursor: pointer;
+    color:#007bff;
+}
+
   @media only screen and (max-width: 600px){
   form {
     width: 100%;
@@ -156,50 +181,74 @@
                 </form>
              
             </section>
+
+            <div class="col-12">
+                <div class="dropdown" style="float: right; display: none;" id="actions_btn">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="actionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                      Actions <i class="fa-solid fa-sort"></i>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="actionsDropdown">
+                      <li><form action="/delete/position" method="POST" id="deletePositionForm" style="margin: 0;">
+                        <button type="submit" class="dropdown-item">
+                            Delete
+                        </button>
+                    </form></li>
+                     
+                    </ul>
+                  </div>
+                  
+                  <style>
+                    .dropdown-toggle::after {
+                      display: none !important;
+                    }
+                  </style>
+                  
+                <br> <br>
+            </div>
             <section id="table-section">
+                <div>
+                    <input type="search" class="form-control" name="search" id="searchInput" placeholder="Search position" style="width: 100%;height: 3pc;">
+                </div>
+                <br>
                 <table class="table responsive">
                             <thead>
-                                <th>#</th>
+                                <th>
+                                    <input class="form-check-input select-all" type="checkbox" id="flexCheck">
+                                    No.</th>
                                 <th scope="col">Position</th>
                                 <th scope="col">Description</th>
                                 <th scope="col">Age Eligibility</th>
                                 <th scope="col">Election</th>
                                 <th scope="col">Action</th>
                             </thead>
-                            <tbody>
-                                <% positions.forEach((position, index) => {%>
-                                <tr>
-                                    <td><%= index + 1%></td>
-                                    <td><%= position.position %></td>
-                                    <td><%= position.position_description%></td>
-                                    <td><%= position.candidate_age_eligibility %> Years</td>
-                                    <td><%= position.election%></td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= position.id %>">
-                                                <li>
-                                                    <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editPosition(<%= JSON.stringify(position) %>)">
-    
-                                                        <i class="fas fa-pencil-alt me-2"></i>Edit
-                                                    </button>
-                                                    
-                                                </li>
-                                                <li>
-                                                    <form action="/delete/position/<%=position.id %>" method="POST" style="margin: 0;">
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fas fa-trash-alt me-2"></i>Delete
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <%})%>
+                            <tbody id="positionTable">
+                                <% if (positions.length > 0) { %>
+                                    <% positions.forEach((position, index) => { %>
+                                        <tr>
+                                            <td>
+                                                <input class="form-check-input voter-checkbox" type="checkbox" value="<%= position.id %>">
+                                                <%= index + 1 %>
+                                            </td>
+                                            <td><%= position.position %></td>
+                                            <td><%= position.position_description %></td>
+                                            <td><%= position.candidate_age_eligibility %> Years</td>
+                                            <td><%= position.election %></td>
+                                            <td>
+                                                <p data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editPosition(<%= JSON.stringify(position) %>)" id="edit_btn">
+                                                    <i class="fas fa-pencil-alt me-2"></i>Edit
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" class="text-center bg-light text-dark fw-bold p-3">
+                                            No positions available.
+                                        </td>
+                                    </tr>
+                                <% } %>
                             </tbody>
+                            
                         </table>
             </section>
 
@@ -253,50 +302,76 @@
                     </form>
                  
                 </section>
+
+                <div class="col-12">
+                    <div class="dropdown" style="float: right; display: none;" id="actions_btn">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="actionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                          Actions <i class="fa-solid fa-sort"></i>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="actionsDropdown">
+                          <li><form action="/delete/position" method="POST" id="deletePositionForm" style="margin: 0;">
+                            <button type="submit" class="dropdown-item">
+                                Delete
+                            </button>
+                        </form></li>
+                         
+                        </ul>
+                      </div>
+                      
+                      <!-- Optional: Hide Bootstrap's default caret -->
+                      <style>
+                        .dropdown-toggle::after {
+                          display: none !important;
+                        }
+                      </style>
+                      
+                    <br> <br>
+                </div>
+                <div class="d-flex justify-content-center w-100">
+                    <input type="search" class="form-control w-100" name="search" id="searchInput" placeholder="Search position" style="max-width: 600px; height: 3pc;">
+                </div>
+                <br>
                 <section id="table-section">
                     <table class="table responsive">
                                 <thead>
-                                    <th>#</th>
+                                    <th>
+                                        <input class="form-check-input select-all" type="checkbox" id="flexCheck">
+                                        No.</th>
                                     <th scope="col">Position</th>
                                     <th scope="col">Description</th>
                                     <th scope="col">Candidate Age Eligibility</th>
                                     <th scope="col">Action</th>
                                 </thead>
-                                <tbody>
+                                <tbody id="positionTable">
+                                    <% if (Adminpositions.length > 0) { %>
                                     <% Adminpositions.forEach((position, index) => {%>
                                         <tr>
-                                        <td><%=index + 1 %></td>
+                                            <td>
+                                        
+                                                <input class="form-check-input voter-checkbox" type="checkbox" value="<%= position.id %>">
+                                                <%= index + 1 %></td>
                                         <td><%= position.position %></td>
                                         <td><%= position.position_description%></td>
                                         <td><%= position.candidate_age_eligibility %> Years</td>
 
 
                                         <td>
-                                            <div class="dropdown">
-                                                <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="fas fa-ellipsis-v"></i>
-                                                </button>
-                                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= position.id %>">
-                                                    <li>
-                                                        <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editPosition(<%= JSON.stringify(position) %>)">
-        
-                                                            <i class="fas fa-pencil-alt me-2"></i>Edit
-                                                        </button>
-                                                        
-                                                    </li>
-                                                    <li>
-                                                        <form action="/delete/position/<%=position.id %>" method="POST" style="margin: 0;">
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="fas fa-trash-alt me-2"></i>Delete
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                            <p data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editPosition(<%= JSON.stringify(position) %>)" id="edit_btn">
+                                                <i class="fas fa-pencil-alt me-2"></i>Edit
+    
+                                            </p>
+                                           
                                         </td>
 
                                     </tr>
                                     <%})%>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="6" class="text-center bg-light text-dark fw-bold p-3">
+                                                No positions available.
+                                            </td>
+                                        </tr>
+                                    <% } %>
                                 </tbody>
                             </table>
                 </section>
@@ -320,7 +395,7 @@
 
                                     <div class="mb-3">
                                         <label for="position description" class="form-label">Position Description</label>
-                                        <input type="text" class="form-control" id="position_description" name="position_description">
+                                        <input type="text" class="form-control" id="positionDescription" name="position_description">
                                     </div>
   
                                     <div class="mb-3">
@@ -343,7 +418,7 @@
         function editPosition(position) {
         //    console.log('This is the position data:', position); 
            document.getElementById('positionId').value = position.id;
-           document.getElementById('position_description').value = position.position_description;
+           document.getElementById('positionDescription').value = position.position_description;
            document.getElementById('position_name').value = position.position || '';
            document.getElementById('candidate_age_eligibilities').value = position.candidate_age_eligibility || '';
 
@@ -411,6 +486,8 @@ document.getElementById("positionForm").addEventListener('submit', (e) => {
                 timer: 2000
             }).then(() => {
                 document.getElementById('positionForm').reset();
+                window.location.reload();
+
             });
         } else {
             Swal.fire({
@@ -435,6 +512,69 @@ document.getElementById("positionForm").addEventListener('submit', (e) => {
 });
 
            </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const selectAllCheckbox = document.querySelector(".select-all");
+    const voterCheckboxes = document.querySelectorAll(".voter-checkbox");
+    const actionsBtn = document.getElementById("actions_btn");
+    const searchInput = document.getElementById("searchInput");
+
+    function toggleActionsButton() {
+        const visibleCheckedVoters = document.querySelectorAll("#positionTable tr:not([style*='display: none']) .voter-checkbox:checked");
+        actionsBtn.style.display = visibleCheckedVoters.length > 0 ? "block" : "none";
+    }
+
+    selectAllCheckbox.addEventListener("change", function () {
+        document.querySelectorAll("#positionTable tr:not([style*='display: none']) .voter-checkbox").forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        toggleActionsButton();
+    });
+
+    voterCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", toggleActionsButton);
+    });
+
+    searchInput.addEventListener("input", function () {
+        const searchText = searchInput.value.toLowerCase();
+        document.querySelectorAll("#positionTable tr").forEach(row => {
+            const party = row.querySelector("td:nth-child(2)")?.innerText.toLowerCase() || "";
+            const description = row.querySelector("td:nth-child(3)")?.innerText.toLowerCase() || "";
+            const age = row.querySelector("td:nth-child(4)")?.innerText.toLowerCase() || "";
+            const election = row.querySelector("td:nth-child(5)")?.innerText.toLowerCase() || "";
+            row.style.display = (party.includes(searchText) || description.includes(searchText) || age.includes(searchText) || election.includes(searchText)) ? "" : "none";
+        });
+    });
+
+    function handleFormSubmission(formSelector) {
+        const form = document.querySelector(formSelector);
+        form.addEventListener("submit", function (event) {
+            event.preventDefault(); 
+
+            // Get selected voters from visible rows only
+            const selectedVoters = Array.from(document.querySelectorAll("#positionTable tr:not([style*='display: none']) .voter-checkbox:checked")).map(checkbox => checkbox.value);
+
+            if (selectedVoters.length === 0) {
+                alert("No party selected!");
+                return;
+            }
+
+            // Create a hidden input field with selected voter IDs
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "voterIds";
+            hiddenInput.value = JSON.stringify(selectedVoters);
+            form.appendChild(hiddenInput);
+
+            form.submit(); 
+        });
+    }
+
+    handleFormSubmission("form[action='/delete/position']");
+});
+
+  </script>
 
    <!-- <script src="/js/party.js"></script> -->
     <script src="/js/sweet_alert.js"></script>

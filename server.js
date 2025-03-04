@@ -837,73 +837,87 @@ app.post("/voters", upload.single("photo"), async (req, res) => {
 });
 
 // Delete user
-app.post("/delete/user/:id", (req, res) => {
-  const id = req.params.id;
-  pool.query("DELETE FROM users WHERE id = $1", [id], function (err) {
-    if (err) {
-      console.error("Error deleting user:", err.message);
-      return res.redirect("/voters?error=Error Deleting User");
-    }
-    pool.query("DELETE FROM auth WHERE user_id = $1", [id], function (err) {
+app.post("/delete/users", (req, res) => {
+  let { voterIds } = req.body;
+
+  try {
+      voterIds = JSON.parse(voterIds); // Parse JSON string to array
+  } catch (error) {
+      return res.redirect("/voters?error=Invalid voter data");
+  }
+
+  if (!Array.isArray(voterIds) || voterIds.length === 0) {
+    return res.redirect("/voters?error=No voter selected");
+  }
+
+  const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  pool.query(`DELETE FROM users WHERE id IN (${placeholders})`, voterIds, function (err) {
       if (err) {
-        console.error("Error deleting user:", err.message);
-        return res.redirect("/voters?error=Error Deleting User");
+          console.error("Error deleting users:", err.message);
+          return res.redirect("/voters?error=Error Deleting voter");
       }
 
-      pool.query(
-        "DELETE FROM candidates WHERE user_id = $1",
-        [id],
-        function (err) {
+      pool.query(`DELETE FROM auth WHERE user_id IN (${placeholders})`, voterIds, function (err) {
           if (err) {
-            console.error("Error deleting user:", err.message);
-            return res.redirect("/voters?error=Error Deleting User");
+              console.error("Error deleting auth records:", err.message);
+              return res.redirect("/voters?error=Error Deleting voter");
           }
 
-          pool.query(
-            "DELETE FROM user_votes WHERE user_id = $1",
-            [id],
-            function (err) {
+          pool.query(`DELETE FROM candidates WHERE user_id IN (${placeholders})`, voterIds, function (err) {
               if (err) {
-                console.error("Error deleting user:", err.message);
-                return res.redirect("/voters?error=Error Deleting User");
+                  console.error("Error deleting candidates:", err.message);
+                  return res.redirect("/voters?error=Error Deleting voter");
               }
-              res.redirect("/voters?success=User Deleted Successfully!");
-            }
-          );
-        }
-      );
-    });
+
+              pool.query(`DELETE FROM user_votes WHERE user_id IN (${placeholders})`, voterIds, function (err) {
+                  if (err) {
+                      console.error("Error deleting user votes:", err.message);
+                      return res.redirect("/voters?error=Error Deleting voter");
+                  }
+                  return res.redirect("/voters?success=Voter Deleted successfully");
+              });
+          });
+      });
   });
 });
 
+
+
 // Mark user as voted
-app.post("/voted/user/:id", (req, res) => {
-  const id = req.params.id;
-  const votedID = uuidv4();
-  pool.query(
-    "UPDATE users SET has_voted = $1 WHERE id = $2",
-    [1, id],
-    function (err) {
+app.post("/voted/users", (req, res) => {
+  let { voterIds } = req.body;
+
+  try {
+      voterIds = JSON.parse(voterIds); // Parse JSON string to array
+  } catch (error) {
+      return res.redirect("/voters?error=Invalid voter data");
+  }
+
+  if (!Array.isArray(voterIds) || voterIds.length === 0) {
+    return res.redirect("/voters?error=No voter selected");
+  }
+
+  const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  pool.query(`UPDATE users SET has_voted = 1 WHERE id IN (${placeholders})`, voterIds, function (err) {
       if (err) {
-        console.error("Error updating user:", err.message);
-        return res.redirect("/voters?error=Error Marking User as Voted");
-      }
-      pool.query(
-        "INSERT INTO user_votes (id, user_id) VALUES($1, $2)",
-        [votedID, id],
-        function (err) {
-          if (err) {
-            console.error("Error inserting vote:", err.message);
-            return res.redirect("/voters?error=Error Updating Vote Status");
-          }
-          res.redirect(
-            "/voters?success=User has been Marked as Voted Successfully!"
-          );
+          console.error("Error updating users:", err.message);
+          return res.redirect("/voters?error=Error Marking User as Voted");
         }
-      );
-    }
-  );
+
+      const values = voterIds.map(id => `('${uuidv4()}', '${id}')`).join(", ");
+
+      pool.query(`INSERT INTO user_votes (id, user_id) VALUES ${values}`, function (err) {
+          if (err) {
+              console.error("Error inserting votes:", err.message);
+              return res.status(500).json({ message: "Error updating vote status" });
+          }
+          return res.redirect("/voters?success=Users marked as voted successfully!");
+      });
+  });
 });
+
 
 // Update user
 // For updating a user
@@ -952,73 +966,83 @@ app.post("/update/user", (req, res) => {
 
 // For admin
 
-app.post("/admin/delete/user/:id", (req, res) => {
-  const id = req.params.id;
-  pool.query("DELETE FROM users WHERE id = $1", [id], function (err) {
-    if (err) {
-      console.error("Error deleting user:", err.message);
-      return res.redirect("/admin/voters?error=Error Deleting User");
-    }
-    pool.query("DELETE FROM auth WHERE user_id = $1", [id], function (err) {
+app.post("/admin/delete/users", (req, res) => {
+  let { voterIds } = req.body;
+
+  try {
+      voterIds = JSON.parse(voterIds); // Parse JSON string to array
+  } catch (error) {
+      return res.redirect("/admin/voters?error=Invalid voter data");
+  }
+
+  if (!Array.isArray(voterIds) || voterIds.length === 0) {
+    return res.redirect("/admin/voters?error=No voter selected");
+  }
+
+  const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  pool.query(`DELETE FROM users WHERE id IN (${placeholders})`, voterIds, function (err) {
       if (err) {
-        console.error("Error deleting user:", err.message);
-        return res.redirect("/admin/voters?error=Error Deleting User");
+          console.error("Error deleting users:", err.message);
+          return res.redirect("/admin/voters?error=Error Deleting voter");
       }
 
-      pool.query(
-        "DELETE FROM candidates WHERE user_id = $1",
-        [id],
-        function (err) {
+      pool.query(`DELETE FROM auth WHERE user_id IN (${placeholders})`, voterIds, function (err) {
           if (err) {
-            console.error("Error deleting user:", err.message);
-            return res.redirect("/admin/voters?error=Error Deleting User");
+              console.error("Error deleting auth records:", err.message);
+              return res.redirect("/admin/voters?error=Error Deleting voter");
           }
 
-          pool.query(
-            "DELETE FROM user_votes WHERE user_id = $1",
-            [id],
-            function (err) {
+          pool.query(`DELETE FROM candidates WHERE user_id IN (${placeholders})`, voterIds, function (err) {
               if (err) {
-                console.error("Error deleting user:", err.message);
-                return res.redirect("/admin/voters?error=Error Deleting User");
+                  console.error("Error deleting candidates:", err.message);
+                  return res.redirect("/admin/voters?error=Error Deleting voter");
               }
-              res.redirect("/admin/voters?success=User Deleted Successfully!");
-            }
-          );
-        }
-      );
-    });
+
+              pool.query(`DELETE FROM user_votes WHERE user_id IN (${placeholders})`, voterIds, function (err) {
+                  if (err) {
+                      console.error("Error deleting user votes:", err.message);
+                      return res.redirect("/admin/voters?error=Error Deleting voter");
+                  }
+                  return res.redirect("/admin/voters?success=Voter Deleted successfully");
+              });
+          });
+      });
   });
 });
 
-app.post("/admin/voted/user/:id", (req, res) => {
-  const id = req.params.id;
-  const votedID = uuidv4();
-  pool.query(
-    "UPDATE users SET has_voted = $1 WHERE id = $2",
-    [1, id],
-    function (err) {
+app.post("/admin/voted/users", (req, res) => {
+  let { voterIds } = req.body;
+
+  try {
+      voterIds = JSON.parse(voterIds); // Parse JSON string to array
+  } catch (error) {
+      return res.redirect("/voters?error=Invalid voter data");
+  }
+
+  if (!Array.isArray(voterIds) || voterIds.length === 0) {
+    return res.redirect("/admin/voters?error=No voter selected");
+  }
+
+  const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  pool.query(`UPDATE users SET has_voted = 1 WHERE id IN (${placeholders})`, voterIds, function (err) {
       if (err) {
-        console.error("Error updating user:", err.message);
-        return res.redirect("/admin/voters?error=Error Marking User as Voted");
-      }
-      pool.query(
-        "INSERT INTO user_votes (id, user_id) VALUES($1, $2)",
-        [votedID, id],
-        function (err) {
-          if (err) {
-            console.error("Error inserting vote:", err.message);
-            return res.redirect(
-              "/admin/voters?error=Error Updating Vote Status"
-            );
-          }
-          res.redirect(
-            "/admin/voters?success=User has been Marked as Voted Successfully!"
-          );
+          console.error("Error updating users:", err.message);
+          return res.redirect("/voters?error=Error Marking User as Voted");
         }
-      );
-    }
-  );
+
+      const values = voterIds.map(id => `('${uuidv4()}', '${id}')`).join(", ");
+
+      pool.query(`INSERT INTO user_votes (id, user_id) VALUES ${values}`, function (err) {
+          if (err) {
+              console.error("Error inserting votes:", err.message);
+              return res.status(500).json({ message: "Error updating vote status" });
+          }
+          return res.redirect("/admin/voters?success=Users marked as voted successfully!");
+      });
+  });
+
 });
 
 app.post("/admin/update/user", (req, res) => {
@@ -1213,16 +1237,34 @@ app.post("/update/party", upload.single("logo"), (req, res) => {
 });
 
 // Handle delete and edit request
-app.post("/delete/party/:id", (req, res) => {
-  const id = req.params.id;
-  pool.query("DELETE FROM parties WHERE id = $1", [id], function (err) {
-    if (err) {
-      console.error("Error deleting party:", err.message);
-      return res.redirect("/create/party?error=Error deleting party");
-    }
-    res.redirect("/create/party?success=Party Deleted Successfully!");
+app.post("/delete/party", (req, res) => {
+  let { voterIds } = req.body;
+
+  if (!voterIds) {
+      return res.redirect("/create/party?error=No party selected");
+  }
+
+  try {
+      voterIds = JSON.parse(voterIds);
+  } catch (error) {
+      return res.redirect("/create/party?error=Invalid party data");
+  }
+
+  if (!Array.isArray(voterIds) || voterIds.length === 0) {
+      return res.redirect("/create/party?error=No party selected");
+  }
+
+  const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  pool.query(`DELETE FROM parties WHERE id IN (${placeholders})`, voterIds, function (err) {
+      if (err) {
+          console.error("Error deleting party:", err.message);
+          return res.redirect("/create/party?error=Error deleting party");
+      }
+      res.redirect("/create/party?success=Party Deleted Successfully!");
   });
 });
+
 
 app.get("/add/position", async (req, res) => {
   try {
@@ -1385,23 +1427,32 @@ app.post("/update/position", async (req, res) => {
   }
 });
 
-app.post("/delete/position/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
+app.post("/delete/position", async (req, res) => {
+  let { voterIds } = req.body;
 
-    const result = await pool.query("DELETE FROM positions WHERE id = $1", [
-      id,
-    ]);
-
-    if (result.rowCount === 0) {
-      return res.redirect("/add/position?error=Position not found");
-    }
-
-    res.redirect("/add/position?success=Position deleted successfully!");
-  } catch (err) {
-    console.error("Error deleting position:", err);
-    res.redirect("/add/position?error=Error deleting position");
+  if (!voterIds) {
+      return res.redirect("/add/position?error=No position selected");
   }
+
+  try {
+      voterIds = JSON.parse(voterIds);
+  } catch (error) {
+      return res.redirect("/add/position?error=Invalid position data");
+  }
+
+  if (!Array.isArray(voterIds) || voterIds.length === 0) {
+      return res.redirect("/add/position?error=No position selected");
+  }
+
+  const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  pool.query(`DELETE FROM positions WHERE id IN (${placeholders})`, voterIds, function (err) {
+      if (err) {
+          console.error("Error deleting position:", err.message);
+          return res.redirect("/add/position?error=Error deleting position");
+      }
+      res.redirect("/add/position?success=Position Deleted Successfully!");
+  });
 });
 
 //======================== CANDIDATE REGISTRATION ROUTES =============================
@@ -1447,6 +1498,7 @@ app.get("/candidate/registration", async (req, res) => {
       return res.status(404).send("User not found");
     }
     const user = userData[0];
+
 
     // Fetch unread notifications count
     const { rows: unreadNotifications } = await pool.query(
@@ -1540,6 +1592,7 @@ app.get("/candidate/registration", async (req, res) => {
       Adminpositions,
       Admincandidates,
       secondRole,
+      userTable
     });
   } catch (error) {
     console.error("Error:", error);
@@ -1589,6 +1642,7 @@ app.post("/update/candidate", async (req, res) => {
 });
 
 // DELETE Candidate
+// DELETE Candidate
 app.post("/delete/candidate/:id", async (req, res) => {
   const { candidateUserID } = req.body;
   const id = req.params.id;
@@ -1623,6 +1677,11 @@ app.post("/delete/candidate/:id", async (req, res) => {
     );
   }
 });
+
+
+
+
+
 
 app.post(
   "/candidate/registration",

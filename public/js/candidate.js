@@ -40,6 +40,7 @@ document.getElementById('candidateRegistrationForm').addEventListener('submit', 
                 timer: 3000
             }).then(() => {
                 document.getElementById('candidateRegistrationForm').reset();
+                window.location.reload();
             });
         } else {
             Swal.fire({
@@ -62,3 +63,7 @@ document.getElementById('candidateRegistrationForm').addEventListener('submit', 
         console.error('Error:', error);
     });
 });
+
+
+
+

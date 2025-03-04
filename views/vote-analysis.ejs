@@ -28,6 +28,9 @@
     max-width: 900px;
     height: 500px;
   }
+  .dropdown-item.text-primary {
+    display: block !important;
+}
 
   /* Large screens */
   @media only screen and (min-width: 1024px) {
@@ -44,6 +47,7 @@
       height: 400px;
     }
   }
+
 
   /* Small Devices */
   @media only screen and (max-width: 600px) {
@@ -78,8 +82,15 @@
   </div>
 </main>
 <script>
-  const groupedData = <%- groupedData %>; 
+   const groupedData = <%- groupedData %>; 
 
+if (Object.keys(groupedData).length === 0) {
+  // If there's no data available, display a message
+  const noDataMessage = document.createElement("p");
+  noDataMessage.textContent = "No data available for voter analysis.";
+  noDataMessage.classList.add("text-center", "text-muted", "mt-4");
+  document.getElementById("chart").appendChild(noDataMessage);
+} else {
   Object.keys(groupedData).forEach((position) => {
     const positionData = groupedData[position];
 
@@ -109,10 +120,11 @@
       data: data,
       type: "bar",
       height: 300,
-      colors: ["#007bff", "#28a745"]
-,
+      colors: ["#007bff", "#28a745"],
     });
   });
+}
+
 </script>
 
 

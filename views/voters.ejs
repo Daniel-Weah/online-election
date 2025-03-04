@@ -66,8 +66,10 @@
     display: none;
   } */
 
-.dropdown-item.text-primary {
+#edit_btn {
     display: block !important;
+    cursor: pointer;
+    color:#007bff;
 }
 
 
@@ -123,7 +125,25 @@
   color: rgb(58, 57, 57);
 }
 
+#flexCheck{
+    cursor: pointer;
+}
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #b8c9e2; 
+    background-color: white; 
+    cursor: pointer;
+  }
 
+  .form-check-input:checked {
+    background-color: #007bff; 
+    border-color: #007bff;
+  }
+
+  .form-check-input:focus {
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
 
     @media only screen and (max-width: 600px){
         #voters-registration-tab{
@@ -182,6 +202,33 @@
                     <div class="tab-pane fade show active" id="voters-tab" role="tabpanel">
                         <div class="mb-3" style="margin: 20px;">
                             <div class="col-12">
+                                <div class="dropdown" style="float: right; display: none;" id="actions_btn">
+                                    <button class="btn btn-primary dropdown-toggle" type="button" id="actionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                      Actions <i class="fa-solid fa-sort"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="actionsDropdown">
+                                      <li><form action="/delete/users" method="POST" style="margin: 0;">
+                                        <button type="submit" class="dropdown-item">
+                                            Delete
+                                        </button>
+                                    </form></li>
+                                      <li><form action="/voted/users" method="POST" style="margin: 0;">
+                                        <button type="submit" class="dropdown-item">
+                                            Mark as Voted
+                                        </button>
+                                    </form>
+                                </li>
+                                    </ul>
+                                  </div>
+                                  
+                                  <!-- Optional: Hide Bootstrap's default caret -->
+                                  <style>
+                                    .dropdown-toggle::after {
+                                      display: none !important;
+                                    }
+                                  </style>
+                                  
+                                <br> <br>
                                 <div>
                                     <input type="search" class="form-control" name="search" id="searchInput" placeholder="Search voters" style="width: 100%;height: 3pc;">
                                 </div>
@@ -190,7 +237,9 @@
                     
                         <table class="table responsive">
                             <thead>
-                                <th>No.</th>
+                                <th>
+                                    <input class="form-check-input select-all" type="checkbox" id="flexCheck">
+                                    No.</th>
                                 <th scope="col">Name</th>
                                 <th scope="col">Role</th>
                                 <th scope="col">Status</th>
@@ -201,7 +250,10 @@
                             <tbody id="votersTable">
                                 <% users.forEach((user, index) => { %>
                                 <tr>
-                                    <td><%= index + 1 %></td>
+                                    <td>
+                                        
+                                        <input class="form-check-input voter-checkbox" type="checkbox" value="<%= user.id %>">
+                                        <%= index + 1 %></td>
                                     <td>
                                         <img src="data:image/png;base64,<%= user.profile_picture %>" alt="profile_picture" id="profile_picture"> 
                                         <div>
@@ -222,41 +274,19 @@
                                     
                                     <td><%= user.election %></td>
                                     <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-outline-secondary btn-floating dropdown-toggle" type="button" id="dropdownMenuButton<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton<%= user.id %>">
-                                                <li>
-                                                    <form action="/voted/user/<%= user.id %>" method="POST" style="margin: 0;">
-                                                        <button type="submit" class="dropdown-item text-success">
-                                                            <i class="fas fa-check-circle me-2"></i>Mark as Voted
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editUser(<%= JSON.stringify(user) %>)">
+                                        <p data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editUser(<%= JSON.stringify(user) %>)" id="edit_btn">
+                                            <i class="fas fa-pencil-alt me-2"></i>Edit
 
-                                                        <i class="fas fa-pencil-alt me-2"></i>Edit
-                                                    </button>
-                                                    
-                                                                                                    </li>
-                                                <li>
-                                                    <form action="/delete/user/<%= user.id %>" method="POST" style="margin: 0;">
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fas fa-trash-alt me-2"></i>Delete
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                        </p>
+                                       
                                     </td>
+                                    
                                 </tr>
                                 <% }) %>
                             </tbody>
                             <% } else { %>
                             <div class="alert alert-warning text-center mt-4">
-                                There is no candidate available at this moment. Please check back later.
+                                There is no voter available at this moment. Please check back later.
                             </div>
                             <% } %>
                         </table>
@@ -563,6 +593,70 @@ document.addEventListener('DOMContentLoaded', (e) => {
 
 
     </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const selectAllCheckbox = document.querySelector(".select-all");
+    const voterCheckboxes = document.querySelectorAll(".voter-checkbox");
+    const actionsBtn = document.getElementById("actions_btn");
+    const searchInput = document.getElementById("searchInput");
+
+    function toggleActionsButton() {
+        const visibleCheckedVoters = document.querySelectorAll("#votersTable tr:not([style*='display: none']) .voter-checkbox:checked");
+        actionsBtn.style.display = visibleCheckedVoters.length > 0 ? "block" : "none";
+    }
+
+    selectAllCheckbox.addEventListener("change", function () {
+        document.querySelectorAll("#votersTable tr:not([style*='display: none']) .voter-checkbox").forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        toggleActionsButton();
+    });
+
+    voterCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", toggleActionsButton);
+    });
+
+    searchInput.addEventListener("input", function () {
+        const searchText = searchInput.value.toLowerCase();
+        document.querySelectorAll("#votersTable tr").forEach(row => {
+            const name = row.querySelector("td:nth-child(2)")?.innerText.toLowerCase() || "";
+            const role = row.querySelector("td:nth-child(3)")?.innerText.toLowerCase() || "";
+            const status = row.querySelector("td:nth-child(4)")?.innerText.toLowerCase() || "";
+            const election = row.querySelector("td:nth-child(5)")?.innerText.toLowerCase() || "";
+            row.style.display = (name.includes(searchText) || role.includes(searchText) || status.includes(searchText) || election.includes(searchText)) ? "" : "none";
+        });
+    });
+
+    function handleFormSubmission(formSelector) {
+        const form = document.querySelector(formSelector);
+        form.addEventListener("submit", function (event) {
+            event.preventDefault(); 
+
+            // Get selected voters from visible rows only
+            const selectedVoters = Array.from(document.querySelectorAll("#votersTable tr:not([style*='display: none']) .voter-checkbox:checked")).map(checkbox => checkbox.value);
+
+            if (selectedVoters.length === 0) {
+                alert("No voters selected!");
+                return;
+            }
+
+            // Create a hidden input field with selected voter IDs
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "voterIds";
+            hiddenInput.value = JSON.stringify(selectedVoters);
+            form.appendChild(hiddenInput);
+
+            form.submit(); 
+        });
+    }
+
+    handleFormSubmission("form[action='/delete/users']");
+    handleFormSubmission("form[action='/voted/users']");
+});
+
+  </script>
     
     
     <script src="/js/registration.js"></script>
