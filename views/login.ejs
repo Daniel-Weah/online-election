@@ -156,7 +156,26 @@ input{
 #admin-contents{
     display: none;
 }
+.show-password {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        color: #5f6368;
+        margin-top: 5px;
+        cursor: pointer;
+    }
 
+    .show-password input {
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        cursor: pointer;
+    }
+
+    .show-password label {
+        cursor: pointer;
+        font-size: 14px;
+    }
 
 
 /* ===== admin link styles ===== */
@@ -205,7 +224,11 @@ input{
                             <i class='bx bxs-lock-alt'></i>
                             <input type="password" placeholder="Password" id="password" name="password" required>
                         </div>
-                       
+                        
+                        <div class="show-password">
+                            <input type="checkbox" id="showPassword">
+                            <label for="showPassword">Show Password</label>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -218,6 +241,11 @@ input{
         </div>
     </div>
 
-   
+   <script>
+    document.getElementById("showPassword").addEventListener("change", function() {
+        let passwordField = document.getElementById("password");
+        passwordField.type = this.checked ? "text" : "password";
+    });
+   </script>
 </body>
 </html>
