@@ -1,9 +1,15 @@
 <%- include('layout/header') %>
 <style>
+  * {
+  box-sizing: border-box;
+}
+
   body {
     font-family: 'Roboto', sans-serif;
     background-color: #f4f4f4;
     color: #333;
+    margin-left: 15pc;
+
   }
 
   h1 {
@@ -22,12 +28,12 @@
   }
 
   form {
-    max-width: 800px;
     margin: 0 auto;
     padding: 1.5rem;
     background-color: #fff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
+    width: 100%;
   }
 
   form ul {
@@ -43,6 +49,9 @@
     padding: 1rem;
     border-radius: 8px;
     transition: box-shadow 0.2s;
+    /* max-width: 500px; */
+    overflow-x: auto;
+
   }
 
   form ul li:hover {
@@ -79,6 +88,18 @@
   }
 
   #submit_btn {
+    display: block;
+    width: 100%;
+    padding: 0.8rem;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  #submit_bt {
     display: block;
     width: 100%;
     padding: 0.8rem;
@@ -136,6 +157,17 @@ button:hover {
     #submit_btn {
       font-size: 0.9rem;
     }
+    #submit_bt {
+      font-size: 0.9rem;
+    }
+    
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    margin-left: 0;
+
+  }
   }
 </style>
 </head>
@@ -149,45 +181,104 @@ button:hover {
     <p id="notification-message"></p>
   </div>
 
-  <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
-    <h1>Vote Candidate</h1>
-    <p id="timer" style="font-size: 18px; font-weight: bold;color: red;"></p>
-    <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
-      <% if (current < start || current > end) { %>
-        <p>Voting is only allowed between <%= start %> <b>To</b> <%= end %>.</p>
-        <button type="submit" id="submit_btn" disabled>Submit Your Vote</button>
-    <% } else if (Object.keys(groupedCandidates).length === 0) { %>
-      <p class="text-center text-muted">
-        <img src="/images/noCandidate.png" alt="no candidate">
-        <br>
-        No candidates available for voting in this election.
-      </p>    
-    <% } else { %>
-      <ul>
-        <% Object.keys(groupedCandidates).forEach(position => { %>
-          <h2><%= position %></h2>
-          <% if (groupedCandidates[position].length === 0) { %>
-            <p class="text-center text-muted">No candidates available for the <%= position %> position.</p>
-          <% } else { %>
-            <% groupedCandidates[position].forEach(candidate => { %>
-              <li>
-                <label>
-                  <img src="data:image/png;base64,<%= candidate.photo %>" alt="Candidate photo">
-                  <input type="radio" name="<%= position %>" value="<%= candidate.id %>" required>
-                  <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %></span>
-                  <span class="candidate-party">(<%= candidate.party %>)</span>
-                </label>
-              </li>
-            <% }) %>
-          <% } %>
-        <% }); %>
-      </ul>
-      <button type="submit" id="submit_btn">Submit Your Vote</button>
-    <% } %>
-  </form>
+  <% if ((role === 'Super Admin' || role === 'Admin') && current > end && current <= admin_end) { %>
+    <!-- Show admin vote entry section -->
+    <section>
+      <form action="/local-vote-count" method="post" id="" enctype="multipart/form-data">
+        <h1>Enter Local Vote Counts</h1>
+        <div style="padding: 1rem; background: #ffeaa7; color: #2d3436; border-radius: 5px;">
+          This section is only accessible to admins after the voting period. Use it to manually input vote counts.
+        </div>
+        <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
+  
+        <% if (Object.keys(groupedCandidates).length === 0) { %>
+          <p class="text-center text-muted">
+            <img src="/images/noCandidate.png" alt="No candidates available">
+            <br>
+            There are no candidates available for voting in this election.
+          </p>
+        <% } else { %>
+          <ul>
+            <% Object.keys(groupedCandidates).forEach(position => { %>
+              <h2><%= position %></h2>
+  
+              <% if (groupedCandidates[position].length === 0) { %>
+                <p class="text-center text-muted">No candidates available for the <%= position %> position.</p>
+              <% } else { %>
+                <% groupedCandidates[position].forEach(candidate => { %>
+                  <li>
+                    <label>
+                      <img src="data:image/png;base64,<%= candidate.photo %>" alt="Candidate photo">
+                      <span class="candidate-name">
+                        <%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %>
+                      </span>
+                      <span class="candidates">
+                        <input type="number" name="votes[<%= candidate.id %>]" placeholder="Enter number of local votes" required>
+                      </span>
+                    </label>
+                  </li>
+                <% }) %>
+              <% } %>
+            <% }); %>
+          </ul>
+  
+          <button type="submit" id="submit_bt">Submit Vote Counts</button>
+        <% } %>
+      </form>
+    </section>
+  
+  <% } else if (current < start || current > end) { %>
+    <!-- Show voting not allowed message -->
+    <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
+      <h1>Vote Candidate</h1>
+      <p id="timer" style="font-size: 18px; font-weight: bold;color: red;"></p>
+      <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
+      <div style="padding: 1rem; background: #ffeaa7; color: #2d3436; border-radius: 5px;">
 
-
-
+        <p>Voting was only allowed between <%= new Date(start).toUTCString() %> <b>To</b> <%= new Date(end).toUTCString() %>.</p>
+        </div>
+      <button type="submit" id="submit_btn" disabled>Submit Your Vote</button>
+    </form>
+  
+  <% } else { %>
+    <!-- Show candidate voting form -->
+    <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
+      <h1>Vote Candidate</h1>
+      <p id="timer" style="font-size: 18px; font-weight: bold;color: red;"></p>
+      <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
+  
+      <% if (Object.keys(groupedCandidates).length === 0) { %>
+        <p class="text-center text-muted">
+          <img src="/images/noCandidate.png" alt="no candidate">
+          <br>
+          No candidates available for voting in this election.
+        </p>    
+      <% } else { %>
+        <ul>
+          <% Object.keys(groupedCandidates).forEach(position => { %>
+            <h2><%= position %></h2>
+            <% if (groupedCandidates[position].length === 0) { %>
+              <p class="text-center text-muted">No candidates available for the <%= position %> position.</p>
+            <% } else { %>
+              <% groupedCandidates[position].forEach(candidate => { %>
+                <li>
+                  <label>
+                    <img src="data:image/png;base64,<%= candidate.photo %>" alt="Candidate photo">
+                    <input type="radio" name="<%= position %>" value="<%= candidate.id %>" required>
+                    <span class="candidate-name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %></span>
+                    <span class="candidate-party">(<%= candidate.party %>)</span>
+                  </label>
+                </li>
+              <% }) %>
+            <% } %>
+          <% }); %>
+        </ul>
+        <button type="submit" id="submit_btn">Submit Your Vote</button>
+      <% } %>
+    </form>
+  <% } %>
+  
+  
   <script>
 
 

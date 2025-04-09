@@ -331,16 +331,16 @@ app.get("/dashboard", async (req, res) => {
       hour12: false,
     });
     const electionStartTime = registrationTiming.start_time;
+    // const electionEndTime = registrationTiming.end_time;
     const electionEndTime = registrationTiming.end_time;
-
-    console.log("Election Start time:", electionStartTime);
-    console.log("Election End time:", electionEndTime);
+    const adminEndTime = registrationTiming.admin_end_time;
 
     const currentDate = electionStartTime.split("T")[0];
     const fullCurrentTime = `${currentDate}T${currentTime}`;
 
-    const start = new Date(electionStartTime);
     const end = new Date(electionEndTime);
+    const start = new Date(electionStartTime);
+    const admin_end = new Date(adminEndTime);
     const current = new Date(fullCurrentTime);
 
     // Fetch all elections
@@ -359,9 +359,10 @@ app.get("/dashboard", async (req, res) => {
       unreadCount: unreadCountQuery.rows[0]?.unreadcount || 0,
       user: userDetailsQuery.rows[0],
       profilePicture,
-      current,
-      start: new Date(start).toISOString(), 
-      end: new Date(end).toISOString() 
+      current: new Date(current).toISOString(),
+      admin_end: new Date(admin_end).toISOString(), 
+      end: new Date(end).toISOString(),
+      start: new Date(start).toISOString(),
     });
   } catch (err) {
     console.error(err);
@@ -2040,7 +2041,7 @@ app.get("/vote", (req, res) => {
                                     }
 
                                     pool.query(
-                                      `SELECT start_time, end_time FROM election_settings WHERE election_id = $1`,
+                                      `SELECT * FROM election_settings WHERE election_id = $1`,
                                       [user.rows[0].election_id],
                                       (err, electionTiming) => {
                                         if (err) {
@@ -2059,10 +2060,17 @@ app.get("/vote", (req, res) => {
                                         const endTime =
                                           electionTiming.rows[0].end_time;
 
-                                        const start = new Date(startTime);
-                                        const end = new Date(endTime);
-                                        const current = new Date(currentTime);
+                                        const adminStartTime =
+                                        electionTiming.rows[0].admin_start_time;
+                                      const adminEndTime =
+                                        electionTiming.rows[0].admin_end_time;
 
+                                        const start = new Date(startTime).getTime();
+                                        const end = new Date(endTime).getTime();
+                                        const admin_start = new Date(adminStartTime).getTime();
+                                        const admin_end = new Date(adminEndTime).getTime();
+                                        const current = new Date(currentTime).getTime();
+                                        
                                         res.render("vote", {
                                           candidates: candidates.rows,
                                           role: userRole.rows[0].role,
@@ -2075,6 +2083,8 @@ app.get("/vote", (req, res) => {
                                           start,
                                           end,
                                           current,
+                                          admin_start,
+                                          admin_end,
                                         });
                                       }
                                     );
@@ -2096,6 +2106,30 @@ app.get("/vote", (req, res) => {
     }
   );
 });
+app.post("/local-vote-count", upload.none(), async (req, res) => {
+  const { votes } = req.body;
+
+  try {
+    const voteEntries = Object.entries(votes);
+
+    for (const [candidate_id, count] of voteEntries) {
+      await pool.query(
+        `INSERT INTO votes (candidate_id, vote)
+         VALUES ($1, $2)
+         ON CONFLICT (candidate_id)
+         DO UPDATE SET vote = votes.vote + EXCLUDED.vote`,
+        [candidate_id, parseInt(count)]
+      );
+    }
+
+    res.status(201).json({ message: "Votes incremented successfully." });
+  } catch (err) {
+    console.error("Error incrementing votes:", err);
+    res.status(500).json({ error: "Failed to process votes." });
+  }
+});
+
+
 
 app.post("/vote", upload.none(), async (req, res) => {
   const { electionID } = req.body;
@@ -2103,8 +2137,8 @@ app.post("/vote", upload.none(), async (req, res) => {
   const positions = Object.keys(req.body);
   const userVotesID = uuidv4();
   try {
-    const client = await pool.connect(); // Get a client connection
-    await client.query("BEGIN"); // Start a transaction
+    const client = await pool.connect(); 
+    await client.query("BEGIN"); 
 
     // Check if user has already voted
     const userVote = await client.query(
@@ -2548,6 +2582,8 @@ app.post("/create/election", async (req, res) => {
     voter_age_eligibility,
     registration_start_time,
     registration_end_time,
+    admin_start_time,
+    admin_end_time,
   } = req.body;
 
   console.log(req.body);
@@ -2571,8 +2607,8 @@ app.post("/create/election", async (req, res) => {
 
     // Insert into election_settings table
     const insertElectionSettingsQuery = `
-      INSERT INTO election_settings (id, start_time, end_time, registration_start_time, registration_end_time, election_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO election_settings (id, start_time, end_time, registration_start_time, registration_end_time, election_id, admin_start_time, admin_end_time)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `;
     await pool.query(insertElectionSettingsQuery, [
       uuidv4(),
@@ -2581,6 +2617,8 @@ app.post("/create/election", async (req, res) => {
       registration_start_time,
       registration_end_time,
       electionID,
+      admin_start_time,
+      admin_end_time,
     ]);
 
     // Commit the transaction
@@ -2612,6 +2650,8 @@ app.post("/update/election", upload.none(), (req, res) => {
     voter_age_eligibilities,
     RegistrationStartTime,
     RegistrationEndTime,
+    adminStartTime,
+    adminEndTime,
   } = req.body;
 
   console.log(req.body);
@@ -2626,8 +2666,8 @@ app.post("/update/election", upload.none(), (req, res) => {
       }
 
       pool.query(
-        "UPDATE election_settings SET start_time = $1, end_time = $2, registration_start_time = $3, registration_end_time = $4 WHERE election_id = $5",
-        [startTime, endTime, RegistrationStartTime, RegistrationEndTime, id],
+        "UPDATE election_settings SET start_time = $1, end_time = $2, registration_start_time = $3, registration_end_time = $4, admin_start_time = $5, admin_end_time = $6 WHERE election_id = $7",
+        [startTime, endTime, RegistrationStartTime, RegistrationEndTime, adminStartTime, adminEndTime, id],
         function (err) {
           if (err) {
             console.error(err.message);

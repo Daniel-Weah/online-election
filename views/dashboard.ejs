@@ -79,9 +79,24 @@
           </div>
         </div>
       </div>
+
+      <% if (current > end && current <= admin_end) { %>
       
-     
-      
+    <!-- ========== Administrative Use Warning Message ========== -->
+    <div class="alert alert-danger" role="alert">
+      <p><strong>Announcement!</strong></p>
+      <p>Hello <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %>,</p>
+      <p>The voting process has officially ended. Please await the official results from the Election Committee.</p>
+      <p>If you have any inquiries, feel free to contact us <a href="mailto:votewiseliberia@gmail.com">here</a>.</p>
+    </div>
+
+    <% } %>
+
+
+
+    <!-- ========== End of Administrative Use Warning Message ========== -->
+
+
         <h1 class="mb-4" style="text-align: center; padding-top: 30px;">Election Result Dashboard</h1>
         <div class="container pt-2 bg-light">
           <div class="mb-3" style="margin: 20px;">
@@ -219,7 +234,7 @@
 
 // Ensure correct parsing of dates
 const startDate = new Date("<%= start %>");
-const endDate = new Date("<%= end %>");
+const endDate = new Date("<%= admin_end %>");
 const currentDate = new Date();
 
 
