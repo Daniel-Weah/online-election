@@ -122,6 +122,55 @@
     margin-left: 15px;
   }
 }
+
+.notification-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.notification-card {
+  display: flex;
+  background: #fff;
+  border-left: 5px solid #0d6efd;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  padding: 15px;
+  transition: transform 0.2s ease;
+}
+
+.notification-card:hover {
+  transform: scale(1.01);
+}
+
+.notification-icon {
+  font-size: 2rem;
+  color: #0d6efd;
+  margin-right: 15px;
+  align-self: center;
+}
+
+.notification-content h5 {
+  margin: 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.notification-content p {
+  margin: 5px 0;
+  color: #555;
+  white-space: pre-wrap;
+}
+
+.notification-content small {
+  color: #888;
+}
+
+.no-notification-img {
+  max-width: 180px;
+  opacity: 0.8;
+}
+
 </style>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -186,21 +235,33 @@
   </nav>
   
   </header>
- <main id="container" class="shadow-sm mt-4">
-  <h1 style="margin-top: 5pc;">Welcome, <%= userData.first_name %> <%= userData.middle_name %> <%= userData.last_name %>! </h1>
-  <h3>Your Notifications</h3>
-  <ul id="notification-list">
+  <main id="container" class="shadow-sm mt-4 container py-5">
+    <br>
+    <h2 class="mb-4 text-primary">Hello, <%= userData.first_name %> <%= userData.middle_name %> <%= userData.last_name %>!</h2>
+    <h4 class="mb-3 text-secondary">📬 Your Notifications</h4>
+  
     <% if (notifications.length > 0) { %>
-      <% notifications.forEach(notification => { %>
-        <li><img src="/images/message.png" alt="notification-icon"> <span id="title"><%= notification.title %></span> <br> <span class="message" style="white-space: pre-wrap;"><%- notification.message %></span><span ><img src="/images/double-check.png" alt="" style="width: 20px;height: 20px;"></span></li>
-        <li><span style="color: green;">Sent: </span><%= new Date(notification.created_at).toLocaleString() %></li>
-        <hr>
-      <% }) %>
+      <div class="notification-grid">
+        <% notifications.forEach(notification => { %>
+          <div class="notification-card">
+            <div class="notification-icon">
+              <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <div class="notification-content">
+              <h5><%= notification.title %></h5>
+              <p><%- notification.message %></p>
+              <small><i class="fas fa-clock"></i> <%= new Date(notification.created_at).toLocaleString() %></small>
+            </div>
+          </div>
+        <% }) %>
+      </div>
     <% } else { %>
-     <img src="/images/no-notification.png" alt="no notification img" id="no-notification">
-      <p>No notifications available.</p>
+      <div class="text-center mt-4">
+        <img src="/images/no-notification.png" alt="no notification" class="no-notification-img mb-3" />
+        <p class="text-muted">You’re all caught up! No new notifications.</p>
+      </div>
     <% } %>
-  </ul>
-</main>
+  </main>
+  
 
 <%- include('layout/footer') %>
