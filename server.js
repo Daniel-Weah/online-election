@@ -3322,174 +3322,346 @@ app.post("/create/user", upload.single("photo"), (req, res) => {
   });
 });
 
-app.get("/party-dashboard", (req, res) => {
+app.get("/party-dashboard", async (req, res) => {
   if (!req.session.userId || req.session.userRole !== "Candidate") {
     return res.redirect("/login");
   }
 
-  pool.query(
-    "SELECT * FROM candidates WHERE user_id = $1",
-    [req.session.userId],
-    (err, currentUserResult) => {
-      if (err) {
-        console.error("Error fetching current user:", err);
-        return res.status(500).send("An error occurred");
-      }
-      if (currentUserResult.rows.length === 0) {
-        return res.status(404).send("User not found");
-      }
+  try {
+    const currentUserResult = await pool.query(
+      "SELECT * FROM candidates WHERE user_id = $1",
+      [req.session.userId]
+    );
 
-      const currentUser = currentUserResult.rows[0];
-      console.log("Current Logged-in candidate", currentUser);
-
-      pool.query(
-        `SELECT candidates.*, parties.*, users.*
-        FROM candidates
-        JOIN parties ON candidates.party_id = parties.id
-        JOIN users ON candidates.user_id = users.id
-        WHERE candidates.election_id = $1 AND candidates.user_id = $2`,
-        [currentUser.election_id, currentUser.user_id],
-        (err, userResult) => {
-          if (err) {
-            console.error(
-              `Error fetching current candidate for election_id ${currentUser.election_id}:`,
-              err
-            );
-            return res
-              .status(500)
-              .send("An error occurred while fetching candidate data.");
-          }
-
-          if (userResult.rows.length === 0) {
-            return res
-              .status(404)
-              .send("Candidate not found for the specified election.");
-          }
-
-          const user = userResult.rows[0];
-          user.photo = user.photo ? user.photo.toString("base64") : null;
-          user.logo = user.logo ? user.logo.toString("base64") : null;
-
-          console.log("Current Candidate Data", user);
-
-          pool.query(
-            `SELECT candidates.*, parties.*, positions.position, votes.*
-            FROM candidates
-            JOIN parties ON candidates.party_id = parties.id
-            JOIN positions ON candidates.position_id = positions.id
-            LEFT JOIN votes ON candidates.id = votes.candidate_id
-            WHERE candidates.party_id = $1 AND candidates.election_id = $2`,
-            [user.party_id, user.election_id],
-            (err, allCandidatesResult) => {
-              if (err) {
-                console.error("Error fetching all candidates:", err);
-                return res
-                  .status(500)
-                  .send("An error occurred while fetching all candidates");
-              }
-
-              const users = allCandidatesResult.rows;
-
-              users.forEach((user) => {
-                if (user.photo) {
-                  user.photo = user.photo.toString("base64");
-                }
-
-                if (user.logo) {
-                  user.logo = user.logo.toString("base64");
-                }
-              });
-
-              console.log("All candidates", users);
-
-              const voteStatus = user.has_voted ? "Voted" : "Not Voted";
-
-              pool.query(
-                "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
-                [req.session.userId],
-                (err, userRoleResult) => {
-                  if (err) {
-                    return res.status(500).send("Error fetching user role");
-                  }
-
-                  const userRole = userRoleResult.rows[0];
-
-                  pool.query("SELECT * FROM roles", (err, rolesResult) => {
-                    if (err) {
-                      return res.status(500).send("internal server error");
-                    }
-
-                    pool.query(
-                      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-                      [user.username],
-                      (err, countResult) => {
-                        if (err) {
-                          return res
-                            .status(500)
-                            .send("Error fetching unread notifications count");
-                        }
-
-                        const profilePicture = req.session.profilePicture;
-
-                        pool.query(
-                          "SELECT * FROM elections",
-                          (err, electionsResult) => {
-                            if (err) {
-                              return res
-                                .status(500)
-                                .send(
-                                  "There was an error getting the elections data"
-                                );
-                            }
-
-                            pool.query(
-                              `SELECT users.*, elections.election AS election_name
-                              FROM users
-                              JOIN elections ON users.election_id = elections.id
-                              WHERE users.id = $1`,
-                              [req.session.userId],
-                              (err, userElectionDataResult) => {
-                                if (err) {
-                                  console.error(
-                                    "Error getting the user election name:",
-                                    err
-                                  );
-                                  return res.send(
-                                    "Error getting the userElectionName"
-                                  );
-                                }
-
-                                const elections = electionsResult.rows;
-                                const userElectionData =
-                                  userElectionDataResult.rows;
-
-                                res.render("party-dashboard", {
-                                  users,
-                                  profilePicture,
-                                  voteStatus,
-                                  role: userRole.role,
-                                  roles: rolesResult.rows,
-                                  unreadCount: countResult.rows[0].unreadcount,
-                                  user,
-                                  elections,
-                                  userElectionData,
-                                });
-                              }
-                            );
-                          }
-                        );
-                      }
-                    );
-                  });
-                }
-              );
-            }
-          );
-        }
-      );
+    if (currentUserResult.rows.length === 0) {
+      return res.status(404).send("User not found");
     }
-  );
+
+    const currentUser = currentUserResult.rows[0];
+
+    const userResult = await pool.query(
+      `SELECT candidates.*, parties.*, users.*
+       FROM candidates
+       JOIN parties ON candidates.party_id = parties.id
+       JOIN users ON candidates.user_id = users.id
+       WHERE candidates.election_id = $1 AND candidates.user_id = $2`,
+      [currentUser.election_id, currentUser.user_id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).send("Candidate not found for the specified election.");
+    }
+
+    const user = userResult.rows[0];
+    user.photo = user.photo ? user.photo.toString("base64") : null;
+    user.logo = user.logo ? user.logo.toString("base64") : null;
+
+
+    const samePartyCandidatesResult = await pool.query(
+      `SELECT 
+        candidates.*, 
+        parties.*, 
+        users.*, 
+        positions.position, 
+        COALESCE(votes.vote, 0) AS vote_count
+       FROM candidates
+       JOIN parties ON candidates.party_id = parties.id
+       JOIN users ON candidates.user_id = users.id
+       JOIN positions ON candidates.position_id = positions.id
+       LEFT JOIN votes ON candidates.id = votes.candidate_id
+       WHERE candidates.party_id = $1 AND candidates.election_id = $2
+       ORDER BY positions.id`,
+      [user.party_id, user.election_id]
+    );
+    
+    const partyCandidates = samePartyCandidatesResult.rows;
+
+    partyCandidates.forEach(candidate => {
+      candidate.photo = candidate.photo ? candidate.photo.toString("base64") : null;
+      candidate.logo = candidate.logo ? candidate.logo.toString("base64") : null;
+    });
+    
+    
+
+    const allCandidatesResult = await pool.query(
+      `SELECT 
+        candidates.id AS candidate_id,
+        candidates.position_id,
+        users.first_name, 
+        users.middle_name, 
+        users.last_name, 
+        COALESCE(votes.vote, 0) AS vote_count
+       FROM candidates
+       JOIN users ON candidates.user_id = users.id
+       LEFT JOIN votes ON candidates.id = votes.candidate_id
+       WHERE candidates.election_id = $1`,
+      [user.election_id]
+    );
+    
+    const allCandidates = allCandidatesResult.rows;
+    
+    // const users = allCandidatesResult.rows;
+
+
+    allCandidates.forEach(u => {
+      u.photo = u.photo ? u.photo.toString("base64") : null;
+      u.logo = u.logo ? u.logo.toString("base64") : null;
+    });
+
+    const voteStatus = user.has_voted ? "Voted" : "Not Voted";
+
+    const userRoleResult = await pool.query(
+      "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
+      [req.session.userId]
+    );
+    const userRole = userRoleResult.rows[0];
+
+    const rolesResult = await pool.query("SELECT * FROM roles");
+
+    const countResult = await pool.query(
+      "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+      [user.username]
+    );
+
+    const profilePicture = req.session.profilePicture;
+
+    const electionsResult = await pool.query("SELECT * FROM elections");
+
+    const userElectionDataResult = await pool.query(
+      `SELECT users.*, elections.election AS election_name
+       FROM users
+       JOIN elections ON users.election_id = elections.id
+       WHERE users.id = $1`,
+      [req.session.userId]
+    );
+
+    const elections = electionsResult.rows;
+    const userElectionData = userElectionDataResult.rows;
+
+    const voteCounts = {};
+    const totalVotesByPosition = {};
+    
+    // Use all candidates for vote calculations
+    allCandidates.forEach(candidate => {
+      const fullName = `${candidate.first_name} ${candidate.middle_name} ${candidate.last_name}`;
+      const positionId = candidate.position_id;
+      const voteCount = parseInt(candidate.vote_count) || 0;
+    
+      if (!voteCounts[positionId]) {
+        voteCounts[positionId] = [];
+        totalVotesByPosition[positionId] = 0;
+      }
+    
+      voteCounts[positionId].push({ name: fullName, votes: voteCount });
+      totalVotesByPosition[positionId] += voteCount;
+    });
+    
+    const votePercentageData = {};
+    for (let positionId in voteCounts) {
+      const candidates = voteCounts[positionId];
+      const totalVotes = totalVotesByPosition[positionId];
+    
+      votePercentageData[positionId] = candidates.map(candidate => ({
+        name: candidate.name,
+        votes: candidate.votes,
+        percentage: totalVotes > 0
+          ? ((candidate.votes / totalVotes) * 100).toFixed(2)
+          : "0.00"
+      }));
+    }
+    
+    console.log("Vote Percentage Record: ", votePercentageData);
+    res.render("party-dashboard", {
+      users: partyCandidates,
+      votePercentageData,
+      profilePicture,
+      voteStatus,
+      role: userRole.role,
+      roles: rolesResult.rows,
+      unreadCount: countResult.rows[0].unreadcount,
+      user,
+      elections,
+      userElectionData,
+      // votePercentageData
+    });
+
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).send("Internal server error");
+  }
 });
+
+
+
+
+// app.get("/party-dashboard", (req, res) => {
+//   if (!req.session.userId || req.session.userRole !== "Candidate") {
+//     return res.redirect("/login");
+//   }
+
+//   pool.query(
+//     "SELECT * FROM candidates WHERE user_id = $1",
+//     [req.session.userId],
+//     (err, currentUserResult) => {
+//       if (err) {
+//         console.error("Error fetching current user:", err);
+//         return res.status(500).send("An error occurred");
+//       }
+//       if (currentUserResult.rows.length === 0) {
+//         return res.status(404).send("User not found");
+//       }
+
+//       const currentUser = currentUserResult.rows[0];
+//       console.log("Current Logged-in candidate", currentUser);
+
+//       pool.query(
+//         `SELECT candidates.*, parties.*, users.*
+//         FROM candidates
+//         JOIN parties ON candidates.party_id = parties.id
+//         JOIN users ON candidates.user_id = users.id
+//         WHERE candidates.election_id = $1 AND candidates.user_id = $2`,
+//         [currentUser.election_id, currentUser.user_id],
+//         (err, userResult) => {
+//           if (err) {
+//             console.error(
+//               `Error fetching current candidate for election_id ${currentUser.election_id}:`,
+//               err
+//             );
+//             return res
+//               .status(500)
+//               .send("An error occurred while fetching candidate data.");
+//           }
+
+//           if (userResult.rows.length === 0) {
+//             return res
+//               .status(404)
+//               .send("Candidate not found for the specified election.");
+//           }
+
+//           const user = userResult.rows[0];
+//           user.photo = user.photo ? user.photo.toString("base64") : null;
+//           user.logo = user.logo ? user.logo.toString("base64") : null;
+
+//           console.log("Current Candidate Data", user);
+
+//           pool.query(
+//             `SELECT candidates.*, parties.*, positions.position, votes.*
+//             FROM candidates
+//             JOIN parties ON candidates.party_id = parties.id
+//             JOIN positions ON candidates.position_id = positions.id
+//             LEFT JOIN votes ON candidates.id = votes.candidate_id
+//             WHERE candidates.party_id = $1 AND candidates.election_id = $2`,
+//             [user.party_id, user.election_id],
+//             (err, allCandidatesResult) => {
+//               if (err) {
+//                 console.error("Error fetching all candidates:", err);
+//                 return res
+//                   .status(500)
+//                   .send("An error occurred while fetching all candidates");
+//               }
+
+//               const users = allCandidatesResult.rows;
+
+//               users.forEach((user) => {
+//                 if (user.photo) {
+//                   user.photo = user.photo.toString("base64");
+//                 }
+
+//                 if (user.logo) {
+//                   user.logo = user.logo.toString("base64");
+//                 }
+//               });
+
+//               console.log("All candidates", users);
+
+//               const voteStatus = user.has_voted ? "Voted" : "Not Voted";
+
+//               pool.query(
+//                 "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
+//                 [req.session.userId],
+//                 (err, userRoleResult) => {
+//                   if (err) {
+//                     return res.status(500).send("Error fetching user role");
+//                   }
+
+//                   const userRole = userRoleResult.rows[0];
+
+//                   pool.query("SELECT * FROM roles", (err, rolesResult) => {
+//                     if (err) {
+//                       return res.status(500).send("internal server error");
+//                     }
+
+//                     pool.query(
+//                       "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+//                       [user.username],
+//                       (err, countResult) => {
+//                         if (err) {
+//                           return res
+//                             .status(500)
+//                             .send("Error fetching unread notifications count");
+//                         }
+
+//                         const profilePicture = req.session.profilePicture;
+
+//                         pool.query(
+//                           "SELECT * FROM elections",
+//                           (err, electionsResult) => {
+//                             if (err) {
+//                               return res
+//                                 .status(500)
+//                                 .send(
+//                                   "There was an error getting the elections data"
+//                                 );
+//                             }
+
+//                             pool.query(
+//                               `SELECT users.*, elections.election AS election_name
+//                               FROM users
+//                               JOIN elections ON users.election_id = elections.id
+//                               WHERE users.id = $1`,
+//                               [req.session.userId],
+//                               (err, userElectionDataResult) => {
+//                                 if (err) {
+//                                   console.error(
+//                                     "Error getting the user election name:",
+//                                     err
+//                                   );
+//                                   return res.send(
+//                                     "Error getting the userElectionName"
+//                                   );
+//                                 }
+
+//                                 const elections = electionsResult.rows;
+//                                 const userElectionData =
+//                                   userElectionDataResult.rows;
+
+//                                 res.render("party-dashboard", {
+//                                   users,
+//                                   profilePicture,
+//                                   voteStatus,
+//                                   role: userRole.role,
+//                                   roles: rolesResult.rows,
+//                                   unreadCount: countResult.rows[0].unreadcount,
+//                                   user,
+//                                   elections,
+//                                   userElectionData,
+//                                 });
+//                               }
+//                             );
+//                           }
+//                         );
+//                       }
+//                     );
+//                   });
+//                 }
+//               );
+//             }
+//           );
+//         }
+//       );
+//     }
+//   );
+// });
 
 // Downloading registered voters and election results list
 // Voters record route
