@@ -3,6 +3,9 @@
     function downloadCSV() {
         window.location.href = '/election/download/csv';
     }
+    function downloadPDF() {
+        window.location.href = '/download/election/results/pdf';
+    }
 </script>
 <style>
     body {
@@ -119,8 +122,16 @@
         <main style="margin-top: 70px ">
             <h1 class="mb-4" style="text-align: center;margin-top: 5pc;">Candidates Election Result</h1>
             <div class="container pt-2">
-                <button class="btn btn-white" onclick="downloadCSV()" title="Download Election Record"><i class="fas fa-download" style="font-size: 1.5rem;"></i></button>
-               <br><br>
+              <div class="dropdown mb-3">
+                <button class="btn btn-white dropdown-toggle" type="button" id="downloadDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fas fa-download" style="font-size: 1.5rem;"></i> Download
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="downloadDropdown">
+                  <li><a class="dropdown-item" href="#" onclick="downloadCSV()">Download CSV</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="downloadPDF()">Download PDF</a></li>
+                </ul>
+              </div>
+                             <br><br>
                 <table class="table responsive">
                     <thead>
                         

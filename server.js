@@ -10,6 +10,7 @@ require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
 const sanitizeHtml = require("sanitize-html");
+const PDFDocument = require('pdfkit');
 const fs = require("fs");
 const { Parser } = require("json2csv");
 const nodemailer = require("nodemailer");
@@ -3494,174 +3495,7 @@ app.get("/party-dashboard", async (req, res) => {
 
 
 
-// app.get("/party-dashboard", (req, res) => {
-//   if (!req.session.userId || req.session.userRole !== "Candidate") {
-//     return res.redirect("/login");
-//   }
 
-//   pool.query(
-//     "SELECT * FROM candidates WHERE user_id = $1",
-//     [req.session.userId],
-//     (err, currentUserResult) => {
-//       if (err) {
-//         console.error("Error fetching current user:", err);
-//         return res.status(500).send("An error occurred");
-//       }
-//       if (currentUserResult.rows.length === 0) {
-//         return res.status(404).send("User not found");
-//       }
-
-//       const currentUser = currentUserResult.rows[0];
-//       console.log("Current Logged-in candidate", currentUser);
-
-//       pool.query(
-//         `SELECT candidates.*, parties.*, users.*
-//         FROM candidates
-//         JOIN parties ON candidates.party_id = parties.id
-//         JOIN users ON candidates.user_id = users.id
-//         WHERE candidates.election_id = $1 AND candidates.user_id = $2`,
-//         [currentUser.election_id, currentUser.user_id],
-//         (err, userResult) => {
-//           if (err) {
-//             console.error(
-//               `Error fetching current candidate for election_id ${currentUser.election_id}:`,
-//               err
-//             );
-//             return res
-//               .status(500)
-//               .send("An error occurred while fetching candidate data.");
-//           }
-
-//           if (userResult.rows.length === 0) {
-//             return res
-//               .status(404)
-//               .send("Candidate not found for the specified election.");
-//           }
-
-//           const user = userResult.rows[0];
-//           user.photo = user.photo ? user.photo.toString("base64") : null;
-//           user.logo = user.logo ? user.logo.toString("base64") : null;
-
-//           console.log("Current Candidate Data", user);
-
-//           pool.query(
-//             `SELECT candidates.*, parties.*, positions.position, votes.*
-//             FROM candidates
-//             JOIN parties ON candidates.party_id = parties.id
-//             JOIN positions ON candidates.position_id = positions.id
-//             LEFT JOIN votes ON candidates.id = votes.candidate_id
-//             WHERE candidates.party_id = $1 AND candidates.election_id = $2`,
-//             [user.party_id, user.election_id],
-//             (err, allCandidatesResult) => {
-//               if (err) {
-//                 console.error("Error fetching all candidates:", err);
-//                 return res
-//                   .status(500)
-//                   .send("An error occurred while fetching all candidates");
-//               }
-
-//               const users = allCandidatesResult.rows;
-
-//               users.forEach((user) => {
-//                 if (user.photo) {
-//                   user.photo = user.photo.toString("base64");
-//                 }
-
-//                 if (user.logo) {
-//                   user.logo = user.logo.toString("base64");
-//                 }
-//               });
-
-//               console.log("All candidates", users);
-
-//               const voteStatus = user.has_voted ? "Voted" : "Not Voted";
-
-//               pool.query(
-//                 "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = $1",
-//                 [req.session.userId],
-//                 (err, userRoleResult) => {
-//                   if (err) {
-//                     return res.status(500).send("Error fetching user role");
-//                   }
-
-//                   const userRole = userRoleResult.rows[0];
-
-//                   pool.query("SELECT * FROM roles", (err, rolesResult) => {
-//                     if (err) {
-//                       return res.status(500).send("internal server error");
-//                     }
-
-//                     pool.query(
-//                       "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-//                       [user.username],
-//                       (err, countResult) => {
-//                         if (err) {
-//                           return res
-//                             .status(500)
-//                             .send("Error fetching unread notifications count");
-//                         }
-
-//                         const profilePicture = req.session.profilePicture;
-
-//                         pool.query(
-//                           "SELECT * FROM elections",
-//                           (err, electionsResult) => {
-//                             if (err) {
-//                               return res
-//                                 .status(500)
-//                                 .send(
-//                                   "There was an error getting the elections data"
-//                                 );
-//                             }
-
-//                             pool.query(
-//                               `SELECT users.*, elections.election AS election_name
-//                               FROM users
-//                               JOIN elections ON users.election_id = elections.id
-//                               WHERE users.id = $1`,
-//                               [req.session.userId],
-//                               (err, userElectionDataResult) => {
-//                                 if (err) {
-//                                   console.error(
-//                                     "Error getting the user election name:",
-//                                     err
-//                                   );
-//                                   return res.send(
-//                                     "Error getting the userElectionName"
-//                                   );
-//                                 }
-
-//                                 const elections = electionsResult.rows;
-//                                 const userElectionData =
-//                                   userElectionDataResult.rows;
-
-//                                 res.render("party-dashboard", {
-//                                   users,
-//                                   profilePicture,
-//                                   voteStatus,
-//                                   role: userRole.role,
-//                                   roles: rolesResult.rows,
-//                                   unreadCount: countResult.rows[0].unreadcount,
-//                                   user,
-//                                   elections,
-//                                   userElectionData,
-//                                 });
-//                               }
-//                             );
-//                           }
-//                         );
-//                       }
-//                     );
-//                   });
-//                 }
-//               );
-//             }
-//           );
-//         }
-//       );
-//     }
-//   );
-// });
 
 // Downloading registered voters and election results list
 // Voters record route
@@ -4002,6 +3836,193 @@ app.get("/election/download/csv", (req, res) => {
     }
   );
 });
+
+
+
+// =========== Election Records PDF Downloads +===============
+app.get("/download/voters/pdf", (req, res) => {
+  if (
+    !req.session.userId ||
+    !["Super Admin", "Admin", "Candidate"].includes(req.session.userRole)
+  ) {
+    return res.redirect("/login");
+  }
+
+  pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId], (err, currentUser) => {
+    if (err || currentUser.rows.length === 0) {
+      return res.status(500).send("Error fetching user");
+    }
+
+    const electionId = currentUser.rows[0].election_id;
+
+    pool.query(
+      `SELECT auth.*, users.*, COALESCE(elections.election, 'No Election') AS election
+       FROM auth
+       JOIN users ON auth.user_id = users.id
+       LEFT JOIN elections ON users.election_id = elections.id
+       WHERE auth.user_id IN (SELECT id FROM users WHERE election_id = $1)`,
+      [electionId],
+      (err, voters) => {
+        if (err || voters.rows.length === 0) {
+          return res.status(500).send("Error fetching voter data");
+        }
+
+        const doc = new PDFDocument({ size: "A4", margin: 50 });
+        const filename = "voters-record.pdf";
+
+        res.setHeader("Content-disposition", `attachment; filename="${filename}"`);
+        res.setHeader("Content-type", "application/pdf");
+
+        doc.pipe(res);
+
+        // Title
+        doc
+        .fontSize(18)
+        .text(voters.rows[0].election || "Election", { align: "center" })
+        .moveDown(0.5)
+        .text("Voters Record", { align: "center", underline: true });
+
+        doc.moveDown(1.5);
+
+        // Table headers
+        const tableTop = 100;
+        const rowHeight = 25;
+        const colWidths = [50, 120, 120, 120, 100];
+        const colTitles = ["#", "First Name", "Middle Name", "Last Name"];
+
+        let startY = tableTop;
+
+        // Draw Header Row
+        colTitles.forEach((title, i) => {
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(12)
+            .text(title, 50 + colWidths.slice(0, i).reduce((a, b) => a + b, 0), startY, {
+              width: colWidths[i],
+              align: "center",
+            });
+        });
+
+        startY += rowHeight;
+
+        // Draw Rows
+        voters.rows.forEach((voter, index) => {
+          const row = [
+            index + 1,
+            voter.first_name,
+            voter.middle_name || "-",
+            voter.last_name,
+          ];
+
+          row.forEach((val, i) => {
+            doc
+              .font("Helvetica")
+              .fontSize(11)
+              .text(String(val), 50 + colWidths.slice(0, i).reduce((a, b) => a + b, 0), startY, {
+                width: colWidths[i],
+                align: "center",
+              });
+          });
+
+          startY += rowHeight;
+
+          // Avoid overflowing the page
+          if (startY > 750) {
+            doc.addPage();
+            startY = tableTop;
+          }
+        });
+
+        doc.end();
+      }
+    );
+  });
+});
+
+app.get("/download/election/results/pdf", (req, res) => {
+  if (
+    !req.session.userId ||
+    !["Super Admin", "Admin", "Candidate"].includes(req.session.userRole)
+  ) {
+    return res.redirect("/login");
+  }
+
+  pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId], (err, currentUser) => {
+    if (err || currentUser.rows.length === 0) {
+      return res.status(500).send("Error fetching user");
+    }
+
+    const electionId = currentUser.rows[0].election_id;
+
+    pool.query(
+      `SELECT candidates.*, COALESCE(votes.vote, 0) AS vote, 
+              positions.position, parties.party, 
+              elections.election 
+       FROM candidates
+       LEFT JOIN votes ON candidates.id = votes.candidate_id
+       LEFT JOIN positions ON candidates.position_id = positions.id
+       LEFT JOIN parties ON candidates.party_id = parties.id
+       LEFT JOIN elections ON candidates.election_id = elections.id
+       WHERE candidates.election_id = $1`,
+      [electionId],
+      (err, candidates) => {
+        if (err || candidates.rows.length === 0) {
+          return res.status(500).send("Error fetching candidate data");
+        }
+
+        const doc = new PDFDocument({ margin: 40 });
+        const filename = "election-results.pdf";
+
+        res.setHeader("Content-disposition", `attachment; filename="${filename}"`);
+        res.setHeader("Content-type", "application/pdf");
+
+        doc.pipe(res);
+
+        // Title
+        doc
+          .fontSize(18)
+          .text(candidates.rows[0].election || "Election", { align: "center" })
+          .moveDown(0.5)
+          .text("Election Results", { align: "center", underline: true });
+
+        doc.moveDown(1);
+
+        // Column Headers
+        doc.fontSize(12).font("Helvetica-Bold");
+        const tableTop = doc.y;
+        const colWidths = [40, 130, 100, 100, 60];
+
+        doc.text("No", 50, tableTop);
+        doc.text("Candidate", 90, tableTop);
+        doc.text("Position", 230, tableTop);
+        doc.text("Party", 330, tableTop);
+        doc.text("Votes", 430, tableTop);
+
+
+        // Table Rows
+        doc.font("Helvetica").moveDown(0.5);
+        candidates.rows.forEach((candidate, index) => {
+          const y = doc.y;
+
+          const fullName = `${candidate.first_name} ${candidate.middle_name || ""} ${candidate.last_name}`;
+          doc.text(index + 1, 50, y);
+          doc.text(fullName.trim(), 90, y, { width: 130 });
+          doc.text(candidate.position, 230, y, { width: 100 });
+          doc.text(candidate.party, 330, y, { width: 100 });
+          doc.text(candidate.vote.toString(), 430, y, { width: 60 });
+
+          doc.moveDown(0.5); 
+        });
+
+        doc.end();
+      }
+    );
+  });
+});
+
+
+
+
 
 app.get("/create-election", (req, res) => {
   const token = req.query.token;
