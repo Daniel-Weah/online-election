@@ -39,10 +39,10 @@ app.use(express.static(path.join(__dirname, "public")));
 // app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(express.urlencoded({ extended: true }));
 // app.use(express.json());
-
+// {/* <option value="dfbf036d-2bda-4c20-ae8e-8d8d238d9565">About to hack your system</option> */}
 // app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: true })); // Parses URL-encoded form data
-app.use(express.json()); // Parses JSON data
+app.use(express.urlencoded({ extended: true })); 
+app.use(express.json());
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -57,6 +57,7 @@ const pool = new Pool({
     rejectUnauthorized: false,
   },
 });
+
 
 pool
   .connect()
@@ -360,7 +361,7 @@ app.get("/dashboard", async (req, res) => {
       unreadCount: unreadCountQuery.rows[0]?.unreadcount || 0,
       user: userDetailsQuery.rows[0],
       profilePicture,
-      current: new Date(current).toISOString(),
+      current: new Date().toISOString(),
       admin_end: new Date(admin_end).toISOString(), 
       end: new Date(end).toISOString(),
       start: new Date(start).toISOString(),
@@ -4011,7 +4012,7 @@ app.get("/download/election/results/pdf", (req, res) => {
           doc.text(candidate.party, 330, y, { width: 100 });
           doc.text(candidate.vote.toString(), 430, y, { width: 60 });
 
-          doc.moveDown(0.5); 
+          doc.moveDown(2.5); 
         });
 
         doc.end();
