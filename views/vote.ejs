@@ -1,15 +1,14 @@
 <%- include('layout/header') %>
 <style>
   * {
-  box-sizing: border-box;
-}
+    box-sizing: border-box;
+  }
 
   body {
     font-family: 'Roboto', sans-serif;
     background-color: #f4f4f4;
     color: #333;
     margin-left: 15pc;
-
   }
 
   h1 {
@@ -49,9 +48,7 @@
     padding: 1rem;
     border-radius: 8px;
     transition: box-shadow 0.2s;
-    /* max-width: 500px; */
     overflow-x: auto;
-
   }
 
   form ul li:hover {
@@ -87,18 +84,7 @@
     color: #7f8c8d;
   }
 
-  #submit_btn {
-    display: block;
-    width: 100%;
-    padding: 0.8rem;
-    background-color: #3498db;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
+  #submit_btn,
   #submit_bt {
     display: block;
     width: 100%;
@@ -112,7 +98,8 @@
     transition: background-color 0.3s;
   }
 
-button:hover {
+  #submit_btn:hover,
+  #submit_bt:hover {
     background-color: #2980b9;
   }
 
@@ -132,6 +119,10 @@ button:hover {
   }
 
   @media (max-width: 768px) {
+    body {
+      margin-left: 0;
+    }
+
     form {
       padding: 1rem;
     }
@@ -154,20 +145,10 @@ button:hover {
       margin-bottom: 0.5rem;
     }
 
-    #submit_btn {
-      font-size: 0.9rem;
-    }
+    #submit_btn,
     #submit_bt {
       font-size: 0.9rem;
     }
-    
-  body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-    margin-left: 0;
-
-  }
   }
 </style>
 </head>
@@ -182,7 +163,6 @@ button:hover {
   </div>
 
   <% if ((role === 'Super Admin' || role === 'Admin') && current > end && current <= admin_end) { %>
-    <!-- Show admin vote entry section -->
     <section>
       <form action="/local-vote-count" method="post" id="localvoteForm" enctype="multipart/form-data">
         <h1>Enter Local Vote Counts</h1>
@@ -190,7 +170,7 @@ button:hover {
           This section is only accessible to admins after the voting period. Use it to manually input vote counts.
         </div>
         <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
-  
+
         <% if (Object.keys(groupedCandidates).length === 0) { %>
           <p class="text-center text-muted">
             <img src="/images/noCandidate.png" alt="No candidates available">
@@ -201,7 +181,6 @@ button:hover {
           <ul>
             <% Object.keys(groupedCandidates).forEach(position => { %>
               <h2><%= position %></h2>
-  
               <% if (groupedCandidates[position].length === 0) { %>
                 <p class="text-center text-muted">No candidates available for the <%= position %> position.</p>
               <% } else { %>
@@ -221,38 +200,40 @@ button:hover {
               <% } %>
             <% }); %>
           </ul>
-  
           <button type="submit" id="submit_bt">Submit Vote Counts</button>
         <% } %>
       </form>
     </section>
-  
+
   <% } else if (current < start || current > end) { %>
-    <!-- Show voting not allowed message -->
     <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
       <h1>Vote Candidate</h1>
+<p style="text-align: center; font-size: 1rem; color: #555; margin-top: -1rem; margin-bottom: 2rem;">
+  Please select your preferred candidate for each position listed below. You can only vote once, so choose carefully.
+</p>
       <p id="timer" style="font-size: 18px; font-weight: bold;color: red;"></p>
       <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
       <div style="padding: 1rem; background: #ffeaa7; color: #2d3436; border-radius: 5px;">
-
         <p>Voting was only allowed between <%= new Date(start).toUTCString() %> <b>To</b> <%= new Date(end).toUTCString() %>.</p>
-        </div>
+      </div>
       <button type="submit" id="submit_btn" disabled>Submit Your Vote</button>
     </form>
-  
+
   <% } else { %>
-    <!-- Show candidate voting form -->
     <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
       <h1>Vote Candidate</h1>
+<p style="text-align: center; font-size: 1rem; color: #555; margin-top: -1rem; margin-bottom: 2rem;">
+  Please select your preferred candidate for each position listed below. You can only vote once, so choose carefully.
+</p>
       <p id="timer" style="font-size: 18px; font-weight: bold;color: red;"></p>
       <input type="hidden" name="electionID" id="electionID" value="<%= userElectionID %>">
-  
+
       <% if (Object.keys(groupedCandidates).length === 0) { %>
         <p class="text-center text-muted">
           <img src="/images/noCandidate.png" alt="no candidate">
           <br>
           No candidates available for voting in this election.
-        </p>    
+        </p>
       <% } else { %>
         <ul>
           <% Object.keys(groupedCandidates).forEach(position => { %>
@@ -277,13 +258,8 @@ button:hover {
       <% } %>
     </form>
   <% } %>
-  
-  
+
   <script>
-
-
-
-
     const startTime = new Date("<%= start %>").getTime();
     const endTime = new Date("<%= end %>").getTime();
 
@@ -307,7 +283,6 @@ button:hover {
         timerElement.style.color = color;
       } else if (now > endTime) {
         timerElement.innerText = "Voting period is over.";
-        
       }
     }
 
@@ -319,26 +294,25 @@ button:hover {
     document.addEventListener('DOMContentLoaded', () => {
       const submitButton = document.getElementById('submit_btn');
       const voteForm = document.getElementById('voteForm');
-      const radioButtons = voteForm.querySelectorAll('input[type="radio"]');
-  
-      if (radioButtons.length === 0) {
-        submitButton.style.display = 'none';
-      } else {
-        submitButton.disabled = true; 
-  
-        radioButtons.forEach(radio => {
-          radio.addEventListener('change', () => {
-            submitButton.disabled = false;
+      if (voteForm && submitButton) {
+        const radioButtons = voteForm.querySelectorAll('input[type="radio"]');
+        if (radioButtons.length === 0) {
+          submitButton.style.display = 'none';
+        } else {
+          submitButton.disabled = true;
+          radioButtons.forEach(radio => {
+            radio.addEventListener('change', () => {
+              submitButton.disabled = false;
+            });
           });
-        });
+        }
       }
     });
   </script>
-  
+
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const unreadCount = <%= unreadCount %>;
-
       if (unreadCount > 0) {
         const notificationBox = document.getElementById('notification-box');
         const notificationMessage = document.getElementById('notification-message');
@@ -352,46 +326,46 @@ button:hover {
       }
     });
   </script>
+
   <script>
-    document.getElementById('localvoteForm').addEventListener('submit', async function (e) {
-      e.preventDefault(); // Prevent immediate form submission
-  
-      const result = await Swal.fire({
-        title: 'Submit Vote Counts?',
-        text: "Are you sure you want to submit these vote counts?",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#2ecc71',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, submit'
-      });
-  
-      if (result.isConfirmed) {
-        const form = e.target;
-  
-        // Submit using Fetch API to get JSON response and show feedback
-        const formData = new FormData(form);
-        try {
-          const res = await fetch(form.action, {
-            method: form.method,
-            body: formData
-          });
-  
-          const data = await res.json();
-  
-          if (res.ok) {
-            Swal.fire('Success!', data.message, 'success');
-            form.reset(); // Optionally reset the form
-          } else {
-            Swal.fire('Error', data.error || 'Something went wrong.', 'error');
+    const localVoteForm = document.getElementById('localvoteForm');
+    if (localVoteForm) {
+      localVoteForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const result = await Swal.fire({
+          title: 'Submit Vote Counts?',
+          text: "Are you sure you want to submit these vote counts?",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#2ecc71',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, submit'
+        });
+
+        if (result.isConfirmed) {
+          const formData = new FormData(this);
+          try {
+            const res = await fetch(this.action, {
+              method: this.method,
+              body: formData
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+              Swal.fire('Success!', data.message, 'success');
+              this.reset();
+            } else {
+              Swal.fire('Error', data.error || 'Something went wrong.', 'error');
+            }
+          } catch (err) {
+            console.error(err);
+            Swal.fire('Error', 'Could not submit the form.', 'error');
           }
-        } catch (err) {
-          console.error(err);
-          Swal.fire('Error', 'Could not submit the form.', 'error');
         }
-      }
-    });
+      });
+    }
   </script>
-  
+
   <script src="/js/vote.js"></script>
-<%- include('layout/footer') %>
+  <%- include('layout/footer') %>

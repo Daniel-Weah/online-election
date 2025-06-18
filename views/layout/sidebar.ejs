@@ -1,3 +1,165 @@
+<style>
+  /* Desktop styles */
+  #sidebarMenu {
+    width: 250px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .sidebar-content {
+    padding: 0;
+  }
+
+  /* Tablet breakpoint */
+  @media (max-width: 991px) {
+    #sidebarMenu {
+      transform: translateX(-100%);
+      width: 300px;
+    }
+
+    #sidebarMenu.show {
+      transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    .sidebar-overlay.show {
+      display: block;
+    }
+
+    .list-group-item {
+      padding: 12px 15px !important;
+      font-size: 14px;
+    }
+
+    .list-group-item i {
+      margin-right: 10px !important;
+    }
+  }
+
+  /* Mobile breakpoint */
+  @media (max-width: 768px) {
+    #sidebarMenu {
+      width: 280px;
+      transform: translateX(-100%);
+    }
+
+    .list-group {
+      margin: 0 10px !important;
+      margin-top: 15px !important;
+    }
+
+    .list-group-item {
+      padding: 10px 12px !important;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .list-group-item i {
+      font-size: 14px;
+      margin-right: 8px !important;
+    }
+
+    .accordion-button {
+      padding: 10px 12px !important;
+      font-size: 13px;
+    }
+
+    code {
+      font-size: 11px;
+      padding: 5px;
+      display: block;
+      margin: 10px 12px;
+    }
+  }
+
+  /* Small mobile breakpoint */
+  @media (max-width: 480px) {
+    #sidebarMenu {
+      width: 260px;
+    }
+
+    .list-group-item {
+      padding: 8px 10px !important;
+      font-size: 12px;
+    }
+
+    .list-group-item i {
+      font-size: 12px;
+      margin-right: 6px !important;
+    }
+
+    .list-group-item span {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .accordion-button {
+      padding: 8px 10px !important;
+      font-size: 12px;
+    }
+
+    code {
+      font-size: 10px;
+      padding: 3px;
+      margin: 8px 10px;
+    }
+  }
+
+  /* Extra small devices */
+  @media (max-width: 320px) {
+    #sidebarMenu {
+      width: 240px;
+    }
+
+    .list-group-item {
+      padding: 6px 8px !important;
+      font-size: 11px;
+    }
+
+    .list-group-item i {
+      font-size: 11px;
+      margin-right: 5px !important;
+    }
+  }
+
+  /* Scrollbar styling for mobile */
+  @media (max-width: 991px) {
+    #sidebarMenu::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    #sidebarMenu::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    #sidebarMenu::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 2px;
+    }
+
+    #sidebarMenu::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  }
+</style>
+
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <nav
   style="margin-top: 10px; overflow-y: scroll; font-weight: 600;"
   id="sidebarMenu"
@@ -113,7 +275,10 @@
   document.addEventListener('DOMContentLoaded', function () {
     const currentPath = window.location.pathname;
     const links = document.querySelectorAll('.active-link');
+    const sidebar = document.getElementById('sidebarMenu');
+    const overlay = document.getElementById('sidebarOverlay');
 
+    // Active link highlighting
     links.forEach(link => {
       const linkHref = new URL(link.href).pathname;
       if (currentPath === linkHref || currentPath === linkHref + "/") {
@@ -129,5 +294,107 @@
         link.classList.remove('bg-primary', 'text-white', 'rounded');
       }
     });
+
+    // Mobile sidebar toggle functionality
+    function toggleSidebar() {
+      sidebar.classList.toggle('show');
+      overlay.classList.toggle('show');
+      document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    // Create mobile menu button if it doesn't exist
+    if (window.innerWidth <= 991 && !document.getElementById('mobile-menu-btn')) {
+      const menuBtn = document.createElement('button');
+      menuBtn.id = 'mobile-menu-btn';
+      menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+      menuBtn.style.cssText = `
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1001;
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 12px;
+        border-radius: 5px;
+        font-size: 16px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      `;
+      document.body.appendChild(menuBtn);
+      menuBtn.addEventListener('click', toggleSidebar);
+    }
+
+    // Close sidebar when clicking overlay
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar when clicking a link on mobile
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 991) {
+          setTimeout(closeSidebar, 150);
+        }
+      });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 991) {
+        closeSidebar();
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        if (mobileBtn) mobileBtn.remove();
+      } else if (!document.getElementById('mobile-menu-btn')) {
+        // Re-create mobile button if needed
+        const menuBtn = document.createElement('button');
+        menuBtn.id = 'mobile-menu-btn';
+        menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        menuBtn.style.cssText = `
+          position: fixed;
+          top: 15px;
+          left: 15px;
+          z-index: 1001;
+          background: #007bff;
+          color: white;
+          border: none;
+          padding: 10px 12px;
+          border-radius: 5px;
+          font-size: 16px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        `;
+        document.body.appendChild(menuBtn);
+        menuBtn.addEventListener('click', toggleSidebar);
+      }
+    });
+
+    // Handle swipe gestures for mobile
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    document.addEventListener('touchend', function(e) {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    });
+
+    function handleSwipe() {
+      if (window.innerWidth <= 991) {
+        const swipeDistance = touchEndX - touchStartX;
+        if (swipeDistance > 50 && touchStartX < 50) {
+          // Swipe right from left edge
+          toggleSidebar();
+        } else if (swipeDistance < -50 && sidebar.classList.contains('show')) {
+          // Swipe left when sidebar is open
+          closeSidebar();
+        }
+      }
+    }
   });
 </script>

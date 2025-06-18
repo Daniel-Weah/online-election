@@ -2729,7 +2729,7 @@ app.get("/vote/analysis", (req, res) => {
 
       const positionsQuery = `
   SELECT positions.position, candidates.first_name, candidates.middle_name, 
-         candidates.last_name, COALESCE(SUM(votes.vote), 0) AS vote
+         candidates.last_name, candidates.photo, COALESCE(SUM(votes.vote), 0) AS vote
   FROM candidates
   JOIN positions ON candidates.position_id = positions.id
   LEFT JOIN votes ON candidates.id = votes.candidate_id
@@ -2765,16 +2765,27 @@ app.get("/vote/analysis", (req, res) => {
 
             // Ensure position exists in groupedData
             if (!groupedData[position]) {
-              groupedData[position] = { labels: [], votes: [] };
+              groupedData[position] = { candidates: [] };
+
             }
 
+
             // Add candidate to the corresponding position
-            groupedData[position].labels.push(candidateName);
-            groupedData[position].votes.push(candidate.vote);
+       groupedData[position].candidates.push({
+  name: candidateName,
+  vote: candidate.vote,
+ photo: Buffer.isBuffer(candidate.photo)
+  ? `data:image/jpeg;base64,${candidate.photo.toString('base64')}`
+  : (typeof candidate.photo === "string" ? candidate.photo : "")
+
+});
+
+
+
           });
 
           // Log groupedData to verify the result
-          console.log("Grouped Data:", groupedData);
+          console.log(groupedData);
 
           // Proceed with rendering or further processing the groupedData
 
@@ -2826,7 +2837,7 @@ app.get("/vote/analysis", (req, res) => {
                           }
 
                           res.render("vote-analysis", {
-                            groupedData: JSON.stringify(groupedData), // Pass data as JSON to the template
+                            groupedData: JSON.stringify(groupedData),
                             profilePicture: req.session.profilePicture,
                             role: userRoleResult.rows[0].role,
                             unreadCount: countResult.rows[0].unreadcount,

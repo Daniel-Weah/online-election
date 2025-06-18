@@ -1,30 +1,30 @@
-<%- include('layout/header') %> 
+<%- include('layout/header') %>
 <link rel="stylesheet" href="/css/style.css" />
 <style>
-      body {
-      background-color: #f9f9f9;
-      font-family: 'Roboto', sans-serif;
-    }
-    #notification-box {
-  position: fixed;
-  top: 100px;
-  left: 300px;
-  width: auto;
-  height: auto;
-  background-color: #ffffff;
-  /* font-weight: bold; */
-  font-size: 1rem;
-  padding: 10px;
-  border-radius: 10px;
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  display: none;
-  transition: transform 0.3s ease-in-out;
-}
+  body {
+    background-color: #f9f9f9;
+    font-family: 'Roboto', sans-serif;
+  }
 
+  #notification-box {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 400px;
+    background-color: #ffffff;
+    font-size: 1rem;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: none;
+    transition: all 0.3s ease-in-out;
+  }
 
-  @media only screen and (max-width: 600px){
-    #fullName{
+  @media only screen and (max-width: 600px) {
+    #fullName {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -32,276 +32,399 @@
       display: inline-block;
       vertical-align: middle;
     }
+    
+    #notification-box {
+      left: 10px;
+      right: 10px;
+      transform: none;
+      max-width: none;
+    }
   }
 
+  .candidate-photo {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 10px;
+  }
 
+  .party-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  .progress-bar {
+    min-width: 50px;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .winner-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+
+  .card {
+    position: relative;
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
 </style>
-
-<!-- Your existing CSS and styles -->
-
 </head>
 
 <body>
-    <header>
-        <%- include('./layout/sidebar') -%>
-        <%- include('./layout/navbar') -%>
-    </header>
-    
+  <header>
+    <%- include('./layout/sidebar') -%>
+    <%- include('./layout/navbar') -%>
+  </header>
 
-    <div id="notification-box" style="display: none;">
-      <p id="notification-message"></p>
-    </div>
-    
-    <main style="margin-top: 70px " id="content-area">
-       <!-- Button trigger modal -->
-      
-      
-      <!-- Election Result Modal -->
-      <div class="modal fade " id="electionResultModal" tabindex="-1" aria-labelledby="electionResultModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-          <div class="modal-content">
-            <div class="modal-header bg-danger text-white text-center">
-              <h5 class="modal-title w-100">Election Results</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <!-- Notification Box -->
+  <div id="notification-box" role="alert" aria-live="polite">
+    <p id="notification-message"></p>
+  </div>
+
+  <main style="margin-top: 70px;" id="content-area">
+    <!-- Election Result Modal -->
+    <div class="modal fade" id="electionResultModal" tabindex="-1" aria-labelledby="electionResultModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white text-center">
+            <h5 class="modal-title w-100" id="electionResultModalLabel">🏆 Final Election Results</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="text-center mb-4">
+              <img src="/images/election.png" alt="Election Results" width="100" height="100">
+              <h2 class="mt-3 text-success">Election Concluded!</h2>
+              <p class="lead">Here are the official results:</p>
             </div>
-            <div class="modal-body">
-              <div class="text-center">
-                <img src="/images/election.png" alt="Winner Icon" width="100">
-                <h2 class="mt-3 text-success">Congratulations!</h2>
-                <p class="lead">The election has concluded. Here are the results:</p>
-              </div>
-              
-              <div id="resultsContainer"></div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+            <div id="resultsContainer"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
-      <% if (current > end && current <= admin_end) { %>
-      
-    <!-- ========== Administrative Use Warning Message ========== -->
-    <div class="alert alert-danger" role="alert">
-      <p><strong>Announcement!</strong></p>
-      <p>Hello <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %>,</p>
-      <p>The voting process has officially ended. Please await the official results from the Election Committee.</p>
-      <p>If you have any inquiries, feel free to contact us <a href="mailto:votewiseliberia@gmail.com">here</a>.</p>
     </div>
 
+    <!-- Administrative Notice -->
+    <% if (current > end && current <= admin_end) { %>
+    <div class="alert alert-info" role="alert">
+      <h4 class="alert-heading">📢 Election Update</h4>
+      <p><strong>Hello <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %>,</strong></p>
+      <p>The voting process has officially concluded. Please await the official results from the Election Committee.</p>
+      <hr>
+      <p class="mb-0">For any inquiries, please contact us at 
+        <a href="mailto:votewiseliberia@gmail.com" class="alert-link">votewiseliberia@gmail.com</a>
+      </p>
+    </div>
     <% } %>
 
-
-
-    <!-- ========== End of Administrative Use Warning Message ========== -->
-
-
-        <h1 class="mb-4" style="text-align: center; padding-top: 30px;">Election Result Dashboard</h1>
-        <div class="container pt-2 bg-light">
-          <div class="mb-3" style="margin: 20px;">
-            <label class="visually-hidden" for="elections-dropdown">Preference</label>
-            <% if (role === 'Super Admin') { %> 
-            <select class="form-select" name="elections-dropdown" id="elections-dropdown" required style="cursor: pointer;">
-                <option value="" selected disabled>Select Election</option>
-                <% elections.forEach(election => { %> 
-                <option value="<%= election.id %>"><%= election.election %></option>
-                <% }) %>
-            </select>
-            <% } %>
+    <div class="container-fluid">
+      <h1 class="mb-4 text-center pt-4">📊 Election Results Dashboard</h1>
+      
+      <div class="container pt-2 bg-light rounded shadow-sm">
+        <!-- Election Selector (Super Admin Only) -->
+        <% if (role === 'Super Admin') { %>
+        <div class="mb-4" style="margin: 20px;">
+          <label for="elections-dropdown" class="form-label">Select Election:</label>
+          <select class="form-select" name="elections-dropdown" id="elections-dropdown" required>
+            <option value="" selected disabled>Choose an Election</option>
+            <% elections.forEach(election => { %>
+            <option value="<%= election.id %>"><%= election.election %></option>
+            <% }) %>
+          </select>
         </div>
-        
-                 
-                     <section>
+        <% } %>
 
-                         <div class="row">
-                             <div class="col-xl-6 col-md-12 mb-4 ">
-                                 <div class="card ">
-                                     <div class="card-body ">
-                                         <div class="d-flex justify-content-between p-md-1 ">
-                                             <div class="d-flex flex-row ">
-                                                 <div class="align-self-center ">
-                                                  <i class="fas fa-users text-info fa-3x me-4 "></i>
-                                                 </div>
-                                                 <div>
-                                                     <h4>Registered Voters</h4>
-                                                     <p class="mb-0 ">Total number of registered voters</p>
-                                                 </div>
-                                             </div>
-                                             <div class="align-self-center">
-                                                 <h2 id="registered-voters" class="h1 mb-0"><%= totalUsers < 10 ? '0' + totalUsers : totalUsers %></h2>
-                                             </div>
-                                         </div>
-                                     </div>
-                                 </div>
-                             </div>
-                             
-                             <div class="col-xl-6 col-md-12 mb-4 ">
-                                 <div class="card ">
-                                     <div class="card-body ">
-                                         <div class="d-flex justify-content-between p-md-1 ">
-                                             <div class="d-flex flex-row ">
-                                                 <div class="align-self-center ">
-                                                     
-                                                  <i class="fas fa-vote-yea text-warning fa-3x me-4 "></i>
-                                                 </div>
-                                                 <div>
-                                                     <h4>Total Votes</h4>
-                                                     <p class="mb-0 ">Total number of votes</p>
-                                                 </div>
-                                             </div>
-                                             <div class="align-self-center ">
-                                                 <h2 class="h1 mb-0 "><%= totalVotes %></h2>
-                                             </div>
-                                         </div>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
-                        
-                     </section>
+        <!-- Statistics Cards -->
+        <section class="mb-5">
+          <div class="row">
+            <div class="col-xl-6 col-md-12 mb-4">
+              <div class="card shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between p-md-1">
+                    <div class="d-flex flex-row">
+                      <div class="align-self-center">
+                        <i class="fas fa-users text-info fa-3x me-4" aria-hidden="true"></i>
+                      </div>
+                      <div>
+                        <h4>Registered Voters</h4>
+                        <p class="mb-0 text-muted">Total number of registered voters</p>
+                      </div>
+                    </div>
+                    <div class="align-self-center">
+                      <h2 id="registered-voters" class="h1 mb-0">
+                        <%= totalUsers.toString().padStart(2, '0') %>
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                     <section id="contestants-results">
-                        <% if (Object.keys(groupedCandidates).length === 0) { %>
-                            <p class="text-center text-muted">
-                              <img src="/images/noCandidate.png" alt="no candidate">
-                              <br>
-                            No candidates available.</p>
-                        <% } else { %>
-                          <% Object.keys(groupedCandidates).forEach(position => { %>
-                            <article>
-                              <h2><%= position %></h2>
-                              <% if (groupedCandidates[position].length === 0) { %>
-                                <p class="text-center text-muted">No candidates for this position.</p>
-                              <% } else { %>
-                                <div class="row">
-                                  <% groupedCandidates[position].forEach(candidate => { %>
-                                    <div class="col-md-4 mb-4">
-                                      <div class="card">
-                                        <div class="card-body">
-                                          <div class="d-flex justify-content-between px-md-1">
-                                            <div class="align-self-center">
-                                              <img src="data:image/png;base64,<%= candidate.photo %>" class="img-fluid text-info fa-3x" />
-                                              <h6 class="card-title name"><%= candidate.first_name %> <%= candidate.middle_name %> <%= candidate.last_name %></h6>
-                                              <p class="card-text party">
-                                                <img src="data:image/png;base64,<%= candidate.logo %>" class="img-fluid text-info fa-3x" />
-                                                <%= candidate.party %>
-                                              </p>
-                                            </div>
-                                            <div class="text-end">
-                                              <h3><%= candidate.vote < 10 ? '0' + candidate.vote : candidate.vote %></h3>
-                                              <p class="mb-0">Votes</p>
-                                            </div>
-                                          </div>
-                                          <div class="px-md-1">
-                                            <div class="progress mt-3 mb-1 rounded" style="height: 15px; font-weight: bold;">
-                                              <div class="progress-bar bg-info" role="progressbar" style="width: <%= candidate.votePercentage %>%;" aria-valuenow="<%= candidate.votePercentage %>" aria-valuemin="0" aria-valuemax="100">
-                                                <%= candidate.votePercentage ? candidate.votePercentage.toFixed(2) : '0.00' %>%
-
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  <% }) %>
-                                </div>
-                              <% } %>
-                            </article>
-                          <% }) %>
-                        <% } %>
-                      </section>
-                      
-        </div>
-    </main>
-
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const unreadCount = <%= unreadCount %>; 
-        if (unreadCount > 0) {
-          const notificationBox = document.getElementById('notification-box');
-          const notificationMessage = document.getElementById('notification-message');
-    
-          notificationMessage.innerHTML = `<i class="fas fa-check-circle" style='color: green;'></i> You have ${unreadCount} new notification(s).`;
-          
-          notificationBox.style.display = 'block';
-    
-          setTimeout(function() {
-            notificationBox.style.display = 'none';
-          }, 5000);
-        }
-      });
-
-// Ensure correct parsing of dates
-const startDate = new Date("<%= start %>");
-const endDate = new Date("<%= admin_end %>");
-const currentDate = new Date();
-
-
-console.log("Current Date:", currentDate);
-console.log("Start Date:", startDate);
-console.log("End Date:", endDate);
-
-if (currentDate > endDate) {
-  window.onload = function () {
-    // Ensure groupedCandidates is parsed correctly
-    const groupedCandidates = <%- JSON.stringify(groupedCandidates) %>;
-
-    if (!groupedCandidates || Object.keys(groupedCandidates).length === 0) {
-      console.error("No election results available.");
-      return;
-    }
-
-    const resultsContainer = document.getElementById("resultsContainer");
-
-    if (!resultsContainer) {
-      console.error("Element with ID 'resultsContainer' not found.");
-      return;
-    }
-
-    resultsContainer.innerHTML = "";
-
-    Object.keys(groupedCandidates).forEach(position => {
-      let candidates = groupedCandidates[position];
-
-      // Sort candidates by votes in descending order
-      candidates.sort((a, b) => b.vote - a.vote);
-
-      // Get the winner (first in sorted list)
-      let winner = candidates[0];
-
-      let positionHTML = `
-        <div class="mb-4">
-          <h4 class="text-primary">${position}</h4>
-          <div class="alert alert-success text-center">
-            🏆 <strong>${winner.first_name} ${winner.middle_name} ${winner.last_name}</strong> is the winner via <strong>ONLINE</strong> with <strong>${winner.vote}</strong> votes!
+            <div class="col-xl-6 col-md-12 mb-4">
+              <div class="card shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between p-md-1">
+                    <div class="d-flex flex-row">
+                      <div class="align-self-center">
+                        <i class="fas fa-vote-yea text-warning fa-3x me-4" aria-hidden="true"></i>
+                      </div>
+                      <div>
+                        <h4>Total Votes</h4>
+                        <p class="mb-0 text-muted">Total number of votes cast</p>
+                      </div>
+                    </div>
+                    <div class="align-self-center">
+                      <h2 class="h1 mb-0"><%= totalVotes %></h2>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <ul class="list-group">
-            ${candidates.map(candidate => `
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                ${candidate.first_name} ${candidate.middle_name} ${candidate.last_name}
-                <span class="badge bg-${candidate === winner ? 'success' : 'secondary'} rounded-pill">
-                  ${candidate.vote} votes
-                </span>
-              </li>`).join('')}
-          </ul>
-        </div>
-      `;
+        </section>
 
-      resultsContainer.innerHTML += positionHTML;
+        <!-- Election Results by Position -->
+        <section id="contestants-results">
+          <% if (Object.keys(groupedCandidates).length === 0) { %>
+          <div class="text-center text-muted py-5">
+            <img src="/images/noCandidate.png" alt="No candidates available" class="mb-3">
+            <h3>No Candidates Available</h3>
+            <p>There are currently no candidates registered for this election.</p>
+          </div>
+          <% } else { %>
+            <% Object.keys(groupedCandidates).forEach(position => { %>
+            <article class="mb-5">
+              <h2 class="mb-4">🏛️ <%= position %></h2>
+              <% if (groupedCandidates[position].length === 0) { %>
+              <div class="alert alert-info text-center">
+                <p class="mb-0">No candidates registered for this position.</p>
+              </div>
+              <% } else { %>
+              <div class="row">
+                <% 
+                // Sort candidates by vote count (descending) to show winner first
+                const sortedCandidates = groupedCandidates[position].sort((a, b) => b.vote - a.vote);
+                const highestVotes = sortedCandidates[0]?.vote || 0;
+                %>
+                <% sortedCandidates.forEach((candidate, index) => { %>
+                <div class="col-lg-4 col-md-6 mb-4">
+                  <div class="card h-100 shadow-sm">
+                    <% if (candidate.vote === highestVotes && candidate.vote > 0) { %>
+                    <div class="winner-badge">🏆 Leading</div>
+                    <% } %>
+                    <div class="card-body text-center">
+                      <img 
+                        src="data:image/png;base64,<%= candidate.photo %>" 
+                        alt="Photo of <%= candidate.first_name %> <%= candidate.last_name %>"
+                        class="candidate-photo"
+                        onerror="this.src='/images/default-avatar.png'"
+                      />
+                      <h6 class="card-title name">
+                        <%= candidate.first_name %> 
+                        <% if (candidate.middle_name) { %><%= candidate.middle_name %><% } %>
+                        <%= candidate.last_name %>
+                      </h6>
+                      <p class="card-text party">
+                        <img 
+                          src="data:image/png;base64,<%= candidate.logo %>" 
+                          alt="<%= candidate.party %> logo"
+                          class="party-logo"
+                          onerror="this.src='/images/default-party.png'"
+                        />
+                        <%= candidate.party %>
+                      </p>
+                      
+                      <div class="mt-3">
+                        <h3 class="text-primary">
+                          <%= candidate.vote.toString().padStart(2, '0') %>
+                        </h3>
+                        <p class="mb-2 text-muted">Votes</p>
+                        
+                        <div class="progress" style="height: 20px;" role="progressbar" 
+                             aria-valuenow="<%= candidate.votePercentage || 0 %>" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100"
+                             aria-label="Vote percentage for <%= candidate.first_name %> <%= candidate.last_name %>">
+                          <div class="progress-bar bg-info" 
+                               style="width: <%= candidate.votePercentage || 0 %>%;">
+                            <%= candidate.votePercentage ? candidate.votePercentage.toFixed(1) : '0.0' %>%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <% }) %>
+              </div>
+              <% } %>
+            </article>
+            <% }) %>
+          <% } %>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Notification handling
+      const unreadCount = parseInt('<%= unreadCount %>') || 0;
+      if (unreadCount > 0) {
+        showNotification(unreadCount);
+      }
+
+      // Election results modal handling
+      handleElectionResults();
     });
 
-    let electionModal = new bootstrap.Modal(document.getElementById('electionResultModal'));
-    electionModal.show();
-  };
-} else {
-  console.log("Election still in progress...");
-}
+    function showNotification(count) {
+      const notificationBox = document.getElementById('notification-box');
+      const notificationMessage = document.getElementById('notification-message');
 
-    </script>
+      if (!notificationBox || !notificationMessage) return;
 
-    
+      const message = count === 1 
+        ? 'You have 1 new notification.' 
+        : `You have ${count} new notifications.`;
 
+      notificationMessage.innerHTML = `
+        <i class="fas fa-bell" style="color: #17a2b8;" aria-hidden="true"></i> 
+        ${message}
+      `;
+      
+      notificationBox.style.display = 'block';
 
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        notificationBox.style.display = 'none';
+      }, 5000);
 
-    <script src="/js/dashboard.js"></script>
-<%- include('layout/footer') %>
+      // Allow manual dismissal
+      notificationBox.addEventListener('click', () => {
+        notificationBox.style.display = 'none';
+      });
+    }
+
+    function handleElectionResults() {
+      try {
+        // Parse dates safely
+        const startDate = new Date('<%- start %>');
+        const endDate = new Date('<%- admin_end %>');
+        const currentDate = new Date();
+
+        console.log('Election Status Check:', {
+          current: currentDate.toISOString(),
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+          isElectionEnded: currentDate > endDate
+        });
+
+        if (currentDate > endDate) {
+          displayElectionResults();
+        }
+      } catch (error) {
+        console.error('Error handling election results:', error);
+      }
+    }
+
+    function displayElectionResults() {
+      try {
+        const groupedCandidates = <%- JSON.stringify(groupedCandidates) %>;
+        
+        if (!groupedCandidates || Object.keys(groupedCandidates).length === 0) {
+          console.warn('No election results available.');
+          return;
+        }
+
+        const resultsContainer = document.getElementById('resultsContainer');
+        if (!resultsContainer) {
+          console.error('Results container not found.');
+          return;
+        }
+
+        resultsContainer.innerHTML = '';
+
+        Object.keys(groupedCandidates).forEach(position => {
+          const candidates = [...groupedCandidates[position]]; // Create copy
+          
+          // Sort by votes (descending)
+          candidates.sort((a, b) => b.vote - a.vote);
+          
+          const winner = candidates[0];
+          const hasWinner = winner && winner.vote > 0;
+
+          const positionHTML = `
+            <div class="mb-4">
+              <h4 class="text-primary">🏛️ ${position}</h4>
+              ${hasWinner ? `
+                <div class="alert alert-success text-center">
+                  🏆 <strong>${winner.first_name} ${winner.middle_name || ''} ${winner.last_name}</strong> 
+                  wins with <strong>${winner.vote}</strong> vote${winner.vote !== 1 ? 's' : ''}!
+                </div>
+              ` : `
+                <div class="alert alert-warning text-center">
+                  No votes recorded for this position.
+                </div>
+              `}
+              <div class="list-group">
+                ${candidates.map((candidate, index) => `
+                  <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>${candidate.first_name} ${candidate.middle_name || ''} ${candidate.last_name}</strong>
+                      <br>
+                      <small class="text-muted">${candidate.party}</small>
+                    </div>
+                    <span class="badge ${candidate === winner && hasWinner ? 'bg-success' : 'bg-secondary'} rounded-pill">
+                      ${candidate.vote} vote${candidate.vote !== 1 ? 's' : ''}
+                      ${candidate.votePercentage ? ` (${candidate.votePercentage.toFixed(1)}%)` : ''}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+
+          resultsContainer.innerHTML += positionHTML;
+        });
+
+        // Show modal
+        const electionModal = new bootstrap.Modal(document.getElementById('electionResultModal'));
+        electionModal.show();
+
+      } catch (error) {
+        console.error('Error displaying election results:', error);
+      }
+    }
+
+    // Election dropdown handler (if applicable)
+    const electionsDropdown = document.getElementById('elections-dropdown');
+    if (electionsDropdown) {
+      electionsDropdown.addEventListener('change', function() {
+        if (this.value) {
+          // Handle election selection
+          console.log('Selected election:', this.value);
+          // Add your election selection logic here
+        }
+      });
+    }
+  </script>
+
+  <script src="/js/dashboard.js"></script>
+  <%- include('layout/footer') %>

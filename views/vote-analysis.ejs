@@ -1,130 +1,316 @@
 <%- include('layout/header') %>
-<script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.2.4/dist/frappe-charts.min.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 
 <style>
   body {
-    margin-left: 25px; 
+    margin-left: 30px;
   }
 
-  #positionTabs {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-    flex-wrap: wrap; 
-  }
-
-  .tab-content {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow-x: auto; 
-    flex-direction: column; 
-  }
-
-  .tab-pane > div {
-    margin: 0 auto;
+  /* Desktop styles */
+  .container {
     width: 90%;
-    max-width: 900px;
-    height: 500px;
+    max-width: 1200px;
   }
-  .dropdown-item.text-primary {
-    display: block !important;
-}
 
-  /* Large screens */
-  @media only screen and (min-width: 1024px) {
-    .tab-pane > div {
-      width: 900px;
-      height: 500px;
+  .chart-container {
+    width: 90%;
+    height: 400px;
+    margin-bottom: 40px;
+  }
+
+  /* Tablet breakpoint */
+  @media (max-width: 768px) {
+    body {
+      margin-left: 15px;
+      margin-right: 15px;
+    }
+
+    .container {
+      width: 100%;
+      padding: 0 10px;
+    }
+
+    .text-center h1 {
+      font-size: 1.8rem;
+    }
+
+    .text-center p {
+      font-size: 1rem;
+    }
+
+    .chart-container {
+      width: 100%;
+      height: 350px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      padding: 20px !important;
     }
   }
 
-  /* Medium Devices */
-  @media only screen and (max-width: 1024px) {
-    .tab-pane > div {
-      width: 700px;
-      height: 400px;
+  /* Mobile breakpoint */
+  @media (max-width: 480px) {
+    body {
+      margin-left: 10px;
+      margin-right: 10px;
     }
-  }
 
+    .container {
+      margin-top: 60px !important;
+    }
 
-  /* Small Devices */
-  @media only screen and (max-width: 600px) {
-    .tab-pane > div {
-      width: 90%; 
+    .text-center h1 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      margin-top: 9rem;
+    }
+
+    .text-center p {
+      font-size: 0.9rem;
+    }
+
+    .chart-container {
+      width: 100%;
       height: 300px;
+      margin-bottom: 25px;
     }
 
-    #fullName {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 55px;
-      display: inline-block;
-      vertical-align: middle;
+    .card {
+      padding: 15px !important;
+      margin: 0 5px;
+    }
+
+    .card h4 {
+      font-size: 1.2rem;
+    }
+  }
+
+  /* Extra small devices */
+  @media (max-width: 320px) {
+    .text-center h1 {
+      font-size: 1.3rem;
+    }
+
+    .chart-container {
+      height: 280px;
+    }
+
+    .card {
+      padding: 10px !important;
     }
   }
 </style>
 </head>
 <body>
   <header>
-    <!-- Sidebar -->
     <%- include('./layout/sidebar') -%>
-
-    <!-- Navbar -->
     <%- include('./layout/navbar') -%>
   </header>
   <main>
   <div class="container mt-5">
-    <h1 class="text-center" style="margin-top: 80px;">Voter Analysis</h1>
-    <div id="chart"></div>
+    <div class="text-center mb-4" style="margin-top: 80px;">
+      <h1 class="fw-bold">Vote Analysis Dashboard</h1>
+      <p class="text-muted fs-5">Overview of vote distribution by position and candidate</p>
+    </div>
+
+    <div class="card shadow-sm p-4">
+      <h4 class="mb-3 text-primary">Results Visualization</h4>
+      <div id="chart"></div>
+    </div>
   </div>
 </main>
+
+
 <script>
-   const groupedData = <%- groupedData %>; 
+  const groupedData = <%- groupedData %>;
 
-if (Object.keys(groupedData).length === 0) {
-  // If there's no data available, display a message
-  const noDataMessage = document.createElement("p");
-  noDataMessage.textContent = "No data available for voter analysis.";
-  noDataMessage.classList.add("text-center", "text-muted", "mt-4");
-  document.getElementById("chart").appendChild(noDataMessage);
-} else {
-  Object.keys(groupedData).forEach((position) => {
-    const positionData = groupedData[position];
+  function makeRoundedImage(src, width = 50, height = 50, radius = 8) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
 
-    const normalizedPosition = position
-      .replace(/\s+/g, '_') 
-      .replace(/[^a-zA-Z0-9_]/g, '');
+        // Draw rounded rectangle path
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(width - radius, 0);
+        ctx.quadraticCurveTo(width, 0, width, radius);
+        ctx.lineTo(width, height - radius);
+        ctx.quadraticCurveTo(width, height, width - radius, height);
+        ctx.lineTo(radius, height);
+        ctx.quadraticCurveTo(0, height, 0, height - radius);
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
+        ctx.clip();
 
-    const container = document.createElement("div");
-    container.id = `chart-${normalizedPosition}`; 
-    container.style.marginBottom = "20px";
-    document.getElementById("chart").appendChild(container);
-
-    const data = {
-      labels: positionData.labels,
-      datasets: [
-        {
-          name: "Votes",
-          type: "bar",
-          values: positionData.votes,
-        },
-      ],
-    };
-
-    // Initialize the chart
-    new frappe.Chart(`#chart-${normalizedPosition}`, {  
-      title: `${position} - Vote Analysis`,
-      data: data,
-      type: "bar",
-      height: 300,
-      colors: ["#007bff", "#28a745"],
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL());
+      };
+      img.src = src;
     });
-  });
-}
+  }
 
-</script>
+  // Function to get responsive chart dimensions
+  function getChartDimensions() {
+    const screenWidth = window.innerWidth;
+    if (screenWidth <= 320) {
+      return { width: '100%', height: '280px' };
+    } else if (screenWidth <= 480) {
+      return { width: '100%', height: '300px' };
+    } else if (screenWidth <= 768) {
+      return { width: '100%', height: '350px' };
+    } else {
+      return { width: '90%', height: '400px' };
+    }
+  }
 
+  // Function to get responsive grid settings
+  function getResponsiveGrid() {
+    const screenWidth = window.innerWidth;
+    if (screenWidth <= 480) {
+      return {
+        top: 60,
+        bottom: 40,
+        left: 80,
+        right: 40
+      };
+    } else if (screenWidth <= 768) {
+      return {
+        top: 50,
+        bottom: 35,
+        left: 120,
+        right: 60
+      };
+    } else {
+      return {
+        top: 10,
+        bottom: 30,
+        left: 150,
+        right: 80
+      };
+    }
+  }
+
+  async function renderCharts() {
+    if (Object.keys(groupedData).length === 0) {
+      const noDataMessage = document.createElement("p");
+      noDataMessage.textContent = "No data available for voter analysis.";
+      noDataMessage.classList.add("text-center", "text-muted", "mt-4");
+      document.getElementById("chart").appendChild(noDataMessage);
+      return;
+    }
+
+    const dimensions = getChartDimensions();
+    const gridSettings = getResponsiveGrid();
+
+    for (const position of Object.keys(groupedData)) {
+      const positionData = groupedData[position];
+      const normalizedPosition = position.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+
+      const container = document.createElement("div");
+      container.id = `chart-${normalizedPosition}`;
+      container.className = "chart-container";
+      container.style.marginBottom = "40px";
+      container.style.width = dimensions.width;
+      container.style.height = dimensions.height;
+      document.getElementById("chart").appendChild(container);
+
+      const candidateNames = positionData.candidates.map(c => c.name);
+      const candidatePhotos = positionData.candidates.map(c => c.photo || '/default-avatar.png');
+      const voteCounts = positionData.candidates.map(c => c.vote);
+      const maxVote = Math.max(...voteCounts);
+
+      const roundedImages = await Promise.all(candidatePhotos.map(photo =>
+        makeRoundedImage(photo, 50, 50, 8)
+      ));
+
+      const myChart = echarts.init(document.getElementById(`chart-${normalizedPosition}`));
+
+      const option = {
+        title: {
+          text: `${position} - Vote Results`,
+          left: 'center',
+          top: 10,
+          textStyle: { 
+            fontSize: window.innerWidth <= 480 ? 14 : 18 
+          }
+        },
+        grid: gridSettings,
+        xAxis: {
+          type: 'value',
+          max: 'dataMax',
+          axisLabel: {
+            formatter: n => Math.round(n),
+            fontSize: window.innerWidth <= 480 ? 10 : 12
+          }
+        },
+        yAxis: {
+          type: 'category',
+          inverse: true,
+          data: candidateNames,
+          axisLabel: {
+            show: true,
+            fontSize: window.innerWidth <= 480 ? 10 : 14
+          }
+        },
+        tooltip: {
+          trigger: 'item',
+          backgroundColor: '#fff',
+          borderColor: '#ccc',
+          borderWidth: 1,
+          extraCssText: 'box-shadow: 0px 0px 6px rgba(0,0,0,0.2);',
+          formatter: function (params) {
+            const index = params.dataIndex;
+            const name = candidateNames[index];
+            const image = roundedImages[index];
+            const votes = params.value;
+            return `
+              <div style="display: flex; align-items: center;">
+                <div style="flex: 1; padding-right: 10px;">
+                  <div style="font-weight: bold; font-size: 14px;">${name}</div>
+                  <div style="color: #888; font-size: 12px;">${votes} votes</div>
+                </div>
+                <img src="${image}" style="width: 50px; height: 50px; border-radius: 8px;" />
+              </div>
+            `;
+          }
+        },
+        series: [{
+          type: 'bar',
+          data: voteCounts.map(v => ({
+            value: v,
+            itemStyle: {
+              color: v === maxVote ? '#DE3163' : '#DE3163'
+            }
+          })),
+          label: {
+            show: true,
+            position: 'right',
+            formatter: p => `${p.value} votes`,
+            fontWeight: 'bold',
+            fontFamily: 'monospace',
+            fontSize: window.innerWidth <= 480 ? 10 : 12
+          }
+        }]
+      };
+
+      myChart.setOption(option);
+
+      // Make charts responsive on window resize
+      window.addEventListener('resize', function() {
+        myChart.resize();
+      });
+    }
+  }
+
+  renderCharts();
+
+  </script>
 
 <%- include('layout/footer') %>
