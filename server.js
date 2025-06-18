@@ -132,7 +132,7 @@ app.post("/login", (req, res) => {
       const user = result.rows[0]; // Extract the first user from the result set
       if (!user) {
         return res.render("login", {
-          errorMessage: "Invalid username or password",
+          errorMessage: "Invalid voterID or password",
         });
       }
 
@@ -142,7 +142,7 @@ app.post("/login", (req, res) => {
         }
         if (!isMatch) {
           return res.render("login", {
-            errorMessage: "Invalid username or password",
+            errorMessage: "Invalid voterID or password",
           });
         }
 
@@ -2254,7 +2254,7 @@ app.get("/forget-password", (req, res) => {
 });
 
 app.post("/forget-password", (req, res) => {
-  const { username, password, passwordConfirm } = req.body;
+  const { voter_id, password, passwordConfirm } = req.body;
 
   if (password !== passwordConfirm) {
     return res
@@ -2264,18 +2264,18 @@ app.post("/forget-password", (req, res) => {
 
   pool.query(
     "SELECT * FROM auth WHERE username = $1",
-    [username],
+    [voter_id],
     (err, result) => {
       if (err) {
         return res
           .status(500)
-          .json({ success: false, message: "An error occurred" });
+          .json({ success: false, message: `An error occurred, ${err}` });
       }
 
       if (!result.rows.length) {
         return res
           .status(404)
-          .json({ success: false, message: "Username does not exist" });
+          .json({ success: false, message: "VoterID does not exist" });
       }
 
       bcrypt.hash(password, 10, (err, hash) => {
@@ -2287,7 +2287,7 @@ app.post("/forget-password", (req, res) => {
 
         pool.query(
           "UPDATE auth SET password = $1 WHERE username = $2",
-          [hash, username],
+          [hash, voter_id],
           (err) => {
             if (err) {
               return res
