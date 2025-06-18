@@ -3061,83 +3061,96 @@ app.post("/create/notification", async (req, res) => {
   }
 });
 
+// Helper function for time ago
+const timeAgo = (date) => {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  const intervals = [
+    { label: "year", seconds: 31536000 },
+    { label: "month", seconds: 2592000 },
+    { label: "day", seconds: 86400 },
+    { label: "hour", seconds: 3600 },
+    { label: "minute", seconds: 60 },
+    { label: "second", seconds: 1 },
+  ];
+
+  for (const interval of intervals) {
+    const count = Math.floor(seconds / interval.seconds);
+    if (count >= 1) {
+      return `${count} ${interval.label}${count > 1 ? "s" : ""} ago`;
+    }
+  }
+  return "Just now";
+};
+
+
+// Notifications route
 app.get("/notifications", (req, res) => {
-  // Ensure the user is logged in
   if (!req.session.userId) {
     return res.redirect("/login");
   }
-
-  // Fetch the user's username
+console.log("Session user", req.session.userId)
   pool.query(
     "SELECT username FROM auth WHERE user_id = $1",
     [req.session.userId],
     (err, userResult) => {
       if (err) {
-        console.log("USER ERROR", err);
+        console.error("USER ERROR", err);
         return res.status(500).send("Error fetching user");
       }
+      console.log("user result", userResult);
 
       if (userResult.rows.length === 0) {
         return res.status(404).send("User not found");
       }
 
-      const user = userResult.rows[0]; // Extracting user data from the result
+      const username = userResult.rows[0].username;
 
-      // Fetch notifications for the current user
       pool.query(
         "SELECT * FROM notifications WHERE username = $1 ORDER BY created_at DESC",
-        [user.username],
+        [username],
         (err, notificationsResult) => {
           if (err) {
             return res.status(500).send("Error fetching notifications");
           }
+
           const notifications = notificationsResult.rows;
 
-          // Reset unread count to zero
           pool.query(
             "UPDATE notifications SET is_read = 1 WHERE username = $1 AND is_read = 0",
-            [user.username],
+            [username],
             (err) => {
               if (err) {
-                return res
-                  .status(500)
-                  .send("Error updating notification status");
+                return res.status(500).send("Error updating notification status");
               }
 
-              // Fetch the unread notifications count
               pool.query(
                 "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-                [user.username],
+                [username],
                 (err, countResult) => {
                   if (err) {
-                    return res
-                      .status(500)
-                      .send("Error fetching unread notifications count");
+                    return res.status(500).send("Error fetching unread notifications count");
                   }
 
-                  const unreadCount = countResult.rows[0].unreadCount;
+                  const unreadCount = parseInt(countResult.rows[0].unreadcount, 10) || 0;
 
-                  // Fetch user profile information
                   pool.query(
                     "SELECT * FROM users WHERE id = $1",
                     [req.session.userId],
                     (err, userDataResult) => {
                       if (err) {
-                        return res
-                          .status(500)
-                          .send("Error fetching user from the user table");
+                        return res.status(500).send("Error fetching user data");
                       }
 
                       const userData = userDataResult.rows[0];
 
-                      // Render the notifications page
                       res.render("notification", {
-                        username: user.username,
+                        username,
                         userId: req.session.userId,
                         notifications,
                         profilePicture: req.session.profilePicture,
                         userData,
-                        unreadCount: unreadCount,
+                        unreadCount,
+                        timeAgo,
                       });
                     }
                   );
@@ -3151,6 +3164,7 @@ app.get("/notifications", (req, res) => {
   );
 });
 
+// Socket.IO connection
 io.on("connection", (socket) => {
   console.log("A user connected");
 
@@ -3158,28 +3172,26 @@ io.on("connection", (socket) => {
     pool.query(
       "SELECT username FROM auth WHERE user_id = $1",
       [userId],
-      (err, user) => {
-        if (err || !user) {
+      (err, userResult) => {
+        if (err || !userResult.rows.length) {
           console.error("Error fetching user:", err);
           return;
         }
 
-        socket.join(user.username);
+        const username = userResult.rows[0].username;
+        socket.join(username);
 
-        // Emit the count of unread notifications
         pool.query(
           "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-          [user.username],
+          [username],
           (err, countResult) => {
             if (err) {
               console.error("Error fetching unread notifications count:", err);
               return;
             }
 
-            io.to(user.username).emit(
-              "unread-notifications-count",
-              countResult.unreadCount
-            );
+            const unreadCount = parseInt(countResult.rows[0].unreadcount, 10) || 0;
+            io.to(username).emit("unread-notifications-count", unreadCount);
           }
         );
       }
@@ -3190,6 +3202,7 @@ io.on("connection", (socket) => {
     console.log("A user disconnected");
   });
 });
+
 
 // Listen for new notifications and emit them to the specific user
 // Server-side socket.io configuration

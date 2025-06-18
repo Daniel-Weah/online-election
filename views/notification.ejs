@@ -1,256 +1,319 @@
-
-<%- include('layout/header') %> 
+<%- include('layout/header') %>
 <link rel="stylesheet" href="/css/style.css" />
 
 <style>
- 
- #notification-box {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4CAF50; 
-  color: white;
-  padding: 15px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-
-/* Style for the notification box */
-#notification-box {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4CAF50;
-  color: white;
-  padding: 15px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  font-size: 1rem;
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-/* Smooth fade-in animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-10px);
+  body {
+    background-color: #f5f7fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+
+  .notification-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
   }
-}
 
-/* Notifications list */
-#notification-list {
-  list-style-type: none;
-  padding: 20px;
-  width: 70%;
-
-}
-
-#notification-list li {
-  /* display: flex; */
-  /* align-items: flex-start; */
-  margin-bottom: 10px;
-}
-
-#notification-list li img {
-  width: 30px;
-  height: 30px;
-  margin-right: 5px;
-}
-
-#notification-list li span {
-  font-size: 0.9rem;
-  color: #333;
-}
-
-#notification-list li span#title {
-  font-weight: bold;
-  color: #000;
-}
-
-#notification-list li span img {
-  /* margin-left: 10px; */
-  width: 15px;
-  height: 15px;
-}
-
-/* No notification image */
-#no-notification {
-  display: block;
-  margin: 20px auto;
-  max-width: 200px;
-}
-
-
-@media only screen and (max-width: 768px){
-  #notification-list {
-  list-style-type: none;
-  padding: 20px;
-  width: 100%;
-
-}
-  #fullName{
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 55px;
-    display: inline-block;
-    vertical-align: middle;
+  .notification-card {
+    display: flex;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    padding: 15px;
+    transition: all 0.25s ease-in-out;
+    align-items: center;
   }
-  #container{
-    margin-left: 15px;
+
+  .notification-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
   }
-}
-@media only screen and (min-width: 600px){
-  #fullName{
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 55px;
-    display: inline-block;
-    vertical-align: middle;
+
+  .notification-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+    border: 2px solid #0d6efd;
   }
-  #container{
-    margin-left: 15px;
+
+  .notification-content h5 {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+    font-weight: 600;
   }
-}
 
-.notification-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-}
+  .notification-content p {
+    margin: 5px 0;
+    font-size: 0.95rem;
+    color: #555;
+  }
 
-.notification-card {
-  display: flex;
-  background: #fff;
-  border-left: 5px solid #0d6efd;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  padding: 15px;
-  transition: transform 0.2s ease;
-}
+  .notification-content small {
+    color: #888;
+    font-size: 0.8rem;
+  }
 
-.notification-card:hover {
-  transform: scale(1.01);
-}
+  .no-notification-img {
+    max-width: 200px;
+    opacity: 0.75;
+  }
 
-.notification-icon {
-  font-size: 2rem;
-  color: #0d6efd;
-  margin-right: 15px;
-  align-self: center;
-}
+  @media (max-width: 576px) {
+    .notification-card {
+      flex-direction: column;
+      text-align: center;
+    }
 
-.notification-content h5 {
-  margin: 0;
-  font-weight: 600;
-  color: #333;
-}
-
-.notification-content p {
-  margin: 5px 0;
-  color: #555;
-  white-space: pre-wrap;
-}
-
-.notification-content small {
-  color: #888;
-}
-
-.no-notification-img {
-  max-width: 180px;
-  opacity: 0.8;
-}
-
+    .notification-avatar {
+      margin-bottom: 10px;
+    }
+  }
 </style>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
+  document.addEventListener("DOMContentLoaded", function () {
     const socket = io();
-    
-    const userId = '<%= userId %>'; 
+    const userId = '<%= userId %>';
     socket.emit('join', userId);
-    
-    socket.on('new-notification', function(notification) {
+
+    socket.on('new-notification', function (notification) {
       alert(`New notification: ${notification.message}`);
-      
-      const notificationList = document.getElementById('notification-list');
-      const newNotification = document.createElement('li');
-      newNotification.textContent = `${notification.title}: ${notification.message}`;
-      notificationList.appendChild(newNotification);
+      // Optionally: dynamically insert notification into the DOM
     });
   });
 </script>
 
-
-
 </head>
 <body>
   <header>
-    <nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
-      <div class="container-fluid">
-         
-          <a class="navbar-brand" href="#">
-              <img src="/images/election.png" height="45"  alt="" loading="lazy" />
-          </a>
-  
-          <ul class="navbar-nav ms-auto d-flex flex-row">
-              <li class="nav-item dropdown">
-                  <a class="nav-link me-3 me-lg-0 dropdown-toggle hidden-arrow" href="#" id="notification" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      <i class="fas fa-bell" style="font-size: 1.2rem;margin-top: 10px;"></i>
-                      <span class="badge rounded-pill badge-notification bg-danger"><%= unreadCount %></span>
-                  </a>
-                  <ul style="position: absolute" class="dropdown-menu dropdown-menu-end" aria-labelledby="notification">
-                      <li><a class="dropdown-item" href="/notifications">Notification</a></li>
-                  </ul>
-              </li>
-              
-              </li>
-  
-              <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle hidden-arrow d-flex align-items-center" href="#" id="profile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      <img src="data:image/png;base64,<%=profilePicture%>" class="rounded-circle" height="40" width="40" loading="lazy" alt="user" /> &nbsp;
-                      <span id="fullName" title="<%= userData.first_name%> <%= userData.middle_name%> <%= userData.last_name%>"><%= userData.first_name%> <%= userData.middle_name%> <%= userData.last_name%></span>
-                  </a>
-                  <ul style="position: absolute" class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
-                      <li><a class="dropdown-item" href="/my/profile">My profile</a></li>
-                      <li><a class="dropdown-item" href="/voter/setting">Settings</a></li>
-                      <li><a class="dropdown-item" href="/logout" style="color: #f00;"> <i class="fas fa-arrow-right"></i> Logout</a></li>
-                  </ul>
-              </li>
-              
-          </ul>
-      </div>
-       
-  </nav>
-  
+    <style>
+    /* Full name styling */
+    #fullName {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    /* Notification badge styling */
+    .badge-notification {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        font-size: 0.7rem;
+        min-width: 18px;
+        height: 18px;
+        line-height: 18px;
+        text-align: center;
+    }
+
+    /* Notification link container */
+    .notification-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    /* Navbar responsive fixes */
+    .navbar-nav {
+        align-items: center;
+    }
+
+    /* Desktop styles */
+    @media (min-width: 992px) {
+        #fullName {
+            max-width: 150px;
+        }
+        
+        .navbar-toggler {
+            display: none;
+        }
+    }
+
+    /* Tablet breakpoint */
+    @media (max-width: 991px) {
+        #fullName {
+            max-width: 100px;
+        }
+
+        .navbar-brand img {
+            height: 40px;
+        }
+
+        .notification-container .fas {
+            font-size: 1.1rem !important;
+        }
+    }
+
+    /* Mobile breakpoint */
+    @media (max-width: 768px) {
+        #fullName {
+            max-width: 80px;
+            font-size: 0.9rem;
+        }
+
+        .navbar-brand img {
+            height: 35px;
+        }
+
+        .dropdown-toggle img {
+            height: 35px !important;
+            width: 35px !important;
+        }
+
+        .notification-container .fas {
+            font-size: 1rem !important;
+            margin-top: 8px !important;
+        }
+
+        .badge-notification {
+            font-size: 0.6rem;
+            min-width: 16px;
+            height: 16px;
+            line-height: 16px;
+        }
+
+        .dropdown-menu {
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Small mobile breakpoint */
+    @media (max-width: 480px) {
+        #fullName {
+            max-width: 60px;
+            font-size: 0.8rem;
+        }
+
+        .navbar-brand img {
+            height: 30px;
+        }
+
+        .dropdown-toggle img {
+            height: 30px !important;
+            width: 30px !important;
+        }
+
+        .notification-container .fas {
+            font-size: 0.9rem !important;
+            margin-top: 6px !important;
+        }
+
+        .navbar-toggler {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .container-fluid {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 320px) {
+        #fullName {
+            display: none; /* Hide name on very small screens */
+        }
+
+        .navbar-brand img {
+            height: 28px;
+        }
+
+        .dropdown-toggle img {
+            height: 28px !important;
+            width: 28px !important;
+        }
+    }
+
+    /* Fix dropdown positioning */
+    .dropdown-menu {
+        position: absolute !important;
+        right: 0;
+        left: auto;
+        min-width: 160px;
+    }
+
+    /* Ensure proper spacing */
+    .nav-item {
+        margin: 0 0.25rem;
+    }
+
+    .nav-link {
+        padding: 0.5rem 0.75rem;
+    }
+</style>
+
+<nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+    <div class="container-fluid">
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <a class="navbar-brand" href="/">
+            <img src="/images/election.png" height="45" alt="Election Logo" loading="lazy" />
+        </a>
+
+        <ul class="navbar-nav ms-auto d-flex flex-row">
+            <!-- Notification -->
+            <li class="nav-item">
+                <a class="nav-link me-3 me-lg-0 notification-container" href="/notifications" id="notification">
+                    <i class="fas fa-bell" style="font-size: 1.2rem; margin-top: 10px;"></i>
+                    <% if (unreadCount > 0) { %>
+                        <span class="badge rounded-pill badge-notification bg-danger"><%= unreadCount %></span>
+                    <% } %>
+                </a>
+            </li>
+
+            <!-- Avatar -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle hidden-arrow d-flex align-items-center" href="#" id="profile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="data:image/png;base64,<%=profilePicture%>" class="rounded-circle" height="40" width="40" loading="lazy" alt="User Avatar" />
+                    <span class="ms-2">
+                        <span id="fullName" title="<%= userData.first_name%> <%= userData.middle_name%> <%= userData.last_name%>">
+                            <%= userData.first_name%> <%= userData.middle_name%> <%= userData.last_name%>
+                        </span>
+                    </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+                    <li><a class="dropdown-item" href="/my/profile">
+                        <i class="fas fa-user me-2"></i>My profile
+                    </a></li>
+                    <li><a class="dropdown-item" href="/voter/setting">
+                        <i class="fas fa-cog me-2"></i>Settings
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</nav>
   </header>
-  <main id="container" class="shadow-sm mt-4 container py-5">
+
+  <main class="shadow-sm mt-5 container py-5">
     <br>
     <h2 class="mb-4 text-primary">Hello, <%= userData.first_name %> <%= userData.middle_name %> <%= userData.last_name %>!</h2>
     <h4 class="mb-3 text-secondary">📬 Your Notifications</h4>
-  
+
     <% if (notifications.length > 0) { %>
       <div class="notification-grid">
         <% notifications.forEach(notification => { %>
           <div class="notification-card">
-            <div class="notification-icon">
-              <i class="fas fa-envelope-open-text"></i>
-            </div>
+            <img src="/images/notification-avatar.png" class="notification-avatar" alt="avatar">
             <div class="notification-content">
               <h5><%= notification.title %></h5>
               <p><%- notification.message %></p>
-              <small><i class="fas fa-clock"></i> <%= new Date(notification.created_at).toLocaleString() %></small>
+              <small><i class="fas fa-clock"></i> <%= timeAgo(notification.created_at) %></small>
             </div>
           </div>
         <% }) %>
@@ -262,6 +325,5 @@
       </div>
     <% } %>
   </main>
-  
 
 <%- include('layout/footer') %>
