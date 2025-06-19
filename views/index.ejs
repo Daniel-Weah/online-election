@@ -2,370 +2,446 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>Vote Wise Online Election Application</title>
-    <link rel="shortcut icon" href="/images/election.png" type="image/x-icon">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" />
-    <!-- Google Fonts Roboto -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
-    <!-- Bootstrap CSS -->
-    <link href="/css/bootstrap.min.css" rel="stylesheet">
-   <!-- Custom styles -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>Vote Wise | Secure Online Elections</title>
+  <link rel="shortcut icon" href="/images/votewiseLogo.png" type="image/x-icon">
 
-    <!-- Additional Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/index.css">
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
-   
-    </style>
+  <!-- Custom Styles (optional) -->
+  <style>
+    .navbar-nav .nav-link {
+      color: #ffffff !important;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #ffc107 !important;
+    }
+    .heroCarousel img {
+    height: 500px;
+    object-fit: cover;
+  }
+  #developer{
+    color: white;
+  }
+
+.gradient-custom {
+  background: radial-gradient(50% 123.47% at 50% 50%, #00ff94 0%, #720059 100%),
+    linear-gradient(121.28deg, #669600 0%, #ff0000 100%),
+    linear-gradient(360deg, #0029ff 0%, #8fff00 100%),
+    radial-gradient(100% 164.72% at 100% 100%, #6100ff 0%, #00ff57 100%),
+    radial-gradient(100% 148.07% at 0% 0%, #fff500 0%, #51d500 100%);
+  background-blend-mode: screen, color-dodge, overlay, difference, normal;
+}
+.carousel-indicators {
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+}
+#testimonials {
+  background: #111827;
+}
+
+#testimonials h2 {
+  position: relative;
+  font-family: 'Jost', sans-serif;
+}
+
+#testimonials h2::after {
+  content: "";
+  width: 80px;
+  height: 3px;
+  background: #ffdc12;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -12px;
+}
+
+#testimonials .carousel-item {
+  transition: transform 0.8s ease-in-out;
+}
+
+#testimonials img {
+  border: 4px solid #ffdc12;
+}
+.footer a:hover {
+  text-decoration: underline;
+  color: #ffdc12;
+}
+
+#contact-us h2::after {
+  content: "";
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: #ffdc12;
+  margin: 10px auto 0;
+}
+
+  </style>
 </head>
 
-<body>
-  <main>
-<!-- ========== top nav =============== -->
-<header>
-  <div id="top-bar" class="d-flex justify-content-between align-items-center p-2 text-white" style="background-color: rgb(30, 158, 201);">
+<body style="font-family: 'Jost', sans-serif;">
+
+  <!-- Top Contact Bar -->
+  <div class="bg-primary text-white py-2 px-3 d-flex justify-content-between align-items-center small">
     <div>
-    <span ><i class="fas fa-phone"></i> <a href="tel:+231-771894241">+231-771894241</a> | <a href="tel:+231-880822436">+231-880822436</a></span> |<span class=""> <i class="fas fa-envelope"></i> <a href="mailto:votewiseliberia@gmail.com">votewiseliberia@gmail.com</a></span>
+      <i class="fas fa-phone me-1"></i> 
+      <a href="tel:+231771894241" class="text-white text-decoration-none">+231-771894241</a> |
+      <a href="tel:+231880822436" class="text-white text-decoration-none">+231-880822436</a> |
+      <i class="fas fa-envelope ms-2"></i> 
+      <a href="mailto:votewiseliberia@gmail.com" class="text-white text-decoration-none">votewiseliberia@gmail.com</a>
+    </div>
+    <div>
+      <a href="#" class="text-white me-2"><i class="fab fa-facebook-f"></i></a>
+      <a href="#" class="text-white me-2"><i class="fab fa-twitter"></i></a>
+      <a href="#" class="text-white me-2"><i class="fab fa-instagram"></i></a>
+      <a href="#" class="text-white"><i class="fab fa-linkedin-in"></i></a>
+    </div>
   </div>
-  <div class="d-flex gap-3">
-    <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
-    <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-    <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
-    <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
-  </div>
-</div>
 
-
-
-    <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-lg">
-  <div class="container-fluid">
-    <!-- Toggle button -->
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarSupportedContent"
-      aria-controls="navbarSupportedContent"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-    >
-      <i class="fas fa-bars"></i>
-    </button>
-
-    <!-- Collapsible wrapper -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <!-- Navbar brand -->
-      <a class="navbar-brand mt-2 mt-lg-0" href="#">
-        <img
-          src="/images/election.png"
-          height="50"
-          alt="Logo"
-          loading="lazy"
-        />
+  <!-- Navbar (Dark) -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <img src="/images/votewiseLogo.png" alt="VoteWise Logo" height="50">
       </a>
-
-      <!-- Left links -->
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="/">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#about">About</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#features">Features</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#developer">Developer</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#contact-us">Contact us</a>
-        </li>
-       
-      </ul>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+          <li class="nav-item"><a class="nav-link" href="#developer">Developer</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contact-us">Contact</a></li>
+        </ul>
+        <a href="/login" class="btn btn-outline-warning">Login <i class="fas fa-sign-in-alt ms-2"></i></a>
+      </div>
     </div>
+  </nav>
 
-    <!-- Right elements -->
-    <div class="d-flex align-items-center">
-      
-        <li class="nav-item" style="list-style-type: none;">
-          <button class="button"><a class="nav-link" href="/login">Login
-            <svg fill="currentColor" viewBox="0 0 24 24" class="icon">
-              <path
-                clip-rule="evenodd"
-                d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z"
-                fill-rule="evenodd"
-              ></path>
-            </svg></a></button>
-        </li>
-       
+  <!-- Hero Section -->
+  <div id="carouselExample" class="carousel slide carousel-fade" data-bs-ride="carousel">
+    <div class="carousel-inner heroCarousel">
+      <div class="carousel-item active" data-bs-interval="8000">
+        <img src="https://media.istockphoto.com/id/2156403871/photo/young-hispanic-woman-in-her-twenties-proudly-displaying-her-i-voted-sticker-in-a-co-working.webp?a=1&b=1&s=612x612&w=0&k=20&c=laKB9VozV6FuaL6hXnkuqvV78_w9rSHUA2zZ8-wNL3U=" class="d-block w-100" alt="Young woman showing 'I Voted' sticker">
+        <div class="carousel-caption text-start h-100 d-flex align-items-center" style="background: rgba(0,0,0,0.5);">
+          <div>
+            <h5 class="text-warning text-uppercase">Secure Online Elections</h5>
+            <h1 class="display-4 text-white fw-bold">Empowering Democracy Digitally</h1>
+            <p class="lead text-white">Vote from anywhere, anytime, with transparency.</p>
+            <a href="#about" class="btn btn-warning btn-lg me-2">Learn More</a>
+            <a href="/login" class="btn btn-outline-light btn-lg">Get Started</a>
+          </div>
+        </div>
+      </div>
+      <div class="carousel-item" data-bs-interval="8000">
+        <img src="https://images.unsplash.com/photo-1587400563418-290eddd09c6f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZWxlY3Rpb24lMjByZWFsJTIwdGltZSUyMHJlc3VsdHxlbnwwfHwwfHx8MA%3D%3D" class="d-block w-100" alt="People monitoring election results on screen">
+        <div class="carousel-caption text-start h-100 d-flex align-items-center" style="background: rgba(0,0,0,0.5);">
+          <div>
+            <h5 class="text-warning text-uppercase">Real-Time Results</h5>
+            <h1 class="display-4 text-white fw-bold">Transparent & Accurate Counting</h1>
+            <p class="lead text-white">Stay updated with live voting data.</p>
+            <a href="#features" class="btn btn-warning btn-lg me-2">Explore Features</a>
+            <a href="/login" class="btn btn-outline-light btn-lg">Try Now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon bg-dark p-3 rounded-circle" aria-hidden="true"></span>
+      <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+      <span class="carousel-control-next-icon bg-dark p-3 rounded-circle" aria-hidden="true"></span>
+      <span class="visually-hidden">Next</span>
+    </button>
   </div>
-</nav>
-<!-- Navbar -->
- </header>
 
-<section class="hero" >
-  <div class="hero-section-details">
-    <div class="hero-text">
-      <h2>VoteWise <br> <code>Online Election</code></h2>
-      <p>Empowering democracy through <code>secure</code> and <code>transparent</code> online voting.</p>
-      <p> Cast your vote anytime, anywhere with confidence.</p>
-     
-    </div>
-    <div class="hero-img">
-      <!-- <img src="/images/voteIllustration.png" alt=""  height="500"> -->
-    </div>
-  </div>
-</section>
 
-<section class="about-section" id="about">
+
+
+<!-- ======= About Section ======= -->
+<section id="about" class="py-5 bg-light">
   <div class="container">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">About VoteWise</h2>
+      <p class="text-muted">A revolutionary step towards secure, accessible, and transparent online voting.</p>
+    </div>
     <div class="row align-items-center">
       <div class="col-md-6">
-        <img src="/images/about-votewise.png" alt="About Vote Wise" class="about-img" height="500">
+        <img src="https://media.istockphoto.com/id/523262976/photo/about-us-concept-with-alphabet-blocks.webp?a=1&b=1&s=612x612&w=0&k=20&c=ivgQiyyuES6Gt7NYF8G84weQ0_iBWNSuERvtcW8Fhu0=" class="img-fluid rounded" alt="About VoteWise">
       </div>
       <div class="col-md-6">
-        <h2 class="about-title">About Vote Wise</h2>
-        <p class="about-text">
-          Vote Wise is a secure and transparent online election platform designed to empower democracy. 
-          Our system allows voters to cast their votes anytime, anywhere, ensuring a seamless and trustworthy electoral process.
-        </p>
-        <ul class="about-list">
-          <li><i class="fas fa-check-circle"></i> Secure and Encrypted Voting</li>
-          <li><i class="fas fa-check-circle"></i> User-Friendly Experience</li>
-          <li><i class="fas fa-check-circle"></i> Real-Time Election Results</li>
-          <li><i class="fas fa-check-circle"></i> Trusted by Communities Worldwide</li>
+        <p>VoteWise is an innovative platform designed to modernize elections by enabling secure online voting for individuals across the globe. Our system leverages robust security protocols, real-time vote counting, and end-to-end transparency to ensure trust and credibility in the electoral process.</p>
+        <ul class="list-unstyled">
+          <li><i class="fas fa-check-circle text-success me-2"></i> Blockchain-secured voting</li>
+          <li><i class="fas fa-check-circle text-success me-2"></i> User-friendly interface</li>
+          <li><i class="fas fa-check-circle text-success me-2"></i> Real-time analytics and results</li>
         </ul>
-        <button class="button"><a class="nav-link" href="/login">Explore</a></button>
       </div>
     </div>
   </div>
 </section>
 
 
-<section class="features-section" id="features">
+
+<hr>
+<section id="features" class="py-5">
   <div class="container">
-    <h2 class="features-title">Key Features</h2>
-    <p class="features-subtitle">Empowering democracy with a secure and seamless voting experience.</p>
-
-    <div class="features-grid">
-      <div class="feature-box">
-        <i class="fas fa-shield-alt feature-icon"></i>
-        <h3>Secure Voting</h3>
-        <p>End-to-end encryption ensures a safe and tamper-proof election process.</p>
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">Key Features</h2>
+      <p class="text-muted">What makes VoteWise your go-to election platform</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center">
+            <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+            <h5 class="card-title fw-bold">Top-notch Security</h5>
+            <p class="card-text">Utilizes advanced encryption and authentication to prevent fraud and ensure integrity.</p>
+          </div>
+        </div>
       </div>
-
-      <div class="feature-box">
-        <i class="fas fa-mobile-alt feature-icon"></i>
-        <h3>Mobile-Friendly</h3>
-        <p>Cast your vote anytime, anywhere from any device with ease.</p>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center">
+            <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+            <h5 class="card-title fw-bold">Live Results</h5>
+            <p class="card-text">See live vote updates and stats as they happen in real-time.</p>
+          </div>
+        </div>
       </div>
-
-      <div class="feature-box">
-        <i class="fas fa-chart-line feature-icon"></i>
-        <h3>Real-Time Results</h3>
-        <p>Get instant election results with accurate and transparent vote counts.</p>
-      </div>
-
-      <div class="feature-box">
-        <i class="fas fa-users feature-icon"></i>
-        <h3>User Authentication</h3>
-        <p>Secure login and verification ensure only eligible voters can participate.</p>
-      </div>
-
-      <div class="feature-box">
-        <i class="fas fa-clock feature-icon"></i>
-        <h3>24/7 Availability</h3>
-        <p>Vote at your convenience with a system that’s available round the clock.</p>
-      </div>
-
-      <div class="feature-box">
-        <i class="fas fa-handshake feature-icon"></i>
-        <h3>Fair & Transparent</h3>
-        <p>Built with integrity, ensuring elections are fair and unbiased.</p>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center">
+            <i class="fas fa-mobile-alt fa-3x text-success mb-3"></i>
+            <h5 class="card-title fw-bold">Mobile Friendly</h5>
+            <p class="card-text">Vote seamlessly on mobile, tablet, or desktop devices with our responsive design.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 
-<section class="developer-section" id="developer">
+
+<section id="developer" class="py-5 bg-dark">
   <div class="container">
-    <h2 class="developer-title" style="color: white;">Meet the Developer</h2>
-    <p class="developer-subtitle" style="color: white;">This platform was developed by a passionate individual.</p>
-
-    <div class="developer-card">
-      <img src="/images/developer.jpg" alt="Daniel K. Weah, Jr.">
-      <h3>Daniel K. Weah, Jr.</h3>
-      <p>Lead Developer</p>
-      <p>Daniel is a skilled developer dedicated to creating secure and seamless digital experiences.</p>
-      
-      <!-- Social Links -->
-      <div class="social-links">
-        <a href="https://github.com/Daniel-Weah" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
-        <a href="https://www.linkedin.com/in/daniel-k-weah-jr-970021252/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
-        <a href="mailto:weahjrdanielk@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a>
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">Meet the Developer</h2>
+      <p class="text-muted">Behind the tech that powers secure digital democracy.</p>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-md-4 text-center">
+        <img src="/images/developer.jpg" class="img-fluid rounded-circle mb-3" alt="Developer">
+        <h5 class="fw-bold">Daniel K. Weah, Jr</h5>
+        <p class="text-sm">#buildwithdanielk</p>
+        <p class="text-muted">Full Stack Developer | System Architect</p>
+        <p>With a passion for digital transformation and civic tech, Daniel designed VoteWise to empower institutions with modern, secure, and scalable election tools.</p>
+        <a href="mailto:votewiseliberia@gmail.com" class="btn btn-outline-primary mt-2">Contact Developer</a>
       </div>
     </div>
   </div>
 </section>
+
 
 <!-- Election Statistics Section -->
 <section id="election-stats" class="text-center py-5 bg-light">
   <div class="container">
-      <h2 class="features-title">Election Statistics</h2>
-      <p class="features-subtitle">Real-time election data updates</p>
-      <div class="row">
-          <div class="col-md-3 shadow-sm">
-              <h3 class="counter" data-target="50">0</h3>
-              <p>Total Elections</p>
-          </div>
-          <div class="col-md-3 shadow-sm">
-              <h3 class="counter" data-target="20000">0</h3>
-              <p>Total Voters</p>
-          </div>
-          <div class="col-md-3 shadow-sm">
-              <h3 class="counter" data-target="1000">0</h3>
-              <p>Total Candidates</p>
-          </div>
-          <div class="col-md-3 shadow-sm">
-              <h3 class="counter" data-target="100">0</h3>
-              <p>Total Administrators</p>
-          </div>
+    <h2 class="fw-bold mb-3">Election Statistics</h2>
+    <p class="text-muted mb-4">Real-time election data updates</p>
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="p-4 shadow-sm bg-white rounded">
+          <h3 class="counter display-5 fw-bold text-primary" data-target="50">0</h3>
+          <p>Total Elections</p>
+        </div>
       </div>
+      <div class="col-md-3">
+        <div class="p-4 shadow-sm bg-white rounded">
+          <h3 class="counter display-5 fw-bold text-success" data-target="20000">0</h3>
+          <p>Total Voters</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-4 shadow-sm bg-white rounded">
+          <h3 class="counter display-5 fw-bold text-warning" data-target="1000">0</h3>
+          <p>Total Candidates</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-4 shadow-sm bg-white rounded">
+          <h3 class="counter display-5 fw-bold text-danger" data-target="100">0</h3>
+          <p>Total Administrators</p>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
+
 
 <!-- Testimonials Slider Section -->
-<section id="testimonials" class="py-5 bg-white shadow-lg">
+<section id="testimonials" class="py-5 bg-dark text-white">
   <div class="container">
-    <h2 class="features-title text-center">What People Say</h2>
-    <p class="features-subtitle text-center">Feedback from our users</p>
+    <div class="text-center mb-5">
+      <i class="fas fa-quote-left fa-2x text-warning mb-3"></i>
+      <h2 class="fw-bold text-uppercase">What People Say</h2>
+      <p class="text-muted">Trusted voices from our users</p>
+    </div>
 
-    <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div id="testimonialCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
       <div class="carousel-inner">
+        <!-- Testimonial 1 -->
         <div class="carousel-item active">
-          <div class="d-flex flex-column align-items-center">
-            <img src="https://randomuser.me/api/portraits/men/10.jpg" alt="Alex Johnson" class="rounded-circle mb-3" width="80">
-            <p class="text-muted text-center">"Vote Wise made online elections so easy and fair!"</p>
-            <h5>- Alex Johnson</h5>
+          <div class="row align-items-center justify-content-center text-center text-lg-start">
+            <div class="col-md-3 mb-4 mb-lg-0">
+              <img src="https://mdbcdn.b-cdn.net/img/Photos/Avatars/img%20(1).webp" class="rounded-circle shadow img-fluid" alt="Maria Smantha" width="150" height="150">
+            </div>
+            <div class="col-md-8">
+              <h5 class="text-warning fw-bold mb-2">Maria Smantha</h5>
+              <p class="fst-italic text-white mb-1">Web Developer</p>
+              <p class="lead text-light">"Vote Wise made our organization's elections smooth and secure. Fantastic platform!"</p>
+            </div>
           </div>
         </div>
+
+        <!-- Testimonial 2 -->
         <div class="carousel-item">
-          <div class="d-flex flex-column align-items-center">
-            <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="Sarah Kim" class="rounded-circle mb-3" width="80">
-            <p class="text-muted text-center">"Secure and transparent election process, highly recommended!"</p>
-            <h5>- Sarah Kim</h5>
+          <div class="row align-items-center justify-content-center text-center text-lg-start">
+            <div class="col-md-3 mb-4 mb-lg-0">
+              <img src="https://mdbcdn.b-cdn.net/img/Photos/Avatars/img%20(2).webp" class="rounded-circle shadow img-fluid" alt="Lisa Cudrow" width="150" height="150">
+            </div>
+            <div class="col-md-8">
+              <h5 class="text-warning fw-bold mb-2">Lisa Cudrow</h5>
+              <p class="fst-italic text-white mb-1">Graphic Designer</p>
+              <p class="lead text-light">"Secure, easy to use, and incredibly fast. I felt confident voting online for the first time."</p>
+            </div>
           </div>
         </div>
+
+        <!-- Testimonial 3 -->
         <div class="carousel-item">
-          <div class="d-flex flex-column align-items-center">
-            <img src="https://randomuser.me/api/portraits/men/15.jpg" alt="Daniel Roberts" class="rounded-circle mb-3" width="80">
-            <p class="text-muted text-center">"Amazing user experience, made voting stress-free."</p>
-            <h5>- Daniel Roberts</h5>
+          <div class="row align-items-center justify-content-center text-center text-lg-start">
+            <div class="col-md-3 mb-4 mb-lg-0">
+              <img src="https://mdbcdn.b-cdn.net/img/Photos/Avatars/img%20(9).webp" class="rounded-circle shadow img-fluid" alt="John Smith" width="150" height="150">
+            </div>
+            <div class="col-md-8">
+              <h5 class="text-warning fw-bold mb-2">John Smith</h5>
+              <p class="fst-italic text-white mb-1">Marketing Specialist</p>
+              <p class="lead text-light">"A modern election solution. Real-time results were amazing to watch!"</p>
+            </div>
           </div>
         </div>
       </div>
-      
-      <!-- Previous Button -->
-      <button class="carousel-control-prev custom-carousel-btn" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+
+      <!-- Controls -->
+      <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon bg-warning rounded-circle p-2" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
       </button>
-      
-      <!-- Next Button -->
-      <button class="carousel-control-next custom-carousel-btn" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon bg-warning rounded-circle p-2" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
       </button>
+    </div>
+
+    <div class="text-center mt-5">
+      <i class="fas fa-quote-right fa-2x text-warning"></i>
     </div>
   </div>
 </section>
 
 
-<section class="contact-section" id="contact-us">
+<section id="contact-us" class="py-5 bg-light border-top">
   <div class="container">
-    <h2 class="contact-title">Contact Us</h2>
-    <p class="contact-subtitle">Have questions or feedback? Get in touch with us.</p>
-
-    <div class="contact-content">
-      <!-- Contact Image -->
-      
-      <div class="contact-image shadow-sm">
-        <img src="/images/contact-pic.jpg" alt="Contact Us" height="500">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold text-uppercase">Contact Us</h2>
+      <p class="text-muted">We'd love to hear from you. Reach out anytime!</p>
+    </div>
+    <div class="row align-items-center">
+      <!-- Contact Info + Image -->
+      <div class="col-md-6 mb-4">
+        <h5 class="fw-bold mb-3">Reach Out</h5>
+        <p><i class="fas fa-map-marker-alt me-2 text-primary"></i> Monrovia, Liberia</p>
+        <p><i class="fas fa-envelope me-2 text-primary"></i> 
+          <a href="mailto:votewiseliberia@gmail.com" class="text-decoration-none">votewiseliberia@gmail.com</a></p>
+        <p><i class="fas fa-phone me-2 text-primary"></i> 
+          <a href="tel:+231771894241" class="text-decoration-none">+231-771894241</a> / 
+          <a href="tel:+231880822436" class="text-decoration-none">+231-880822436</a></p>
+        <img src="https://cdn-icons-png.flaticon.com/512/9068/9068964.png" class="img-fluid mt-4" style="max-width: 250px;" alt="Online Contact">
       </div>
+
       <!-- Contact Form -->
-      <div class="contact-form-container shadow-sm p-4">
+      <div class="col-md-6">
         <form id="contact-form">
           <div class="mb-3">
-            <label for="name" class="form-label">Full Name</label>
-            <input type="text" class="form-control" id="name" name="name" placeholder="Enter your full name" required>
+            <label for="name" class="form-label fw-semibold">Your Name</label>
+            <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name">
           </div>
-      
           <div class="mb-3">
-            <label for="email" class="form-label">Email Address</label>
-            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+            <label for="email" class="form-label fw-semibold">Your Email</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email">
           </div>
-      
           <div class="mb-3">
-            <label for="message" class="form-label">Message</label>
-            <textarea class="form-control" id="message" name="message" rows="5" placeholder="Type your message" required></textarea>
+            <label for="message" class="form-label fw-semibold">Message</label>
+            <textarea class="form-control" id="message" name="message" rows="4" placeholder="Write your message..."></textarea>
           </div>
-      
-          <button type="submit" class="btn btn-primary w-100">Send Message</button>
+          <button type="submit" class="btn btn-primary px-4">Send Message</button>
         </form>
-      
-        <div id="response-message" class="mt-3"></div>
+          <div id="response-message" class="mt-3"></div>
       </div>
-      
-      
     </div>
   </div>
 </section>
 
-<footer class="footer">
-  <div class="container">
-    <div class="footer-content">
-      <!-- Left Side: About & Copyright -->
-      <div class="footer-about">
-        <h3>About Us</h3>
-        <p>Providing the best solutions for your needs. Stay connected with us for updates and support.</p>
-        <p>&copy; 2025 All Rights Reserved.</p>
-      </div>
 
-      <!-- Middle: Navigation Links -->
-      <div class="footer-links">
-        <h3>Quick Links</h3>
-        <ul>
-          <li><a href="/">Home</a></li>
-          <li><a href="#features">Features</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#contact-us">Contact</a></li>
+<footer class="footer bg-dark text-white py-5 mt-5">
+  <div class="container">
+    <div class="row text-center text-md-start">
+      <!-- About -->
+      <div class="col-md-4 mb-4">
+  <h5 class="text-warning fw-bold">About Us</h5>
+  <p class="text-white">Empowering democracy through secure, reliable, and transparent online elections.</p>
+  <p class="text-white mb-0">&copy; 2025 VoteWise. All rights reserved.</p>
+</div>
+
+
+      <!-- Quick Links -->
+      <div class="col-md-4 mb-4">
+        <h5 class="text-warning fw-bold">Quick Links</h5>
+        <ul class="list-unstyled">
+          <li><a href="/" class="text-white text-decoration-none">Home</a></li>
+          <li><a href="#features" class="text-white text-decoration-none">Features</a></li>
+          <li><a href="#about" class="text-white text-decoration-none">About</a></li>
+          <li><a href="#contact-us" class="text-white text-decoration-none">Contact</a></li>
         </ul>
       </div>
 
-      <!-- Right Side: Social Media -->
-      <div class="footer-social">
-        <h3>Follow Us</h3>
-        <div class="social-icons">
-          <a href="#" target="_blank"><i class="fab fa-facebook"></i></a>
-          <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
-          <a href="#" target="_blank"><i class="fab fa-linkedin"></i></a>
-          <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+      <!-- Social Media -->
+      <div class="col-md-4 mb-4">
+        <h5 class="text-warning fw-bold">Follow Us</h5>
+        <div class="d-flex gap-3 justify-content-center justify-content-md-start">
+          <a href="#" class="text-white fs-5"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="text-white fs-5"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="text-white fs-5"><i class="fab fa-linkedin-in"></i></a>
+          <a href="#" class="text-white fs-5"><i class="fab fa-instagram"></i></a>
         </div>
       </div>
     </div>
   </div>
 </footer>
+
 
 
 <!-- Include Axios for sending requests -->
