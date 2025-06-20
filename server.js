@@ -1518,7 +1518,7 @@ app.get("/candidate/registration", async (req, res) => {
       JOIN positions ON candidates.position_id = positions.id
       LEFT JOIN votes ON candidates.id = votes.candidate_id
       JOIN elections ON candidates.election_id = elections.id
-      ORDER BY candidates.id DESC
+      ORDER BY candidates.first_name
     `);
 
     // Convert images to base64
@@ -3266,18 +3266,19 @@ app.post("/create/user", upload.single("photo"), (req, res) => {
     }
 
     pool.query(
-      "SELECT election FROM elections WHERE id = $1",
-      [election],
-      (err, row) => {
-        if (err) {
-          console.error("Error fetching election name:", err);
-          return res.status(500).json({
-            success: false,
-            message: "Error fetching election, error",
-          });
-        }
+  "SELECT election FROM elections WHERE id = $1",
+  [election],
+  (err, result) => {
+    if (err) {
+      console.error("Error fetching election name:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Error fetching election",
+      });
+    }
 
-        const electionName = row ? row.election : "the election";
+    const electionName = result.rows[0]?.election || "the election";
+    console.log("Election name:", electionName);
 
         pool.query(
           "INSERT INTO users(id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",

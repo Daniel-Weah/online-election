@@ -362,8 +362,7 @@
         resultsContainer.innerHTML = '';
 
         Object.keys(groupedCandidates).forEach(position => {
-          const candidates = [...groupedCandidates[position]]; // Create copy
-          
+          const candidates = [...groupedCandidates[position]];
           // Sort by votes (descending)
           candidates.sort((a, b) => b.vote - a.vote);
           
