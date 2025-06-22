@@ -164,7 +164,7 @@
 
   <% if ((role === 'Super Admin' || role === 'Admin') && current > end && current <= admin_end) { %>
     <section>
-      <form action="/local-vote-count" method="post" id="localvoteForm" enctype="multipart/form-data">
+      <form action="/local-vote-count" method="post" id="localvoteForm" >
         <h1>Enter Local Vote Counts</h1>
         <div style="padding: 1rem; background: #ffeaa7; color: #2d3436; border-radius: 5px;">
           This section is only accessible to admins after the voting period. Use it to manually input vote counts.
@@ -206,7 +206,7 @@
     </section>
 
   <% } else if (current < start || current > end) { %>
-    <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
+    <form action="/vote" method="post" id="voteForm" >
       <h1>Vote Candidate</h1>
 <p style="text-align: center; font-size: 1rem; color: #555; margin-top: -1rem; margin-bottom: 2rem;">
   Please select your preferred candidate for each position listed below. You can only vote once, so choose carefully.
@@ -220,7 +220,7 @@
     </form>
 
   <% } else { %>
-    <form action="/vote" method="post" id="voteForm" enctype="multipart/form-data">
+    <form action="/vote" method="post" id="voteForm" >
       <h1>Vote Candidate</h1>
 <p style="text-align: center; font-size: 1rem; color: #555; margin-top: -1rem; margin-bottom: 2rem;">
   Please select your preferred candidate for each position listed below. You can only vote once, so choose carefully.

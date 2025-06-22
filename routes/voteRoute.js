@@ -1,246 +1,210 @@
-const express = require('express');
-const db = require('../model/db');
+const express = require("express");
 const router = express.Router();
-const multer = require('multer');
+const pool = require("../db");
+const { v4: uuidv4 } = require("uuid");
+router.use(express.urlencoded({ extended: true }));
 
-const storage = multer.memoryStorage();
-const upload = multer({storage: storage});
+// GET /vote
+router.get("/vote", async (req, res) => {
+  if (!req.session.userId) {
+    return res.redirect("/login");
+  }
 
+  try {
+    const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    if (!userResult.rows.length) return res.status(404).send("User not found");
 
-router.get("/vote", (req, res) => {
-    if (!req.session.userId) {
-      return res.redirect("/login");
-    }
-  
-    const sql = `
-      SELECT candidates.id, candidates.first_name, candidates.last_name, candidates.middle_name, candidates.photo, positions.position, parties.party, IFNULL(votes.vote, 0) AS vote
+    const electionId = userResult.rows[0].election_id;
+    const profilePicture = req.session.profilePicture;
+
+    const candidatesSql = `
+      SELECT candidates.id, candidates.first_name, candidates.last_name, candidates.middle_name,
+             candidates.photo, positions.position, parties.party, COALESCE(votes.vote, 0) AS vote
       FROM candidates
       JOIN positions ON candidates.position_id = positions.id
       JOIN parties ON candidates.party_id = parties.id
       LEFT JOIN votes ON candidates.id = votes.candidate_id
+      WHERE candidates.election_id = $1
     `;
-  
-    db.all(sql, [], (err, candidates) => {
-      if (err) {
-        return res.status(500).send("Error fetching candidates data");
-      }
-      const profilePicture = req.session.profilePicture;
-  
-      candidates = candidates.map((candidate) => {
-        return {
-          ...candidate,
-          photo: candidate.photo.toString("base64"), 
-        };
-      });
-      db.get(
-        "SELECT users.role_id, roles.role FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?",
-        [req.session.userId],
-        (err, userRole) => {
-          if (err) {
-            return res.status(500).send("Error fetching user role");
-          }
-          db.get(
-            "SELECT username FROM auth WHERE id = ?",
-            [req.session.userId],
-            (err, user) => {
-              if (err) {
-                return res.status(500).send("Error fetching user");
-              }
-  
-              if (!user) {
-                return res.status(404).send("User not found");
-              }
-  
-              db.get(
-                "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = ? AND is_read = 0",
-                [user.username],
-                (err, countResult) => {
-                  if (err) {
-                    return res
-                      .status(500)
-                      .send("Error fetching unread notifications count");
-                  }
-                  db.get("SELECT * FROM users WHERE id = ?", [req.session.userId], (err, user) => {
-                    if(err) {
-                      return res.status(500).send('Error fetching user from the user table')
-                    }
-                  res.render("vote", {
-                    candidates,
-                    role: userRole.role,
-                    profilePicture,
-                    unreadCount: countResult.unreadCount,
-                    user
-                  });
-                  });
-                }
-              );
-            }
-          );
-        }
-      );
-    });
-  });
-  
-  router.post("/vote", upload.none(), (req, res) => {
-    const userId = req.session.userId;
-    const candidateId1 = req.body.candidateId;
-    const candidateId2 = req.body.candidateId2;
-    const candidateId3 = req.body.candidateId3;
-  
-    const votePromises = [];
-  
-    db.get(
-      "SELECT * FROM user_votes WHERE user_id = ?",
-      [userId],
-      (err, userVote) => {
-        if (err) {
-          console.error("Error checking user vote:", err);
-          return res
-            .status(500)
-            .json({ success: false, message: "Database error" });
-        }
-  
-        if (userVote) {
-          return res
-            .status(403)
-            .json({ success: false, message: "You have already voted." });
-        }
-  
-        const handleVote = (candidateId) => {
-          return new Promise((resolve, reject) => {
-            if (!candidateId) {
-              return resolve();
-            }
-  
-            db.get(
-              "SELECT * FROM votes WHERE candidate_id = ?",
-              [candidateId],
-              (err, vote) => {
-                if (err) {
-                  return reject(err);
-                }
-  
-                if (vote) {
-                  db.run(
-                    "UPDATE votes SET vote = vote + 1 WHERE candidate_id = ?",
-                    [candidateId],
-                    (err) => {
-                      if (err) {
-                        return reject(err);
-                      }
-                      resolve();
-                    }
-                  );
-                } else {
-                  db.run(
-                    "INSERT INTO votes (candidate_id, vote) VALUES (?, 1)",
-                    [candidateId],
-                    (err) => {
-                      if (err) {
-                        return reject(err);
-                      }
-                      resolve();
-                    }
-                  );
-                }
-              }
-            );
-          });
-        };
-  
-        if (candidateId1) votePromises.push(handleVote(candidateId1));
-        if (candidateId2) votePromises.push(handleVote(candidateId2));
-        if (candidateId3) votePromises.push(handleVote(candidateId3));
-  
-        Promise.all(votePromises)
-          .then(() => {
-            db.run(
-              "INSERT INTO user_votes (user_id) VALUES (?)",
-              [userId],
-              (err) => {
-                if (err) {
-                  console.error("Error recording user vote:", err);
-                  return res
-                    .status(500)
-                    .json({ success: false, message: "Database error" });
-                }
-  
-                // Update user status to "Voted"
-                db.run(
-                  "UPDATE users SET has_voted = 1 WHERE id = ?",
-                  [userId],
-                  (err) => {
-                    if (err) {
-                      console.error("Error updating user vote status:", err);
-                      return res
-                        .status(500)
-                        .json({ success: false, message: "Database error" });
-                    }
-  
-                    db.get(
-                      "SELECT username FROM auth WHERE id = ?",
-                      [req.session.userId],
-                      (err, user) => {
-                        if (err) {
-                          return res.status(500).send("error fetching username");
-                        }
-                        if (!user) {
-                          return res.send("user not found");
-                        }
-  
-                        const currentTime = new Date();
-                        const notificationMessage = `Thank you ${user.username}, for casting your vote. It has been successfully counted.`;
-                        const notificationTitle = "Vote Counted";
-  
-                        db.run(
-                          `INSERT INTO notifications (username, message, title, created_at) VALUES (?,?,?,?)`,
-                          [
-                            user.username,
-                            notificationMessage,
-                            notificationTitle,
-                            currentTime,
-                          ],
-                          function (err) {
-                            if (err) {
-                              console.error("Error inserting notification:", err);
-                              return res
-                                .status(500)
-                                .json({
-                                  success: false,
-                                  message: "Database error",
-                                });
-                            }
-  
-                            // Emit the notification to the user's room
-                            io.to(user.username).emit("new-notification", {
-                              message: notificationMessage,
-                              title: notificationTitle,
-                              created_at: currentTime,
-                            });
-  
-                            res
-                              .status(200)
-                              .json({
-                                success: true,
-                                message: "Your vote has been counted",
-                              });
-                            // Remove or comment out the following line
-                            // res.redirect("/dashboard");
-                          }
-                        );
-                      }
-                    );
-                  }
-                );
-              }
-            );
-          })
-          .catch((err) => {
-            console.error("Error processing votes:", err);
-            res.status(500).send("Error processing votes");
-          });
-      }
-    );
-  });
+    const candidatesResult = await pool.query(candidatesSql, [electionId]);
 
-  module.exports = router;
+    const candidates = candidatesResult.rows.map((candidate) => ({
+      ...candidate,
+      photo: candidate.photo ? candidate.photo.toString("base64") : null,
+    }));
+
+    const groupedCandidates = candidates.reduce((acc, candidate) => {
+      if (!acc[candidate.position]) acc[candidate.position] = [];
+      acc[candidate.position].push(candidate);
+      return acc;
+    }, {});
+
+    const roleResult = await pool.query(
+      `SELECT users.role_id, roles.role 
+       FROM users 
+       JOIN roles ON users.role_id = roles.id 
+       WHERE users.id = $1`,
+      [req.session.userId]
+    );
+
+    const authResult = await pool.query(`SELECT username FROM auth WHERE user_id = $1`, [req.session.userId]);
+    if (!authResult.rows.length) return res.status(404).send("User auth not found");
+
+    const username = authResult.rows[0].username;
+
+    const unreadResult = await pool.query(
+      `SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0`,
+      [username]
+    );
+    const unreadCount = parseInt(unreadResult.rows[0].unreadcount, 10) || 0;
+
+    const fullUserResult = await pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    if (!fullUserResult.rows.length) return res.status(404).send("User data not found");
+
+    const userElectionID = fullUserResult.rows[0].election_id;
+
+    const electionSettingsResult = await pool.query(
+      "SELECT * FROM election_settings WHERE election_id = $1",
+      [userElectionID]
+    );
+    if (!electionSettingsResult.rows.length) return res.status(404).send("Election settings not found");
+
+    const settings = electionSettingsResult.rows[0];
+
+    res.render("vote", {
+      candidates,
+      groupedCandidates,
+      role: roleResult.rows[0].role,
+      profilePicture,
+      unreadCount,
+      user: fullUserResult.rows[0],
+      userElectionID,
+      start: new Date(settings.start_time).getTime(),
+      end: new Date(settings.end_time).getTime(),
+      current: Date.now(),
+      admin_start: new Date(settings.admin_start_time).getTime(),
+      admin_end: new Date(settings.admin_end_time).getTime(),
+    });
+  } catch (error) {
+    console.error("Error in /vote route:", error);
+    res.status(500).send("An error occurred while loading the voting page");
+  }
+});
+
+// POST /local-vote-count
+router.post("/local-vote-count", async (req, res) => {
+  const { votes } = req.body;
+
+  try {
+    const voteEntries = Object.entries(votes || {});
+    if (voteEntries.length === 0) {
+      return res.status(400).json({ error: "No votes submitted." });
+    }
+
+    for (const [candidate_id, count] of voteEntries) {
+      const parsedCount = parseInt(count, 10);
+      if (isNaN(parsedCount) || parsedCount < 0) continue;
+
+      await pool.query(
+        `INSERT INTO votes (candidate_id, vote)
+         VALUES ($1, $2)
+         ON CONFLICT (candidate_id)
+         DO UPDATE SET vote = votes.vote + EXCLUDED.vote`,
+        [candidate_id, parsedCount]
+      );
+    }
+
+    res.status(201).json({ message: "Votes incremented successfully." });
+  } catch (err) {
+    console.error("Error incrementing votes:", err);
+    res.status(500).json({ error: "Failed to process votes." });
+  }
+});
+
+// POST /vote
+router.post("/vote",  async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
+
+  const userId = req.session.userId;
+  const electionID = req.body.electionID;
+  const positions = Object.keys(req.body).filter((k) => k !== "electionID");
+  const userVotesID = uuidv4();
+
+  try {
+    const client = await pool.connect();
+    const io = req.app.get("io");
+
+    try {
+      await client.query("BEGIN");
+
+      const userVoteCheck = await client.query("SELECT * FROM user_votes WHERE user_id = $1", [userId]);
+      if (userVoteCheck.rows.length > 0) {
+        await client.release();
+        return res.status(403).json({ success: false, message: "Sorry! You have already voted." });
+      }
+
+      for (const position of positions) {
+        const candidateId = req.body[position];
+        if (!candidateId) continue;
+
+        const existingVote = await client.query("SELECT * FROM votes WHERE candidate_id = $1", [candidateId]);
+
+        if (existingVote.rows.length > 0) {
+          await client.query("UPDATE votes SET vote = vote + 1 WHERE candidate_id = $1", [candidateId]);
+        } else {
+          await client.query("INSERT INTO votes (candidate_id, vote) VALUES ($1, 1)", [candidateId]);
+        }
+      }
+
+      await client.query("INSERT INTO user_votes (id, user_id) VALUES ($1, $2)", [userVotesID, userId]);
+      await client.query("UPDATE users SET has_voted = 1 WHERE id = $1", [userId]);
+
+      const userResult = await client.query("SELECT username FROM auth WHERE user_id = $1", [userId]);
+      if (!userResult.rows.length) {
+        await client.release();
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+
+      const username = userResult.rows[0].username;
+      const currentTime = new Date();
+
+      await client.query(
+        `INSERT INTO notifications (id, username, election, message, title, created_at) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          userVotesID,
+          username,
+          electionID,
+          `Thank you ${username}, for casting your vote. It has been successfully counted.`,
+          "Vote Counted",
+          currentTime,
+        ]
+      );
+
+      await client.query("COMMIT");
+      client.release();
+
+      // Emit notification via socket
+      if (io) {
+        io.to(username).emit("new-notification", {
+          message: `Thank you ${username}, for casting your vote. It has been successfully counted.`,
+          title: "Vote Counted",
+          created_at: currentTime,
+        });
+      }
+
+      res.status(200).json({ success: true, message: "Your vote has been counted" });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      client.release();
+      throw err;
+    }
+  } catch (err) {
+    console.error("Error processing votes:", err);
+    res.status(500).json({ success: false, message: "Error processing votes" });
+  }
+});
+
+module.exports = router;

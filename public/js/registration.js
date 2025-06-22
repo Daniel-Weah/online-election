@@ -1,13 +1,23 @@
 document.getElementById('registrationForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    
+
+    // Explicitly re-assign values before FormData is created
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    if (!usernameInput.value || !passwordInput.value) {
+        const rand = generateRandomId();
+        usernameInput.value = rand;
+        passwordInput.value = rand + '@votewise';
+    }
+
     const formData = new FormData(e.target);
 
     fetch('/voters', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json()) // Convert to JSON
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
             Swal.fire({
@@ -41,6 +51,7 @@ document.getElementById('registrationForm').addEventListener('submit', (e) => {
         console.error('Error:', error);
     });
 });
+
 
 // =============    PREVIEW OF THE USER PROFILE PICTURE =============
 document.getElementById('photo').addEventListener('change', function(event) {
