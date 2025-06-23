@@ -419,73 +419,80 @@ if (totalUsersEl && data.totalUsers) {
       }
     }
 
-    function displayElectionResults() {
-      try {
-        const groupedCandidates = <%- JSON.stringify(groupedCandidates) %>;
-        
-        if (!groupedCandidates || Object.keys(groupedCandidates).length === 0) {
-          console.warn('No election results available.');
-          return;
-        }
+   function displayElectionResults() {
+  try {
+    const groupedCandidates = <%- JSON.stringify(groupedCandidates) %>;
 
-        const resultsContainer = document.getElementById('resultsContainer');
-        if (!resultsContainer) {
-          console.error('Results container not found.');
-          return;
-        }
-
-        resultsContainer.innerHTML = '';
-
-        Object.keys(groupedCandidates).forEach(position => {
-          const candidates = [...groupedCandidates[position]];
-          // Sort by votes (descending)
-          candidates.sort((a, b) => b.vote - a.vote);
-          
-          const winner = candidates[0];
-          const hasWinner = winner && winner.vote > 0;
-
-          const positionHTML = `
-            <div class="mb-4">
-              <h4 class="text-primary">🏛️ ${position}</h4>
-              ${hasWinner ? `
-                <div class="alert alert-success text-center">
-                  🏆 <strong>${winner.first_name} ${winner.middle_name || ''} ${winner.last_name}</strong> 
-                  wins with <strong>${winner.vote}</strong> vote${winner.vote !== 1 ? 's' : ''}!
-                </div>
-              ` : `
-                <div class="alert alert-warning text-center">
-                  No votes recorded for this position.
-                </div>
-              `}
-              <div class="list-group">
-                ${candidates.map((candidate, index) => `
-                  <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                      <strong>${candidate.first_name} ${candidate.middle_name || ''} ${candidate.last_name}</strong>
-                      <br>
-                      <small class="text-muted">${candidate.party}</small>
-                    </div>
-                    <span class="badge ${candidate === winner && hasWinner ? 'bg-success' : 'bg-secondary'} rounded-pill">
-                      ${candidate.vote} vote${candidate.vote !== 1 ? 's' : ''}
-                      ${candidate.votePercentage ? ` (${candidate.votePercentage.toFixed(1)}%)` : ''}
-                    </span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `;
-
-          resultsContainer.innerHTML += positionHTML;
-        });
-
-        // Show modal
-        const electionModal = new bootstrap.Modal(document.getElementById('electionResultModal'));
-        electionModal.show();
-
-      } catch (error) {
-        console.error('Error displaying election results:', error);
-      }
+    if (!groupedCandidates || Object.keys(groupedCandidates).length === 0) {
+      console.warn('No election results available.');
+      return;
     }
+
+    const resultsContainer = document.getElementById('resultsContainer');
+    if (!resultsContainer) {
+      console.error('Results container not found.');
+      return;
+    }
+
+    resultsContainer.innerHTML = '';
+
+    Object.keys(groupedCandidates).forEach(position => {
+      const candidates = [...groupedCandidates[position]];
+      candidates.sort((a, b) => b.vote - a.vote);
+
+      const highestVote = candidates[0]?.vote || 0;
+      const topCandidates = candidates.filter(c => c.vote === highestVote && highestVote > 0);
+
+      const isTie = topCandidates.length > 1;
+
+      const headerHTML = `
+        <div class="mb-4">
+          <h4 class="text-primary">🏛️ ${position}</h4>
+          ${highestVote === 0 ? `
+            <div class="alert alert-warning text-center">
+              No votes recorded for this position.
+            </div>
+          ` : isTie ? `
+            <div class="alert alert-info text-center">
+              🤝 <strong>Tie</strong> among ${topCandidates.length} candidates with <strong>${highestVote}</strong> votes each!
+            </div>
+          ` : `
+            <div class="alert alert-success text-center">
+              🏆 <strong>${topCandidates[0].first_name} ${topCandidates[0].middle_name || ''} ${topCandidates[0].last_name}</strong> 
+              wins with <strong>${highestVote}</strong> vote${highestVote !== 1 ? 's' : ''}!
+            </div>
+          `}
+          <div class="list-group">
+            ${candidates.map(candidate => {
+              const isTop = candidate.vote === highestVote && highestVote > 0;
+              return `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>${candidate.first_name} ${candidate.middle_name || ''} ${candidate.last_name}</strong><br>
+                    <small class="text-muted">${candidate.party}</small>
+                  </div>
+                  <span class="badge ${isTop ? 'bg-success' : 'bg-secondary'} rounded-pill">
+                    ${candidate.vote} vote${candidate.vote !== 1 ? 's' : ''}
+                    ${candidate.votePercentage ? ` (${candidate.votePercentage.toFixed(1)}%)` : ''}
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+
+      resultsContainer.innerHTML += headerHTML;
+    });
+
+    const electionModal = new bootstrap.Modal(document.getElementById('electionResultModal'));
+    electionModal.show();
+
+  } catch (error) {
+    console.error('Error displaying election results:', error);
+  }
+}
+
 
   </script>
 

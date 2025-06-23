@@ -3,6 +3,7 @@ const router = Router();
 const pool = require("../db");
 const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
+const path = require("path");
 
 
 router.get("/election-record", async (req, res) => {
@@ -156,13 +157,35 @@ router.get("/download/election/results/pdf", async (req, res) => {
 
     const doc = new PDFDocument({ margin: 40 });
     const filename = "election-results.pdf";
+    const logoPath = path.join(__dirname, "../public/images/votewiseLogo.png");
 
     res.setHeader("Content-disposition", `attachment; filename="${filename}"`);
     res.setHeader("Content-type", "application/pdf");
 
     doc.pipe(res);
 
-    // Title
+    // === Custom Header Function ===
+    function drawHeader() {
+      // Left and right logos
+      doc.image(logoPath, 50, 30, { width: 50, height: 50 });
+      doc.image(logoPath, doc.page.width - 100, 30, { width: 50, height: 50 });
+
+      // Header text
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(16)
+        .text("Votewise Online Election", 0, 35, { align: "center" })
+        .font("Helvetica")
+        .fontSize(11)
+        .text("Empowering Transparent & Secure Digital Voting", 0, 55, { align: "center" });
+
+      doc.moveDown(3);
+    }
+
+    // Draw initial header
+    drawHeader();
+
+    // Election title
     doc
       .fontSize(18)
       .text(candidates[0].election, { align: "center" })
@@ -171,21 +194,23 @@ router.get("/download/election/results/pdf", async (req, res) => {
 
     doc.moveDown(1);
 
-    // Table Headers
+    // Table headers
     doc.fontSize(12).font("Helvetica-Bold");
-    const startY = doc.y;
-    doc.text("No", 50, startY);
-    doc.text("Candidate", 90, startY);
-    doc.text("Position", 240, startY);
-    doc.text("Party", 340, startY);
-    doc.text("Votes", 440, startY);
+    const tableTop = doc.y;
+
+    doc.text("No", 50, tableTop);
+    doc.text("Candidate", 90, tableTop);
+    doc.text("Position", 240, tableTop);
+    doc.text("Party", 340, tableTop);
+    doc.text("Votes", 440, tableTop);
 
     doc.font("Helvetica").fontSize(11);
 
-    let y = startY + 20;
+    let y = tableTop + 20;
 
     candidates.forEach((c, index) => {
       const fullName = `${c.first_name} ${c.middle_name || ""} ${c.last_name}`.trim();
+
       doc.text(index + 1, 50, y);
       doc.text(fullName, 90, y, { width: 140 });
       doc.text(c.position, 240, y, { width: 100 });
@@ -194,10 +219,23 @@ router.get("/download/election/results/pdf", async (req, res) => {
 
       y += 25;
 
-      // Handle page break
+      // If close to bottom, add new page and redraw header and table header
       if (y > 750) {
         doc.addPage();
-        y = 50;
+        drawHeader();
+
+        // Re-draw table header
+        const newTop = doc.y;
+
+        doc.fontSize(12).font("Helvetica-Bold");
+        doc.text("No", 50, newTop);
+        doc.text("Candidate", 90, newTop);
+        doc.text("Position", 240, newTop);
+        doc.text("Party", 340, newTop);
+        doc.text("Votes", 440, newTop);
+
+        doc.font("Helvetica").fontSize(11);
+        y = newTop + 20;
       }
     });
 
@@ -207,6 +245,7 @@ router.get("/download/election/results/pdf", async (req, res) => {
     return res.status(500).send("An error occurred while generating the PDF.");
   }
 });
+
 
 
 module.exports = router

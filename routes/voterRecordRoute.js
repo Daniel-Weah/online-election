@@ -3,7 +3,7 @@ const router = Router();
 const pool = require("../db");
 const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
-
+const path = require("path");
 // Route: GET /voters-record
 router.get("/voters-record", async (req, res) => {
   const { userId, userRole, profilePicture } = req.session;
@@ -114,6 +114,8 @@ router.get("/download/csv", async (req, res) => {
   }
 });
 
+
+
 router.get("/download/voters/pdf", async (req, res) => {
   const { userId, userRole } = req.session;
 
@@ -145,13 +147,37 @@ router.get("/download/voters/pdf", async (req, res) => {
 
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     const filename = "voters-record.pdf";
+    const logoPath = path.join(__dirname, "../public/images/votewiseLogo.png");
 
     res.setHeader("Content-disposition", `attachment; filename="${filename}"`);
     res.setHeader("Content-type", "application/pdf");
 
     doc.pipe(res);
 
-    // Title
+    // === Custom Header Function ===
+    function drawHeader() {
+      // Left logo
+      doc.image(logoPath, 50, 30, { width: 50, height: 50 });
+
+      // Right logo
+      doc.image(logoPath, doc.page.width - 100, 30, { width: 50, height: 50 });
+
+      // Title and subtitle
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(16)
+        .text("Votewise Online Election", 0, 35, { align: "center" })
+        .font("Helvetica")
+        .fontSize(11)
+        .text("Empowering Transparent & Secure Digital Voting", 0, 55, { align: "center" });
+
+      doc.moveDown(3);
+    }
+
+    // Draw initial header
+    drawHeader();
+
+    // Election title
     doc
       .fontSize(18)
       .text(voters[0].election, { align: "center" })
@@ -198,10 +224,23 @@ router.get("/download/voters/pdf", async (req, res) => {
 
       y += rowHeight;
 
-      // If close to page bottom, add new page
+      // If close to bottom, add new page with header and reset Y
       if (y > 750) {
         doc.addPage();
-        y = 50;
+        drawHeader();
+
+        // Re-draw table header on new page
+        const newTableTop = doc.y;
+        colTitles.forEach((title, i) => {
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(12)
+            .text(title, 50 + colWidths.slice(0, i).reduce((a, b) => a + b, 0), newTableTop, {
+              width: colWidths[i],
+              align: "center",
+            });
+        });
+        y = newTableTop + rowHeight;
       }
     });
 
@@ -211,5 +250,6 @@ router.get("/download/voters/pdf", async (req, res) => {
     return res.status(500).send("An error occurred while generating the PDF.");
   }
 });
+
 
 module.exports = router
