@@ -221,17 +221,24 @@
               </div>
               <% } else { %>
               <div class="row">
-                <% 
-                // Sort candidates by vote count (descending) to show winner first
-                const sortedCandidates = groupedCandidates[position].sort((a, b) => b.vote - a.vote);
-                const highestVotes = sortedCandidates[0]?.vote || 0;
-                %>
+                <%
+  const sortedCandidates = groupedCandidates[position].sort((a, b) => b.vote - a.vote);
+  const highestVotes = sortedCandidates[0]?.vote || 0;
+  
+  const tiedCandidatesCount = sortedCandidates.filter(c => c.vote === highestVotes).length;
+
+  const isTie = tiedCandidatesCount > 1;
+%>
+
                 <% sortedCandidates.forEach((candidate, index) => { %>
                 <div class="col-lg-4 col-md-6 mb-4">
                   <div class="card h-100 shadow-sm">
-                    <% if (candidate.vote === highestVotes && candidate.vote > 0) { %>
-                    <div class="winner-badge">🏆 Leading</div>
-                    <% } %>
+                   <% if (candidate.vote === highestVotes && candidate.vote > 0) { %>
+  <div class="winner-badge">
+    <% if (isTie) { %>🤝 Tied<% } else { %>🏆 Leading<% } %>
+  </div>
+<% } %>
+
                     <div class="card-body text-center">
                       <img 
                         src="data:image/png;base64,<%= candidate.photo %>" 
@@ -402,12 +409,7 @@ if (totalUsersEl && data.totalUsers) {
         const endDate = new Date('<%- admin_end %>');
         const currentDate = new Date();
 
-        console.log('Election Status Check:', {
-          current: currentDate.toISOString(),
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
-          isElectionEnded: currentDate > endDate
-        });
+       
 
         if (currentDate > endDate) {
           displayElectionResults();

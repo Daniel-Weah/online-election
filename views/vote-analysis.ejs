@@ -121,8 +121,28 @@
   </div>
 </main>
 
+<script src="/socket.io/socket.io.js"></script>
+
 
 <script>
+
+  const socket = io();
+
+socket.on("vote-updated", (data) => {
+  console.log("📊 Vote updated for election:", data.electionId);
+
+ fetch('/api/vote-data')
+  .then(res => res.json())
+  .then(latestData => {
+    document.getElementById("chart").innerHTML = "";
+    Object.keys(groupedData).forEach(key => delete groupedData[key]);
+    Object.assign(groupedData, latestData);
+    renderCharts();
+  })
+  .catch(err => console.error("Error fetching updated vote data:", err));
+
+});
+
   const groupedData = <%- groupedData %>;
 
   function makeRoundedImage(src, width = 50, height = 50, radius = 8) {

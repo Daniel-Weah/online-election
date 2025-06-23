@@ -60,7 +60,6 @@ router.get("/vote/analysis", ensureLoggedIn, async (req, res) => {
       });
     });
 
-    console.log(groupedData);
 
     // Fetch user role
     const userRoleResult = await pool.query(
