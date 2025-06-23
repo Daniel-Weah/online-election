@@ -366,6 +366,56 @@
       });
     }
   </script>
+  
+  <script>
+   document.addEventListener("DOMContentLoaded", function () {
+  const voteForm = document.getElementById("voteForm");
+  if (voteForm) {
+    voteForm.addEventListener("submit", (e) => {
+      e.preventDefault();
 
-  <script src="/js/vote.js"></script>
+      const formData = new FormData(e.target);
+
+      fetch("/vote", {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            Swal.fire({
+              title: "Your Vote Counted",
+              text: data.message,
+              icon: "success",
+              showConfirmButton: false,
+              timer: 2000,
+            }).then(() => {
+              window.location.href = "/dashboard";
+            });
+          } else {
+            Swal.fire({
+              title: "Error",
+              text: data.message,
+              icon: "error",
+              showConfirmButton: false,
+              timer: 2000,
+            });
+          }
+        })
+        .catch((error) => {
+          Swal.fire({
+            title: "Error",
+            text: "There was an error making your vote count. Please try again later.",
+            icon: "error",
+            showConfirmButton: false,
+            timer: 2000,
+          });
+          console.error("Error:", error);
+        });
+    });
+  }
+});
+
+  </script>
+
   <%- include('layout/footer') %>

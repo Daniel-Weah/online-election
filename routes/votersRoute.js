@@ -151,11 +151,22 @@ router.post("/voters", isAuthenticated, upload.single("photo"), async (req, res)
     await pool.query("COMMIT");
 
     const io = getIO(req);
-    io.to(username).emit("new-notification", {
-      message,
-      title: "Registration Successful",
-      created_at: new Date(),
-    });
+
+// Emit notification to the new user
+io.to(username).emit("new-notification", {
+  message,
+  title: "Registration Successful",
+  created_at: new Date(),
+});
+
+// 🔥 Emit event for admin dashboards to refresh
+io.emit("user-registered", {
+  electionId: election,
+  username,
+  fullName: `${firstname} ${middlename} ${lastname}`.trim()
+});
+
+console.log("📣 Emitting 'user-registered' for election:", election);
 
     res.status(201).json({ success: true, message: `${username} registered successfully.` });
   } catch (err) {
@@ -182,10 +193,24 @@ router.post("/delete/users", isAuthenticated, async (req, res) => {
   const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
 
   try {
+    // Get election ID before deletion
+    const electionQuery = await pool.query(
+      `SELECT DISTINCT election_id FROM users WHERE id IN (${placeholders})`,
+      voterIds
+    );
+    const electionId = electionQuery.rows[0]?.election_id;
+
     await pool.query(`DELETE FROM users WHERE id IN (${placeholders})`, voterIds);
     await pool.query(`DELETE FROM auth WHERE user_id IN (${placeholders})`, voterIds);
     await pool.query(`DELETE FROM candidates WHERE user_id IN (${placeholders})`, voterIds);
     await pool.query(`DELETE FROM user_votes WHERE user_id IN (${placeholders})`, voterIds);
+
+    // Emit real-time update
+    const io = req.app.get("io");
+    if (electionId && io) {
+      io.emit("user-deleted", { electionId });
+      console.log("📢 Emitting 'user-deleted' for election:", electionId);
+    }
 
     return res.redirect("/voters?success=Voter(s) deleted successfully");
   } catch (err) {
@@ -193,6 +218,7 @@ router.post("/delete/users", isAuthenticated, async (req, res) => {
     return res.redirect("/voters?error=Error deleting voters");
   }
 });
+
 
 // ========== Mark as voted ============
 router.post("/voted/users", isAuthenticated, async (req, res) => {

@@ -3,7 +3,11 @@ const router = express.Router();
 const pool = require("../db");
 const { v4: uuidv4 } = require("uuid");
 router.use(express.urlencoded({ extended: true }));
+const getIO = (req) => req.app.get("io");
+const multer = require("multer");
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 // GET /vote
 router.get("/vote", async (req, res) => {
   if (!req.session.userId) {
@@ -11,7 +15,9 @@ router.get("/vote", async (req, res) => {
   }
 
   try {
-    const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
+    const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [
+      req.session.userId,
+    ]);
     if (!userResult.rows.length) return res.status(404).send("User not found");
 
     const electionId = userResult.rows[0].election_id;
@@ -47,8 +53,12 @@ router.get("/vote", async (req, res) => {
       [req.session.userId]
     );
 
-    const authResult = await pool.query(`SELECT username FROM auth WHERE user_id = $1`, [req.session.userId]);
-    if (!authResult.rows.length) return res.status(404).send("User auth not found");
+    const authResult = await pool.query(
+      `SELECT username FROM auth WHERE user_id = $1`,
+      [req.session.userId]
+    );
+    if (!authResult.rows.length)
+      return res.status(404).send("User auth not found");
 
     const username = authResult.rows[0].username;
 
@@ -58,8 +68,12 @@ router.get("/vote", async (req, res) => {
     );
     const unreadCount = parseInt(unreadResult.rows[0].unreadcount, 10) || 0;
 
-    const fullUserResult = await pool.query("SELECT * FROM users WHERE id = $1", [req.session.userId]);
-    if (!fullUserResult.rows.length) return res.status(404).send("User data not found");
+    const fullUserResult = await pool.query(
+      "SELECT * FROM users WHERE id = $1",
+      [req.session.userId]
+    );
+    if (!fullUserResult.rows.length)
+      return res.status(404).send("User data not found");
 
     const userElectionID = fullUserResult.rows[0].election_id;
 
@@ -67,7 +81,8 @@ router.get("/vote", async (req, res) => {
       "SELECT * FROM election_settings WHERE election_id = $1",
       [userElectionID]
     );
-    if (!electionSettingsResult.rows.length) return res.status(404).send("Election settings not found");
+    if (!electionSettingsResult.rows.length)
+      return res.status(404).send("Election settings not found");
 
     const settings = electionSettingsResult.rows[0];
 
@@ -92,7 +107,7 @@ router.get("/vote", async (req, res) => {
 });
 
 // POST /local-vote-count
-router.post("/local-vote-count", async (req, res) => {
+router.post("/local-vote-count", upload.none(), async (req, res) => {
   const { votes } = req.body;
 
   try {
@@ -113,6 +128,21 @@ router.post("/local-vote-count", async (req, res) => {
         [candidate_id, parsedCount]
       );
     }
+    const io = getIO(req);
+
+    if (io) {
+      const firstCandidateId = Object.keys(votes || {})[0];
+      const electionRes = await pool.query(
+        `SELECT election_id FROM candidates WHERE id = $1`,
+        [firstCandidateId]
+      );
+      const electionId = electionRes.rows[0]?.election_id;
+
+      if (electionId) {
+        io.emit("vote-updated", { electionId });
+        console.log("📢 Emitting 'vote-updated' for election:", electionId);
+      }
+    }
 
     res.status(201).json({ message: "Votes incremented successfully." });
   } catch (err) {
@@ -121,12 +151,12 @@ router.post("/local-vote-count", async (req, res) => {
   }
 });
 
-// POST /vote
-router.post("/vote",  async (req, res) => {
+router.post("/vote", upload.none(), async (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
 
+  console.log(req.body);
   const userId = req.session.userId;
   const electionID = req.body.electionID;
   const positions = Object.keys(req.body).filter((k) => k !== "electionID");
@@ -134,37 +164,61 @@ router.post("/vote",  async (req, res) => {
 
   try {
     const client = await pool.connect();
-    const io = req.app.get("io");
+    const io = getIO(req);
 
     try {
       await client.query("BEGIN");
 
-      const userVoteCheck = await client.query("SELECT * FROM user_votes WHERE user_id = $1", [userId]);
+      const userVoteCheck = await client.query(
+        "SELECT * FROM user_votes WHERE user_id = $1",
+        [userId]
+      );
       if (userVoteCheck.rows.length > 0) {
         await client.release();
-        return res.status(403).json({ success: false, message: "Sorry! You have already voted." });
+        return res
+          .status(403)
+          .json({ success: false, message: "Sorry! You have already voted." });
       }
 
       for (const position of positions) {
         const candidateId = req.body[position];
         if (!candidateId) continue;
 
-        const existingVote = await client.query("SELECT * FROM votes WHERE candidate_id = $1", [candidateId]);
+        const existingVote = await client.query(
+          "SELECT * FROM votes WHERE candidate_id = $1",
+          [candidateId]
+        );
 
         if (existingVote.rows.length > 0) {
-          await client.query("UPDATE votes SET vote = vote + 1 WHERE candidate_id = $1", [candidateId]);
+          await client.query(
+            "UPDATE votes SET vote = vote + 1 WHERE candidate_id = $1",
+            [candidateId]
+          );
         } else {
-          await client.query("INSERT INTO votes (candidate_id, vote) VALUES ($1, 1)", [candidateId]);
+          await client.query(
+            "INSERT INTO votes (candidate_id, vote) VALUES ($1, 1)",
+            [candidateId]
+          );
         }
       }
 
-      await client.query("INSERT INTO user_votes (id, user_id) VALUES ($1, $2)", [userVotesID, userId]);
-      await client.query("UPDATE users SET has_voted = 1 WHERE id = $1", [userId]);
+      await client.query(
+        "INSERT INTO user_votes (id, user_id) VALUES ($1, $2)",
+        [userVotesID, userId]
+      );
+      await client.query("UPDATE users SET has_voted = 1 WHERE id = $1", [
+        userId,
+      ]);
 
-      const userResult = await client.query("SELECT username FROM auth WHERE user_id = $1", [userId]);
+      const userResult = await client.query(
+        "SELECT username FROM auth WHERE user_id = $1",
+        [userId]
+      );
       if (!userResult.rows.length) {
         await client.release();
-        return res.status(404).json({ success: false, message: "User not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
       }
 
       const username = userResult.rows[0].username;
@@ -193,9 +247,13 @@ router.post("/vote",  async (req, res) => {
           title: "Vote Counted",
           created_at: currentTime,
         });
+
+        io.emit("vote-updated", { electionId: electionID });
       }
 
-      res.status(200).json({ success: true, message: "Your vote has been counted" });
+      res
+        .status(200)
+        .json({ success: true, message: "Your vote has been counted" });
     } catch (err) {
       await client.query("ROLLBACK");
       client.release();

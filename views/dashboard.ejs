@@ -84,6 +84,8 @@
     transform: translateY(-2px);
   }
 </style>
+
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
@@ -191,7 +193,8 @@
                       </div>
                     </div>
                     <div class="align-self-center">
-                      <h2 class="h1 mb-0"><%= totalVotes %></h2>
+                     <h2 class="h1 mb-0" id="totalVotes"><%= totalVotes %></h2>
+
                     </div>
                   </div>
                 </div>
@@ -252,21 +255,20 @@
                       </p>
                       
                       <div class="mt-3">
-                        <h3 class="text-primary">
+                        <h3 class="text-primary" id="vote-count-<%= candidate.id %>">
                           <%= candidate.vote.toString().padStart(2, '0') %>
                         </h3>
                         <p class="mb-2 text-muted">Votes</p>
                         
-                        <div class="progress" style="height: 20px;" role="progressbar" 
-                             aria-valuenow="<%= candidate.votePercentage || 0 %>" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100"
-                             aria-label="Vote percentage for <%= candidate.first_name %> <%= candidate.last_name %>">
-                          <div class="progress-bar bg-info" 
-                               style="width: <%= candidate.votePercentage || 0 %>%;">
-                            <%= candidate.votePercentage ? candidate.votePercentage.toFixed(1) : '0.0' %>%
-                          </div>
+                       <div class="progress" style="height: 20px;" role="progressbar" 
+                          aria-valuenow="<%= candidate.votePercentage || 0 %>" 
+                          aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar bg-info" 
+                            id="vote-percent-<%= candidate.id %>"
+                            style="width: <%= candidate.votePercentage || 0 %>%;">
+                          <%= candidate.votePercentage ? candidate.votePercentage.toFixed(1) : '0.0' %>%
                         </div>
+                      </div>
                       </div>
                     </div>
                   </div>
@@ -281,6 +283,77 @@
       </div>
     </div>
   </main>
+
+
+  <!-- Socket.IO + listener -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  socket.on("connect", () => {
+  });
+
+  const electionId = "<%= selectedElection %>";
+
+  socket.on("user-registered", (data) => {
+    if (data.electionId === electionId) {
+      fetchUpdatedVotes();
+    }
+  });
+
+  socket.on("user-deleted", (data) => {
+    if (data.electionId === electionId) {
+      fetchUpdatedVotes();
+    }
+  });
+
+  socket.on("vote-updated", (data) => {
+  if (data.electionId === electionId) {
+    fetchUpdatedVotes();
+    
+  }
+});
+
+
+  async function fetchUpdatedVotes() {
+    try {
+      const response = await fetch(`/api/dashboard-live-data?electionId=${electionId}`);
+      const data = await response.json();
+      updateDashboardUI(data);
+    } catch (err) {
+      console.error("Failed to fetch live vote data:", err);
+    }
+  }
+
+
+  function updateDashboardUI(data) {
+    // Loop through updated candidates and update DOM (example)
+    data.groupedCandidates && Object.entries(data.groupedCandidates).forEach(([position, candidates]) => {
+      candidates.forEach(candidate => {
+        const percentageEl = document.querySelector(`#vote-percent-${candidate.id}`);
+        if (percentageEl) {
+          percentageEl.textContent = candidate.votePercentage.toFixed(1) + "%";
+        }
+
+        const voteEl = document.querySelector(`#vote-count-${candidate.id}`);
+        if (voteEl) {
+          voteEl.textContent = candidate.vote;
+        }
+      });
+    });
+
+    const totalVotesEl = document.querySelector("#totalVotes");
+    if (totalVotesEl && data.totalVotes) {
+      totalVotesEl.textContent = data.totalVotes;
+    }
+
+    const totalUsersEl = document.querySelector("#registered-voters");
+if (totalUsersEl && data.totalUsers) {
+  totalUsersEl.textContent = data.totalUsers.toString().padStart(2, '0');
+}
+
+  }
+</script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -412,17 +485,6 @@
       }
     }
 
-    // Election dropdown handler (if applicable)
-    const electionsDropdown = document.getElementById('elections-dropdown');
-    if (electionsDropdown) {
-      electionsDropdown.addEventListener('change', function() {
-        if (this.value) {
-          // Handle election selection
-          console.log('Selected election:', this.value);
-          // Add your election selection logic here
-        }
-      });
-    }
   </script>
 
   <script src="/js/dashboard.js"></script>

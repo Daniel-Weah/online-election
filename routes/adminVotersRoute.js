@@ -107,7 +107,6 @@ router.get("/admin/voters", async (req, res) => {
       userData.election_id,
     ]);
 
-    console.log("Fetched admin users:", adminUsers);
 
     // Convert profile pictures to base64
     adminUsers.forEach((adminUser) => {
@@ -178,173 +177,15 @@ router.get("/admin/voters", async (req, res) => {
   }
 });
 
-router.post("/voters", upload.single("photo"), async (req, res) => {
-  const {
-    firstname,
-    middlename,
-    lastname,
-    dob,
-    username,
-    role,
-    election,
-    password,
-  } = req.body;
 
-  if (firstname.length < 3 || lastname.length < 3) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: "First Name or Last Name must be at least 3 characters",
-      });
-  }
-
-  const photo = req.file ? req.file.buffer : null;
-  const votersID = uuidv4();
-
-  try {
-    // Check if username already exists for the election
-    const existingVoter = await pool.query(
-      "SELECT * FROM auth WHERE username = $1 AND election_id = $2",
-      [username, election]
-    );
-
-    if (existingVoter.rows.length > 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: `The username '${username}' is already taken.`,
-        });
-    }
-
-    // Get election age eligibility
-    const electionResult = await pool.query(
-      "SELECT * FROM elections WHERE id = $1",
-      [election]
-    );
-    const electionEligibility = electionResult.rows[0];
-
-    if (!electionEligibility) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Election eligibility not found" });
-    }
-
-    const voterAgeEligibility = electionEligibility.voter_age_eligibility;
-
-    // Calculate user's age
-    const userDOB = new Date(dob);
-    const today = new Date();
-    const age =
-      today.getFullYear() -
-      userDOB.getFullYear() -
-      (today.getMonth() < userDOB.getMonth() ||
-      (today.getMonth() === userDOB.getMonth() &&
-        today.getDate() < userDOB.getDate())
-        ? 1
-        : 0);
-
-    if (age < voterAgeEligibility) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: `You must be at least ${voterAgeEligibility} years old to register.`,
-        });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // **Start Transaction**
-    await pool.query("BEGIN");
-
-    // Insert into users table
-    const insertUserQuery = `
-      INSERT INTO users(id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id
-    `;
-    const userInsertResult = await pool.query(insertUserQuery, [
-      votersID,
-      firstname,
-      middlename,
-      lastname,
-      dob,
-      photo,
-      role,
-      election,
-    ]);
-
-    if (userInsertResult.rowCount === 0) {
-      throw new Error("User insertion failed");
-    }
-
-    // Insert into auth table
-    const authID = uuidv4();
-    const insertAuthQuery = `
-      INSERT INTO auth(id, username, password, user_id, election_id) 
-      VALUES ($1, $2, $3, $4, $5)
-    `;
-    const authInsertResult = await pool.query(insertAuthQuery, [
-      authID,
-      username,
-      hashedPassword,
-      votersID,
-      election,
-    ]);
-
-    if (authInsertResult.rowCount === 0) {
-      throw new Error("Auth insertion failed");
-    }
-
-    // Insert notification
-    const notificationMessage = `Hi ${firstname} ${middlename} ${lastname} (${username}), you have successfully registered for ${electionEligibility.election}!`;
-    await pool.query(
-      "INSERT INTO notifications (id, username, election, message, title, created_at) VALUES ($1, $2, $3, $4, $5, NOW())",
-      [
-        uuidv4(),
-        username,
-        election,
-        notificationMessage,
-        "Registration Successful",
-      ]
-    );
-
-    // Commit transaction if everything is successful
-    await pool.query("COMMIT");
-    
-    const io = getIO(req);
-
-    // Emit notification
-    io.to(username).emit("new-notification", {
-      message: notificationMessage,
-      title: "Registration Successful",
-      created_at: new Date(),
-    });
-
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: `${username} has successfully been registered`,
-      });
-  } catch (err) {
-    // Rollback transaction if an error occurs
-    await pool.query("ROLLBACK");
-    console.error("Error processing request:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
 
 router.post("/admin/delete/users", (req, res) => {
   let { voterIds } = req.body;
 
   try {
-      voterIds = JSON.parse(voterIds); // Parse JSON string to array
+    voterIds = JSON.parse(voterIds); // Parse JSON string to array
   } catch (error) {
-      return res.redirect("/admin/voters?error=Invalid voter data");
+    return res.redirect("/admin/voters?error=Invalid voter data");
   }
 
   if (!Array.isArray(voterIds) || voterIds.length === 0) {
@@ -353,35 +194,55 @@ router.post("/admin/delete/users", (req, res) => {
 
   const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
 
-  pool.query(`DELETE FROM users WHERE id IN (${placeholders})`, voterIds, function (err) {
+  // Step 1: Get election ID before deletion
+  pool.query(`SELECT DISTINCT election_id FROM users WHERE id IN (${placeholders})`, voterIds, (err, result) => {
+    if (err || !result.rows.length) {
+      console.error("Error fetching election ID:", err?.message);
+      return res.redirect("/admin/voters?error=Could not resolve election context");
+    }
+
+    const electionId = result.rows[0].election_id;
+
+    // Step 2: Proceed with deletion
+    pool.query(`DELETE FROM users WHERE id IN (${placeholders})`, voterIds, function (err) {
       if (err) {
-          console.error("Error deleting users:", err.message);
-          return res.redirect("/admin/voters?error=Error Deleting voter");
+        console.error("Error deleting users:", err.message);
+        return res.redirect("/admin/voters?error=Error deleting voter");
       }
 
       pool.query(`DELETE FROM auth WHERE user_id IN (${placeholders})`, voterIds, function (err) {
+        if (err) {
+          console.error("Error deleting auth records:", err.message);
+          return res.redirect("/admin/voters?error=Error deleting voter");
+        }
+
+        pool.query(`DELETE FROM candidates WHERE user_id IN (${placeholders})`, voterIds, function (err) {
           if (err) {
-              console.error("Error deleting auth records:", err.message);
-              return res.redirect("/admin/voters?error=Error Deleting voter");
+            console.error("Error deleting candidates:", err.message);
+            return res.redirect("/admin/voters?error=Error deleting voter");
           }
 
-          pool.query(`DELETE FROM candidates WHERE user_id IN (${placeholders})`, voterIds, function (err) {
-              if (err) {
-                  console.error("Error deleting candidates:", err.message);
-                  return res.redirect("/admin/voters?error=Error Deleting voter");
-              }
+          pool.query(`DELETE FROM user_votes WHERE user_id IN (${placeholders})`, voterIds, function (err) {
+            if (err) {
+              console.error("Error deleting user votes:", err.message);
+              return res.redirect("/admin/voters?error=Error deleting voter");
+            }
 
-              pool.query(`DELETE FROM user_votes WHERE user_id IN (${placeholders})`, voterIds, function (err) {
-                  if (err) {
-                      console.error("Error deleting user votes:", err.message);
-                      return res.redirect("/admin/voters?error=Error Deleting voter");
-                  }
-                  return res.redirect("/admin/voters?success=Voter Deleted successfully");
-              });
+            // Step 3: Emit Socket.IO event
+            const io = req.app.get("io");
+            if (io && electionId) {
+              io.emit("user-deleted", { electionId });
+              console.log("📢 Emitting 'user-deleted' for election:", electionId);
+            }
+
+            return res.redirect("/admin/voters?success=Voter(s) deleted successfully");
           });
+        });
       });
+    });
   });
 });
+
 
 router.post("/admin/voted/users", (req, res) => {
   let { voterIds } = req.body;
