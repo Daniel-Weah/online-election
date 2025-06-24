@@ -3,22 +3,19 @@ const bcrypt = require("bcrypt");
 const pool = require("../db");
 const router = express.Router();
 
-// Render login page
+// Render login page or redirect if already logged in
 router.get("/login", (req, res) => {
   if (req.session.userId) {
     return res.redirect("/dashboard");
   }
-  // No session, show login page
   res.render("login", { errorMessage: null });
 });
-
 
 // Handle login submission
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Step 1: Fetch user from auth table
     const authResult = await pool.query(
       "SELECT * FROM auth WHERE username = $1",
       [username]
@@ -32,7 +29,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Step 2: Verify password
     const validPassword = await bcrypt.compare(password, userAuth.password);
     if (!validPassword) {
       return res.render("login", {
@@ -40,7 +36,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Step 3: Fetch user profile and role
     const userResult = await pool.query(
       `SELECT users.*, roles.role AS role_name
        FROM users
@@ -54,14 +49,13 @@ router.post("/login", async (req, res) => {
       return res.status(500).send("User data not found.");
     }
 
-    // Step 4: Set session
+    // Set session
     req.session.userId = userData.id;
     req.session.userRole = userData.role_name;
     req.session.profilePicture = userData.profile_picture
       ? Buffer.from(userData.profile_picture).toString("base64")
       : null;
 
-    // Step 5: Redirect based on role (optional logic)
     res.redirect("/dashboard");
 
   } catch (err) {

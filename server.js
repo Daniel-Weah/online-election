@@ -39,6 +39,7 @@ io.on("connection", (socket) => {
 });
 
 const isProduction = process.env.NODE_ENV === 'production';
+app.set("trust proxy", 1);
 
 // ✅ PostgreSQL-based session store
 app.use(session({
