@@ -5,8 +5,13 @@ const router = express.Router();
 
 // Render login page
 router.get("/login", (req, res) => {
+  if (req.session.userId) {
+    return res.redirect("/dashboard");
+  }
+  // No session, show login page
   res.render("login", { errorMessage: null });
 });
+
 
 // Handle login submission
 router.post("/login", async (req, res) => {

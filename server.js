@@ -4,13 +4,16 @@ const http = require("http");
 const socketIo = require("socket.io");
 const bodyParser = require("body-parser");
 const session = require("express-session");
+const pgSession = require("connect-pg-simple")(session);
 const multer = require("multer");
 const dotenv = require("dotenv");
 const cors = require("cors");
-// const helmet = require("helmet");
 const nodemailer = require("nodemailer");
 
+// Load environment variables
 dotenv.config();
+
+const db = require("./db");
 
 const app = express();
 const server = http.createServer(app);
@@ -20,16 +23,13 @@ const port = process.env.PORT || 3000;
 // Attach io instance to requests
 app.set("io", io);
 
-// Socket.IO connection handling - add this block here
+// Socket.IO setup
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
   socket.on("join", (userId) => {
     console.log(`User ${userId} joined their room`);
-    socket.join(userId); // join a room named by userId or username
-
-   //emit unread notifications count or any other data
-    // You can query DB here and emit events as needed
+    socket.join(userId);
     io.to(userId).emit("unread-notifications-count", 0);
   });
 
@@ -38,15 +38,26 @@ io.on("connection", (socket) => {
   });
 });
 
-// Session setup
+const isProduction = process.env.NODE_ENV === 'production';
+
+// ✅ PostgreSQL-based session store
 app.use(session({
+  store: new pgSession({
+    pool: db,          
+    tableName: 'session' 
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
+  cookie: {
+    secure: isProduction,
+    maxAge: 3 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: 'lax',
+  }
 }));
 
-// Middleware setup
-// app.use(helmet());
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -55,22 +66,22 @@ app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Multer for file uploads
+// Multer setup
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Inject io into req object (optional since you have app.set("io", io))
+// Inject io into requests
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// Home page
+// Home route
 app.get("/", (req, res) => {
   res.render("index");
 });
 
-// Contact form email handler
+// Nodemailer setup
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -79,6 +90,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Contact form email handler
 app.post("/send-email", (req, res) => {
   const { name, email, message } = req.body;
 
@@ -99,7 +111,7 @@ app.post("/send-email", (req, res) => {
   });
 });
 
-// ================== ROUTES ===================
+// Route imports
 const dashboardRoute = require("./routes/dashboardRoute");
 const candidateRoute = require("./routes/candidateRoute");
 const adminVotersRoute = require("./routes/adminVotersRoute");
@@ -123,7 +135,7 @@ const voterRecordRoute = require("./routes/voterRecordRoute");
 const votersRoute = require("./routes/votersRoute");
 const apiRoutes = require("./routes/api");
 
-// Use all defined routes
+// Use routes
 app.use("/", dashboardRoute);
 app.use("/", candidateRoute);
 app.use("/", adminVotersRoute);
@@ -147,7 +159,7 @@ app.use("/", voterRecordRoute);
 app.use("/", votersRoute);
 app.use("/api", apiRoutes);
 
-// ================== START SERVER ===================
+// Start server
 server.listen(port, () => {
   console.log(`✅ Server is running on http://localhost:${port}`);
 });
