@@ -249,6 +249,11 @@ router.post("/vote", upload.none(), async (req, res) => {
         });
 
         io.emit("vote-updated", { electionId: electionID });
+
+        io.emit("voter-updated", {
+          userId,
+          status: "Voted",
+        });
       }
 
       res

@@ -132,5 +132,7 @@ router.get("/vote-data", async (req, res) => {
 });
 
 
+// router.get("/voter-data", async (req, res) => {
 
+// })
 module.exports = router;

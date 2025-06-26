@@ -29,7 +29,8 @@ router.get("/voters", isAuthenticated, async (req, res) => {
     `;
     const currentUserResult = await pool.query(currentUserQuery, [userId]);
 
-    if (!currentUserResult.rows.length) return res.status(404).send("User not found");
+    if (!currentUserResult.rows.length)
+      return res.status(404).send("User not found");
 
     const currentUser = currentUserResult.rows[0];
     currentUser.profile_picture = currentUser.profile_picture
@@ -44,12 +45,15 @@ router.get("/voters", isAuthenticated, async (req, res) => {
     );
 
     const registrationTiming = settingsResult.rows[0];
-    if (!registrationTiming) return res.status(400).send("Election settings not found");
+    if (!registrationTiming)
+      return res.status(400).send("Election settings not found");
 
     const registrationStartTime = registrationTiming.registration_start_time;
     const registrationEndTime = registrationTiming.registration_end_time;
     const currentDate = registrationStartTime.split("T")[0];
-    const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false });
+    const currentTime = new Date().toLocaleTimeString("en-US", {
+      hour12: false,
+    });
     const fullCurrentTime = `${currentDate}T${currentTime}`;
     const start = new Date(registrationStartTime);
     const end = new Date(registrationEndTime);
@@ -63,20 +67,24 @@ router.get("/voters", isAuthenticated, async (req, res) => {
       JOIN auth ON users.id = auth.user_id
     `);
 
-    const users = usersResult.rows.map(u => ({
+    const users = usersResult.rows.map((u) => ({
       ...u,
-      profile_picture: u.profile_picture ? Buffer.from(u.profile_picture).toString("base64") : null,
+      profile_picture: u.profile_picture
+        ? Buffer.from(u.profile_picture).toString("base64")
+        : null,
       voteStatus: u.has_voted ? "Voted" : "Not Voted",
     }));
 
-    const [rolesResult, allRolesResult, electionsResult, unreadResult] = await Promise.all([
-      pool.query("SELECT * FROM roles LIMIT 1"),
-      pool.query("SELECT * FROM roles"),
-      pool.query("SELECT * FROM elections"),
-      pool.query("SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0", [
-        currentUser.username,
-      ]),
-    ]);
+    const [rolesResult, allRolesResult, electionsResult, unreadResult] =
+      await Promise.all([
+        pool.query("SELECT * FROM roles LIMIT 1"),
+        pool.query("SELECT * FROM roles"),
+        pool.query("SELECT * FROM elections"),
+        pool.query(
+          "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
+          [currentUser.username]
+        ),
+      ]);
 
     res.render("voters", {
       users,
@@ -99,82 +107,133 @@ router.get("/voters", isAuthenticated, async (req, res) => {
 });
 
 // ============== POST /voters ==============
-router.post("/voters", isAuthenticated, upload.single("photo"), async (req, res) => {
-  const { firstname, middlename, lastname, dob, username, role, election, password, gender } = req.body;
+router.post(
+  "/voters",
+  isAuthenticated,
+  upload.single("photo"),
+  async (req, res) => {
+    const {
+      firstname,
+      middlename,
+      lastname,
+      dob,
+      username,
+      role,
+      election,
+      password,
+      gender,
+    } = req.body;
 
-  if (!firstname || firstname.length < 3 || !lastname || lastname.length < 3) {
-    return res.status(400).json({ success: false, message: "First and last name must be at least 3 characters." });
-  }
-
-  const photo = req.file ? req.file.buffer : null;
-  const votersID = uuidv4();
-
-  try {
-    const existing = await pool.query("SELECT * FROM auth WHERE username = $1 AND election_id = $2", [username, election]);
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ success: false, message: `The username '${username}' is already taken.` });
+    if (
+      !firstname ||
+      firstname.length < 3 ||
+      !lastname ||
+      lastname.length < 3
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "First and last name must be at least 3 characters.",
+      });
     }
 
-    const electionResult = await pool.query("SELECT * FROM elections WHERE id = $1", [election]);
-    const electionEligibility = electionResult.rows[0];
-    if (!electionEligibility) return res.status(400).json({ success: false, message: "Election not found." });
+    const photo = req.file ? req.file.buffer : null;
+    const votersID = uuidv4();
 
-    const age = calculateAge(new Date(dob));
-    if (age < electionEligibility.voter_age_eligibility) {
-      return res.status(400).json({ success: false, message: `Must be at least ${electionEligibility.voter_age_eligibility} years old.` });
-    }
+    try {
+      const existing = await pool.query(
+        "SELECT * FROM auth WHERE username = $1 AND election_id = $2",
+        [username, election]
+      );
+      if (existing.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `The username '${username}' is already taken.`,
+        });
+      }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await pool.query("BEGIN");
+      const electionResult = await pool.query(
+        "SELECT * FROM elections WHERE id = $1",
+        [election]
+      );
+      const electionEligibility = electionResult.rows[0];
+      if (!electionEligibility)
+        return res
+          .status(400)
+          .json({ success: false, message: "Election not found." });
 
-    await pool.query(
-      `INSERT INTO users(id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id, gender) 
+      const age = calculateAge(new Date(dob));
+      if (age < electionEligibility.voter_age_eligibility) {
+        return res.status(400).json({
+          success: false,
+          message: `Must be at least ${electionEligibility.voter_age_eligibility} years old.`,
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await pool.query("BEGIN");
+
+      await pool.query(
+        `INSERT INTO users(id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id, gender) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [votersID, firstname, middlename, lastname, dob, photo, role, election, gender]
-    );
+        [
+          votersID,
+          firstname,
+          middlename,
+          lastname,
+          dob,
+          photo,
+          role,
+          election,
+          gender,
+        ]
+      );
 
-    const authID = uuidv4();
-    await pool.query(
-      `INSERT INTO auth(id, username, password, user_id, election_id) 
+      const authID = uuidv4();
+      await pool.query(
+        `INSERT INTO auth(id, username, password, user_id, election_id) 
        VALUES ($1, $2, $3, $4, $5)`,
-      [authID, username, hashedPassword, votersID, election]
-    );
+        [authID, username, hashedPassword, votersID, election]
+      );
 
-    const message = `Hi ${firstname} ${middlename} ${lastname} (${username}), you have successfully registered for ${electionEligibility.election}!`;
+      const message = `Hi ${firstname} ${middlename} ${lastname} (${username}), you have successfully registered for ${electionEligibility.election}!`;
 
-    await pool.query(
-      `INSERT INTO notifications (id, username, election, message, title, created_at) 
+      await pool.query(
+        `INSERT INTO notifications (id, username, election, message, title, created_at) 
        VALUES ($1, $2, $3, $4, $5, NOW())`,
-      [uuidv4(), username, election, message, "Registration Successful"]
-    );
+        [uuidv4(), username, election, message, "Registration Successful"]
+      );
 
-    await pool.query("COMMIT");
+      await pool.query("COMMIT");
 
-    const io = getIO(req);
+      const io = getIO(req);
 
-// Emit notification to the new user
-io.to(username).emit("new-notification", {
-  message,
-  title: "Registration Successful",
-  created_at: new Date(),
-});
+      // Emit notification to the new user
+      io.to(username).emit("new-notification", {
+        message,
+        title: "Registration Successful",
+        created_at: new Date(),
+      });
 
-// 🔥 Emit event for admin dashboards to refresh
-io.emit("user-registered", {
-  electionId: election,
-  username,
-  fullName: `${firstname} ${middlename} ${lastname}`.trim()
-});
+      // 🔥 Emit event for admin dashboards to refresh
+      io.emit("user-registered", {
+        electionId: election,
+        username,
+        fullName: `${firstname} ${middlename} ${lastname}`.trim(),
+      });
 
-console.log("📣 Emitting 'user-registered' for election:", election);
+      console.log("📣 Emitting 'user-registered' for election:", election);
 
-    res.status(201).json({ success: true, message: `${username} registered successfully.` });
-  } catch (err) {
-    await pool.query("ROLLBACK");
-    console.error("Error registering voter:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+      res.status(201).json({
+        success: true,
+        message: `${username} registered successfully.`,
+      });
+    } catch (err) {
+      await pool.query("ROLLBACK");
+      console.error("Error registering voter:", err);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
   }
-});
+);
 
 // ========== DELETE voters =============
 router.post("/delete/users", isAuthenticated, async (req, res) => {
@@ -200,10 +259,22 @@ router.post("/delete/users", isAuthenticated, async (req, res) => {
     );
     const electionId = electionQuery.rows[0]?.election_id;
 
-    await pool.query(`DELETE FROM users WHERE id IN (${placeholders})`, voterIds);
-    await pool.query(`DELETE FROM auth WHERE user_id IN (${placeholders})`, voterIds);
-    await pool.query(`DELETE FROM candidates WHERE user_id IN (${placeholders})`, voterIds);
-    await pool.query(`DELETE FROM user_votes WHERE user_id IN (${placeholders})`, voterIds);
+    await pool.query(
+      `DELETE FROM users WHERE id IN (${placeholders})`,
+      voterIds
+    );
+    await pool.query(
+      `DELETE FROM auth WHERE user_id IN (${placeholders})`,
+      voterIds
+    );
+    await pool.query(
+      `DELETE FROM candidates WHERE user_id IN (${placeholders})`,
+      voterIds
+    );
+    await pool.query(
+      `DELETE FROM user_votes WHERE user_id IN (${placeholders})`,
+      voterIds
+    );
 
     // Emit real-time update
     const io = req.app.get("io");
@@ -218,7 +289,6 @@ router.post("/delete/users", isAuthenticated, async (req, res) => {
     return res.redirect("/voters?error=Error deleting voters");
   }
 });
-
 
 // ========== Mark as voted ============
 router.post("/voted/users", isAuthenticated, async (req, res) => {
@@ -237,11 +307,18 @@ router.post("/voted/users", isAuthenticated, async (req, res) => {
   const placeholders = voterIds.map((_, i) => `$${i + 1}`).join(", ");
 
   try {
-    await pool.query(`UPDATE users SET has_voted = 1 WHERE id IN (${placeholders})`, voterIds);
+    await pool.query(
+      `UPDATE users SET has_voted = 1 WHERE id IN (${placeholders})`,
+      voterIds
+    );
 
-    const values = voterIds.map(id => `('${uuidv4()}', '${id}')`).join(", ");
+    const values = voterIds.map((id) => `('${uuidv4()}', '${id}')`).join(", ");
     await pool.query(`INSERT INTO user_votes (id, user_id) VALUES ${values}`);
 
+    const io = getIO(req);
+    voterIds.forEach((id) => {
+      io.emit("voter-updated", { userId: id, status: "Voted" });
+    });
     return res.redirect("/voters?success=Marked as voted successfully!");
   } catch (err) {
     console.error("Error marking voted:", err);
@@ -263,6 +340,15 @@ router.post("/update/user", isAuthenticated, async (req, res) => {
       `UPDATE users SET first_name = $1, middle_name = $2, last_name = $3, gender = $4, role_id = $5 WHERE id = $6`,
       [first_name, middle_name, last_name, gender, role_id, id]
     );
+    const io = getIO(req);
+    io.emit("voter-info-updated", {
+      userId: id,
+      first_name,
+      middle_name,
+      last_name,
+      gender,
+      role_id,
+    });
 
     res.redirect("/voters?success=User updated successfully!");
   } catch (err) {
@@ -273,9 +359,14 @@ router.post("/update/user", isAuthenticated, async (req, res) => {
 
 function calculateAge(dob) {
   const today = new Date();
-  return today.getFullYear() - dob.getFullYear() -
+  return (
+    today.getFullYear() -
+    dob.getFullYear() -
     (today.getMonth() < dob.getMonth() ||
-    (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate()) ? 1 : 0);
+    (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
+      ? 1
+      : 0)
+  );
 }
 
 module.exports = router;

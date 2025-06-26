@@ -248,7 +248,7 @@ router.post("/admin/voted/users", (req, res) => {
   let { voterIds } = req.body;
 
   try {
-      voterIds = JSON.parse(voterIds); // Parse JSON string to array
+      voterIds = JSON.parse(voterIds); 
   } catch (error) {
       return res.redirect("/voters?error=Invalid voter data");
   }
@@ -272,6 +272,10 @@ router.post("/admin/voted/users", (req, res) => {
               console.error("Error inserting votes:", err.message);
               return res.status(500).json({ message: "Error updating vote status" });
           }
+          const io = getIO(req);
+    voterIds.forEach((id) => {
+      io.emit("voter-updated", { userId: id, status: "Voted" });
+    });
           return res.redirect("/admin/voters?success=Users marked as voted successfully!");
       });
   });
@@ -279,7 +283,7 @@ router.post("/admin/voted/users", (req, res) => {
 });
 
 router.post("/admin/update/user", (req, res) => {
-  const { id, first_name, middle_name, last_name, role_id } = req.body;
+  const { id, first_name, middle_name, last_name, gender, role_id } = req.body;
 
   // Update the candidates table
   const updateCandidatesQuery = `
@@ -291,8 +295,8 @@ router.post("/admin/update/user", (req, res) => {
   // Update the users table
   const updateUsersQuery = `
     UPDATE users
-    SET first_name = $1, middle_name = $2, last_name = $3, role_id = $4
-    WHERE id = $5;
+    SET first_name = $1, middle_name = $2, last_name = $3, gender = $4, role_id = $5
+    WHERE id = $6;
   `;
 
   // Execute queries
@@ -307,12 +311,22 @@ router.post("/admin/update/user", (req, res) => {
 
       pool.query(
         updateUsersQuery,
-        [first_name, middle_name, last_name, role_id, id],
+        [first_name, middle_name, last_name, gender, role_id, id],
         function (err) {
           if (err) {
             console.error("Error updating users:", err.message);
             return res.redirect("/admin/voters?error=Error Updating Users");
           }
+
+           const io = getIO(req);
+    io.emit("voter-info-updated", {
+      userId: id,
+      first_name,
+      middle_name,
+      last_name,
+      gender,
+      role_id,
+    });
 
           res.redirect("/admin/voters?success=User Updated Successfully!");
         }

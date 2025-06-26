@@ -227,60 +227,59 @@
                         </div>
                     
                         <table class="table responsive">
-                            <thead>
-                                <th>
-                                    <input class="form-check-input select-all" type="checkbox" id="flexCheck">
-                                    No.</th>
-                                <th scope="col">Name</th>
-                                <th scope="col">Role</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Register Election</th>
-                                <th scope="col">Action</th>
-                            </thead>
-                            <% if (users && users.length > 0) { %> 
-                            <tbody id="votersTable">
-                                <% users.forEach((user, index) => { %>
-                                <tr>
-                                    <td>
-                                        
-                                        <input class="form-check-input voter-checkbox" type="checkbox" value="<%= user.id %>">
-                                        <%= index + 1 %></td>
-                                    <td>
-                                        <img src="data:image/png;base64,<%= user.profile_picture %>" alt="profile_picture" id="profile_picture"> 
-                                        <div>
-                                        <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %> <br>
-                                        <p class="text-muted small"><%= user.username%></p>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary"><%= user.role ? user.role : 'No Role' %></span>
-                                    </td>
-                                    <td>
-                                        <% if (user.has_voted) { %> 
-                                            <span id="role-badge" class="badge bg-success">Voted</span>
-                                        <% } else { %>
-                                            <span id="role-badge" class="badge bg-danger">Not Voted</span>
-                                        <% } %>
-                                    </td>
-                                    
-                                    <td><%= user.election %></td>
-                                    <td>
-                                        <p data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editUser(<%= JSON.stringify(user) %>)" id="edit_btn">
-                                            <i class="fas fa-pencil-alt me-2"></i>Edit
+  <thead>
+    <th>
+      <input class="form-check-input select-all" type="checkbox" id="flexCheck"> No.
+    </th>
+    <th scope="col">Name</th>
+    <th scope="col">Role</th>
+    <th scope="col">Status</th>
+    <th scope="col">Register Election</th>
+    <th scope="col">Action</th>
+  </thead>
 
-                                        </p>
-                                       
-                                    </td>
-                                    
-                                </tr>
-                                <% }) %>
-                            </tbody>
-                            <% } else { %>
-                            <div class="alert alert-warning text-center mt-4">
-                                There is no voter available at this moment. Please check back later.
-                            </div>
-                            <% } %>
-                        </table>
+  <% if (users && users.length > 0) { %>
+  <tbody id="votersTable">
+    <% users.forEach((user, index) => { %>
+    <tr data-user-id="<%= user.id %>">
+      <td>
+        <input class="form-check-input voter-checkbox" type="checkbox" value="<%= user.id %>">
+        <%= index + 1 %>
+      </td>
+      <td class="user-name">
+        <img src="data:image/png;base64,<%= user.profile_picture %>" alt="profile_picture" id="profile_picture">
+        <div>
+          <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %><br>
+          <p class="text-muted small"><%= user.username %></p>
+        </div>
+      </td>
+      <td class="user-role">
+        <span class="badge bg-primary"><%= user.role ? user.role : 'No Role' %></span>
+      </td>
+      <td class="vote-status">
+        <% if (user.has_voted) { %>
+          <span class="badge bg-success">Voted</span>
+        <% } else { %>
+          <span class="badge bg-danger">Not Voted</span>
+        <% } %>
+      </td>
+      <td class="user-election">
+        <%= user.election %>
+      </td>
+      <td>
+        <p data-bs-toggle="modal" data-bs-target="#editUserModal" onclick="editUser(<%= JSON.stringify(user) %>)" id="edit_btn">
+          <i class="fas fa-pencil-alt me-2"></i>Edit
+        </p>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+  <% } else { %>
+  <div class="alert alert-warning text-center mt-4">
+    There is no voter available at this moment. Please check back later.
+  </div>
+  <% } %>
+</table>
                     </div>
                     
 
@@ -498,6 +497,35 @@
             
             </div>
     </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+ socket.on("voter-updated", data => {
+  const row = document.querySelector(`[data-user-id="${data.userId}"]`);
+  if (row) {
+    const voteStatusCell = row.querySelector(".vote-status");
+    if (voteStatusCell) {
+      voteStatusCell.innerHTML =
+        data.status === "Voted"
+          ? `<span class="badge bg-success">Voted</span>`
+          : `<span class="badge bg-danger">Not Voted</span>`;
+    }
+  }
+});
+
+
+  socket.on("voter-info-updated", data => {
+    const row = document.querySelector(`[data-user-id="${data.userId}"]`);
+    if (!row) return;
+    row.querySelector(".user-name").textContent = `${data.first_name} ${data.middle_name||''} ${data.last_name}`;
+    row.querySelector(".user-gender").textContent = data.gender;
+    row.querySelector(".user-role").textContent = ({
+      "1":"Voter","2": "Candidate","3":"Admin","4":"Super Admin"
+    })[data.role_id] || "Unknown";
+  });
+</script>
 
     <script>
   function editUser(user) {
