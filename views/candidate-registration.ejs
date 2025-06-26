@@ -250,6 +250,14 @@
   }
 </style>
 </head>
+<%
+  const rawName = `${userTable.first_name} ${userTable.middle_name || ''} ${userTable.last_name}`;
+  const fullNameSlug = rawName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const profileLink = `/profile/${userTable.id}-${fullNameSlug}`;
+%>
 <body>
     <header>
         <!-- Sidebar -->
@@ -290,7 +298,7 @@
                     </span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
-                    <li><a class="dropdown-item" href="/my/profile">
+                    <li><a class="dropdown-item" href="<%= profileLink %>">
                         <i class="fas fa-user me-2"></i>My profile
                     </a></li>
                     <li><a class="dropdown-item" href="/voter/setting">

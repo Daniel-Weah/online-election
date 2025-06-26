@@ -98,58 +98,6 @@ router.post("/setting/forget-password",upload.none(), async (req, res) => {
   }
 });
 
-// POST - Update username
-router.post(
-  "/setting/change/username",
-  upload.none(),
-  async (req, res) => {
-    const { username, Newusername, password } = req.body;
 
-    try {
-      const authResult = await pool.query(
-        "SELECT * FROM auth WHERE user_id = $1",
-        [req.session.userId]
-      );
-
-      if (authResult.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User does not exist" });
-      }
-
-      const user = authResult.rows[0];
-
-      if (user.username !== username) {
-        return res
-          .status(403)
-          .json({
-            success: false,
-            message: "You are not authorized to change this username",
-          });
-      }
-
-      const match = await bcrypt.compare(password, user.password);
-
-      if (!match) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Incorrect password" });
-      }
-
-      await pool.query(
-        "UPDATE auth SET username = $1 WHERE username = $2 AND user_id = $3",
-        [Newusername, username, req.session.userId]
-      );
-
-      res.status(200).json({
-        success: true,
-        message: "Username updated successfully!",
-      });
-    } catch (err) {
-      console.error("Error updating username:", err);
-      res.status(500).json({ success: false, message: "Internal server error" });
-    }
-  }
-);
 
 module.exports = router;

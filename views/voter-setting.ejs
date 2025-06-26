@@ -118,11 +118,198 @@
       flex-wrap: wrap;
     }
   }
+   #fullName {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* Notification badge styling */
+  .badge-notification {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 0.7rem;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .notification-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .navbar-nav {
+    align-items: center;
+  }
+
+  @media (min-width: 992px) {
+    #fullName {
+      max-width: 150px;
+    }
+    .navbar-toggler {
+      display: none;
+    }
+  }
+
+  @media (max-width: 991px) {
+    #fullName {
+      max-width: 100px;
+    }
+    .navbar-brand img {
+      height: 40px;
+    }
+    .notification-container .fas {
+      font-size: 1.1rem !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    #fullName {
+      max-width: 80px;
+      font-size: 0.9rem;
+    }
+    .navbar-brand img {
+      height: 35px;
+    }
+    .dropdown-toggle img {
+      height: 35px !important;
+      width: 35px !important;
+    }
+    .notification-container .fas {
+      font-size: 1rem !important;
+      margin-top: 8px !important;
+    }
+    .badge-notification {
+      font-size: 0.6rem;
+      min-width: 16px;
+      height: 16px;
+      line-height: 16px;
+    }
+    .dropdown-menu {
+      font-size: 0.9rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    #fullName {
+      max-width: 60px;
+      font-size: 0.8rem;
+    }
+    .navbar-brand img {
+      height: 30px;
+    }
+    .dropdown-toggle img {
+      height: 30px !important;
+      width: 30px !important;
+    }
+    .notification-container .fas {
+      font-size: 0.9rem !important;
+      margin-top: 6px !important;
+    }
+    .navbar-toggler {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.9rem;
+    }
+    .container-fluid {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+
+  @media (max-width: 320px) {
+    #fullName {
+      display: none;
+    }
+    .navbar-brand img {
+      height: 28px;
+    }
+    .dropdown-toggle img {
+      height: 28px !important;
+      width: 28px !important;
+    }
+  }
+
+  .dropdown-menu {
+    position: absolute !important;
+    right: 0;
+    left: auto;
+    min-width: 160px;
+  }
+
+  .nav-item {
+    margin: 0 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.5rem 0.75rem;
+  }
 </style>
 
+<%
+  const rawName = `${user.first_name} ${user.middle_name || ''} ${user.last_name}`;
+  const fullNameSlug = rawName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const profileLink = `/profile/${user.id}-${fullNameSlug}`;
+%>
 <body>
+
   <header>
-    <%- include('./layout/navbar') -%>
+   <nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+    <div class="container-fluid">
+        
+       
+
+        <a class="navbar-brand" href="/">
+            <img src="/images/votewiseLogo.png" height="55" alt="Election Logo" loading="lazy" />
+        </a>
+
+        <ul class="navbar-nav ms-auto d-flex flex-row">
+            <!-- Notification -->
+            <li class="nav-item">
+                <a class="nav-link me-3 me-lg-0 notification-container" href="/notifications" id="notification">
+                    <i class="fas fa-bell" style="font-size: 1.2rem; margin-top: 10px;"></i>
+                    <% if (unreadCount > 0) { %>
+                        <span class="badge rounded-pill badge-notification bg-danger"><%= unreadCount %></span>
+                    <% } %>
+                </a>
+            </li>
+
+            <!-- Avatar -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle hidden-arrow d-flex align-items-center" href="#" id="profile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="data:image/png;base64,<%=profilePicture%>" class="rounded-circle" height="40" width="40" loading="lazy" alt="User Avatar" />
+                    <span class="ms-2">
+                        <span id="fullName" title="<%= user.first_name%> <%= user.middle_name%> <%= user.last_name%>">
+                            <%= user.first_name%> <%= user.middle_name%> <%= user.last_name%>
+                        </span>
+                    </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+                    <li><a class="dropdown-item" href="<%= profileLink %>">
+                        <i class="fas fa-user me-2"></i>My profile
+                    </a></li>
+                    <li><a class="dropdown-item" href="/voter/setting">
+                        <i class="fas fa-cog me-2"></i>Settings
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</nav>
   </header>
 
   <main class="container-setting" id="voter-setting">
@@ -130,40 +317,14 @@
     <h6>You can update your password here. Personal information is fixed from registration.</h6>
 
     <ul class="nav nav-tabs nav-justified mb-3" id="settings-tabs" role="tablist">
-      <!-- Uncomment this block to enable username change tab -->
-      <!--
-      <li class="nav-item" role="presentation">
-        <a class="nav-link" id="username-tab" data-bs-toggle="tab" href="#username" role="tab" aria-controls="username" aria-selected="false">Username</a>
-      </li>
-      -->
+      
       <li class="nav-item" role="presentation">
         <a class="nav-link active" id="password-tab" data-bs-toggle="tab" href="#password" role="tab" aria-controls="password" aria-selected="true">Password</a>
       </li>
     </ul>
 
     <div class="tab-content">
-      <!-- Username Tab Content - uncomment to enable
-      <div class="tab-pane fade" id="username" role="tabpanel" aria-labelledby="username-tab">
-        <h3 class="text-center mb-4">Update Username</h3>
-        <form action="/setting/change/username" method="post" id="updateUsernameForm" autocomplete="off">
-          <div class="form-floating">
-            <input type="text" class="form-control" name="username" id="username" placeholder="Current Username" required>
-            <label for="username">Current Username</label>
-          </div>
-          <div class="form-floating">
-            <input type="text" class="form-control" name="Newusername" id="Newusername" placeholder="New Username" required>
-            <label for="Newusername">New Username</label>
-          </div>
-          <label for="">Enter your password below to confirm updating your information</label>
-          <div class="form-floating">
-            <input type="password" class="form-control" name="password" id="passwordConfirmUsername" placeholder="Enter Password to confirm" required>
-            <label for="passwordConfirmUsername">Enter your password to confirm</label>
-          </div>
-          <button type="submit" class="btn btn-primary">Change Username</button>
-        </form>
-      </div>
-      -->
-
+      
       <div class="tab-pane fade show active" id="password" role="tabpanel" aria-labelledby="password-tab">
         <h3 class="text-center mb-4">Change Password</h3>
         <form action="/setting/forget-password" method="post" id="forgetPasswordForm" autocomplete="off">

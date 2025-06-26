@@ -1,209 +1,239 @@
 <style>
-    /* Full name styling */
+  /* Full name styling */
+  #fullName {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* Notification badge styling */
+  .badge-notification {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 0.7rem;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .notification-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .navbar-nav {
+    align-items: center;
+  }
+
+  @media (min-width: 992px) {
     #fullName {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 120px;
-        display: inline-block;
-        vertical-align: middle;
+      max-width: 150px;
     }
+    .navbar-toggler {
+      display: none;
+    }
+  }
 
-    /* Notification badge styling */
+  @media (max-width: 991px) {
+    #fullName {
+      max-width: 100px;
+    }
+    .navbar-brand img {
+      height: 40px;
+    }
+    .notification-container .fas {
+      font-size: 1.1rem !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    #fullName {
+      max-width: 80px;
+      font-size: 0.9rem;
+    }
+    .navbar-brand img {
+      height: 35px;
+    }
+    .dropdown-toggle img {
+      height: 35px !important;
+      width: 35px !important;
+    }
+    .notification-container .fas {
+      font-size: 1rem !important;
+      margin-top: 8px !important;
+    }
     .badge-notification {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        font-size: 0.7rem;
-        min-width: 18px;
-        height: 18px;
-        line-height: 18px;
-        text-align: center;
+      font-size: 0.6rem;
+      min-width: 16px;
+      height: 16px;
+      line-height: 16px;
     }
-
-    /* Notification link container */
-    .notification-container {
-        position: relative;
-        display: inline-block;
-    }
-
-    /* Navbar responsive fixes */
-    .navbar-nav {
-        align-items: center;
-    }
-
-    /* Desktop styles */
-    @media (min-width: 992px) {
-        #fullName {
-            max-width: 150px;
-        }
-        
-        .navbar-toggler {
-            display: none;
-        }
-    }
-
-    /* Tablet breakpoint */
-    @media (max-width: 991px) {
-        #fullName {
-            max-width: 100px;
-        }
-
-        .navbar-brand img {
-            height: 40px;
-        }
-
-        .notification-container .fas {
-            font-size: 1.1rem !important;
-        }
-    }
-
-    /* Mobile breakpoint */
-    @media (max-width: 768px) {
-        #fullName {
-            max-width: 80px;
-            font-size: 0.9rem;
-        }
-
-        .navbar-brand img {
-            height: 35px;
-        }
-
-        .dropdown-toggle img {
-            height: 35px !important;
-            width: 35px !important;
-        }
-
-        .notification-container .fas {
-            font-size: 1rem !important;
-            margin-top: 8px !important;
-        }
-
-        .badge-notification {
-            font-size: 0.6rem;
-            min-width: 16px;
-            height: 16px;
-            line-height: 16px;
-        }
-
-        .dropdown-menu {
-            font-size: 0.9rem;
-        }
-    }
-
-    /* Small mobile breakpoint */
-    @media (max-width: 480px) {
-        #fullName {
-            max-width: 60px;
-            font-size: 0.8rem;
-        }
-
-        .navbar-brand img {
-            height: 30px;
-        }
-
-        .dropdown-toggle img {
-            height: 30px !important;
-            width: 30px !important;
-        }
-
-        .notification-container .fas {
-            font-size: 0.9rem !important;
-            margin-top: 6px !important;
-        }
-
-        .navbar-toggler {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .container-fluid {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-    }
-
-    /* Extra small devices */
-    @media (max-width: 320px) {
-        #fullName {
-            display: none; /* Hide name on very small screens */
-        }
-
-        .navbar-brand img {
-            height: 28px;
-        }
-
-        .dropdown-toggle img {
-            height: 28px !important;
-            width: 28px !important;
-        }
-    }
-
-    /* Fix dropdown positioning */
     .dropdown-menu {
-        position: absolute !important;
-        right: 0;
-        left: auto;
-        min-width: 160px;
+      font-size: 0.9rem;
     }
+  }
 
-    /* Ensure proper spacing */
-    .nav-item {
-        margin: 0 0.25rem;
+  @media (max-width: 480px) {
+    #fullName {
+      max-width: 60px;
+      font-size: 0.8rem;
     }
+    .navbar-brand img {
+      height: 30px;
+    }
+    .dropdown-toggle img {
+      height: 30px !important;
+      width: 30px !important;
+    }
+    .notification-container .fas {
+      font-size: 0.9rem !important;
+      margin-top: 6px !important;
+    }
+    .navbar-toggler {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.9rem;
+    }
+    .container-fluid {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
 
-    .nav-link {
-        padding: 0.5rem 0.75rem;
+  @media (max-width: 320px) {
+    #fullName {
+      display: none;
     }
+    .navbar-brand img {
+      height: 28px;
+    }
+    .dropdown-toggle img {
+      height: 28px !important;
+      width: 28px !important;
+    }
+  }
+
+  .dropdown-menu {
+    position: absolute !important;
+    right: 0;
+    left: auto;
+    min-width: 160px;
+  }
+
+  .nav-item {
+    margin: 0 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.5rem 0.75rem;
+  }
 </style>
 
-<nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
-    <div class="container-fluid">
-        
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-            <i class="fas fa-bars"></i>
-        </button>
+<%
+  const rawName = `${user.first_name} ${user.middle_name || ''} ${user.last_name}`;
+  const fullNameSlug = rawName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const profileLink = `/profile/${user.id}-${fullNameSlug}`;
+%>
 
-        <a class="navbar-brand" href="/">
-            <img src="/images/votewiseLogo.png" height="55" alt="Election Logo" loading="lazy" />
+<nav
+  id="main-navbar"
+  class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm"
+>
+  <div class="container-fluid">
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#sidebarMenu"
+      aria-controls="sidebarMenu"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <a class="navbar-brand" href="/">
+      <img
+        src="/images/votewiseLogo.png"
+        height="55"
+        alt="Election Logo"
+        loading="lazy"
+      />
+    </a>
+
+    <ul class="navbar-nav ms-auto d-flex flex-row">
+      <!-- Notification -->
+      <li class="nav-item">
+        <a
+          class="nav-link me-3 me-lg-0 notification-container"
+          href="/notifications"
+          id="notification"
+        >
+          <i
+            class="fas fa-bell"
+            style="font-size: 1.2rem; margin-top: 10px"
+          ></i>
+          <% if (unreadCount > 0) { %>
+          <span class="badge rounded-pill badge-notification bg-danger">
+            <%= unreadCount %>
+          </span>
+          <% } %>
         </a>
+      </li>
 
-        <ul class="navbar-nav ms-auto d-flex flex-row">
-            <!-- Notification -->
-            <li class="nav-item">
-                <a class="nav-link me-3 me-lg-0 notification-container" href="/notifications" id="notification">
-                    <i class="fas fa-bell" style="font-size: 1.2rem; margin-top: 10px;"></i>
-                    <% if (unreadCount > 0) { %>
-                        <span class="badge rounded-pill badge-notification bg-danger"><%= unreadCount %></span>
-                    <% } %>
-                </a>
-            </li>
-
-            <!-- Avatar -->
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle hidden-arrow d-flex align-items-center" href="#" id="profile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="data:image/png;base64,<%=profilePicture%>" class="rounded-circle" height="40" width="40" loading="lazy" alt="User Avatar" />
-                    <span class="ms-2">
-                        <span id="fullName" title="<%= user.first_name%> <%= user.middle_name%> <%= user.last_name%>">
-                            <%= user.first_name%> <%= user.middle_name%> <%= user.last_name%>
-                        </span>
-                    </span>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
-                    <li><a class="dropdown-item" href="/my/profile">
-                        <i class="fas fa-user me-2"></i>My profile
-                    </a></li>
-                    <li><a class="dropdown-item" href="/voter/setting">
-                        <i class="fas fa-cog me-2"></i>Settings
-                    </a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-danger" href="/logout">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                        </a>
-                    </li>
-                </ul>
-            </li>
+      <!-- Avatar -->
+      <li class="nav-item dropdown">
+        <a
+          class="nav-link dropdown-toggle hidden-arrow d-flex align-items-center"
+          href="#"
+          id="profile"
+          role="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <img
+            src="data:image/png;base64,<%= profilePicture %>"
+            class="rounded-circle"
+            height="40"
+            width="40"
+            loading="lazy"
+            alt="User Avatar"
+          />
+          <span class="ms-2">
+            <span
+              id="fullName"
+              title="<%= user.first_name %> <%= user.middle_name %> <%= user.last_name %>"
+            >
+              <%= user.first_name %> <%= user.middle_name %> <%= user.last_name %>
+            </span>
+          </span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+          <li>
+            <a class="dropdown-item" href="<%= profileLink %>">
+              <i class="fas fa-user me-2"></i>My profile
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="/voter/setting">
+              <i class="fas fa-cog me-2"></i>Settings
+            </a>
+          </li>
+          <li><hr class="dropdown-divider" /></li>
+          <li>
+            <a class="dropdown-item text-danger" href="/logout">
+              <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a>
+          </li>
         </ul>
-    </div>
+      </li>
+    </ul>
+  </div>
 </nav>

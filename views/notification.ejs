@@ -70,28 +70,7 @@
       margin-bottom: 10px;
     }
   }
-</style>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const socket = io();
-    const userId = '<%= userId %>';
-    socket.emit('join', userId);
-
-    socket.on('new-notification', function (notification) {
-      alert(`New notification: ${notification.message}`);
-      // Optionally: dynamically insert notification into the DOM
-    });
-  });
-</script>
-
-</head>
-<body>
-  <header>
-    <style>
-    /* Full name styling */
-    #fullName {
+   #fullName {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -217,7 +196,7 @@
     /* Extra small devices */
     @media (max-width: 320px) {
         #fullName {
-            display: none; /* Hide name on very small screens */
+            display: none; 
         }
 
         .navbar-brand img {
@@ -247,15 +226,40 @@
     }
 </style>
 
-<nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const socket = io();
+    const userId = '<%= userId %>';
+    socket.emit('join', userId);
+
+    socket.on('new-notification', function (notification) {
+      alert(`New notification: ${notification.message}`);
+      // Optionally: dynamically insert notification into the DOM
+    });
+  });
+</script>
+
+</head>
+<%
+  const rawName = `${userData.first_name} ${userData.middle_name || ''} ${userData.last_name}`;
+  const fullNameSlug = rawName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const profileLink = `/profile/${userData.id}-${fullNameSlug}`;
+%>
+<body>
+  <header>
+
+
+   <nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
     <div class="container-fluid">
         
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-            <i class="fas fa-bars"></i>
-        </button>
+       
 
         <a class="navbar-brand" href="/">
-            <img src="/images/votewiseLogo.png" height="45" alt="Election Logo" loading="lazy" />
+            <img src="/images/votewiseLogo.png" height="55" alt="Election Logo" loading="lazy" />
         </a>
 
         <ul class="navbar-nav ms-auto d-flex flex-row">
@@ -280,7 +284,7 @@
                     </span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
-                    <li><a class="dropdown-item" href="/my/profile">
+                    <li><a class="dropdown-item" href="<%= profileLink %>">
                         <i class="fas fa-user me-2"></i>My profile
                     </a></li>
                     <li><a class="dropdown-item" href="/voter/setting">

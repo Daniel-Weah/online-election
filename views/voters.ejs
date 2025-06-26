@@ -361,6 +361,14 @@
                         <label for="voter_id" class="form-label">Voter ID<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
                         </div>
                         </div>
+                        <div class="col-12 mb-3">
+                        <label for="gender" class="form-label">Gender<span style="color: rgb(251, 85, 85);font-family: 'Poppins';">*</span></label>
+                        <select id="gender" name="gender" class="form-select" required>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        </select>
+                        </div>
                         <div class="col-12">
                         <div class="form-floating mb-3">
                         <input type="date" class="form-control" name="dob" id="dob" required>
@@ -425,46 +433,66 @@
                   
 
 
-                    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <form id="editUserForm" method="POST" action="/update/user">
-                                        <input type="hidden" id="userId" name="id">
-                                        <div class="mb-3">
-                                            <label for="firstName" class="form-label">First Name</label>
-                                            <input type="text" class="form-control" id="firstName" name="first_name">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="middleName" class="form-label">Middle Name</label>
-                                            <input type="text" class="form-control" id="middleName" name="middle_name">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="lastName" class="form-label">Last Name</label>
-                                            <input type="text" class="form-control" id="lastName" name="last_name">
-                                        </div>
-                                        <div class="col-12 mb-3">
-                                            <label for="role" class="form-label">Role:</label>
-                                            <select id="role_id" name="role_id" class="form-select" required>
-                                            <% allRoles.forEach(role => { %>
-                                            <option value="<%= role.id %>"><%= role.role %></option>
-                                            <% }); %>
-                                            </select>
-                                            </div>
+                    <!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
 
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary" form="editUserForm">Save Changes</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+      <div class="modal-header">
+        <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="editUserForm" method="POST" action="/update/user">
+          <input type="hidden" id="userId" name="id">
+
+          <div class="mb-3">
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="firstName" name="first_name" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="middleName" class="form-label">Middle Name</label>
+            <input type="text" class="form-control" id="middleName" name="middle_name">
+          </div>
+
+          <div class="mb-3">
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="lastName" name="last_name" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="gender" class="form-label">Gender</label>
+            <select id="gender" name="gender" class="form-select" required>
+              <option value="">Select gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="role_id" class="form-label">Role</label>
+            <select id="role_id" name="role_id" class="form-select" required>
+              <% allRoles.forEach(role => { %>
+                <option value="<%= role.id %>"><%= role.role %></option>
+              <% }); %>
+            </select>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary" form="editUserForm">Save Changes</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
                     
             </div>
             
@@ -473,16 +501,20 @@
 
     <script>
   function editUser(user) {
-    document.getElementById('userId').value = user.id;
-    document.getElementById('firstName').value = user.first_name || '';
-    document.getElementById('middleName').value = user.middle_name || '';
-    document.getElementById('lastName').value = user.last_name || '';
-    document.getElementById('edit_role').value = user.role || '';
-}
+  document.getElementById('userId').value = user.id;
+  document.getElementById('firstName').value = user.first_name || '';
+  document.getElementById('middleName').value = user.middle_name || '';
+  document.getElementById('lastName').value = user.last_name || '';
+  
+  // Gender select option
+  document.getElementById("gender").value = user.gender?.toLowerCase() || '';
 
+  // Role select (ensure it matches role_id, not role name)
+  document.getElementById('role_id').value = user.role_id || '';
+}
 // Function to generate a random ID
 function generateRandomId() {
-    return Math.floor(1000 + Math.random() * 9000); // Generates a 4-digit random number
+    return Math.floor(1000 + Math.random() * 9000);
 }
 
 // Function to generate the username

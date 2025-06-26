@@ -100,7 +100,7 @@ router.get("/voters", isAuthenticated, async (req, res) => {
 
 // ============== POST /voters ==============
 router.post("/voters", isAuthenticated, upload.single("photo"), async (req, res) => {
-  const { firstname, middlename, lastname, dob, username, role, election, password } = req.body;
+  const { firstname, middlename, lastname, dob, username, role, election, password, gender } = req.body;
 
   if (!firstname || firstname.length < 3 || !lastname || lastname.length < 3) {
     return res.status(400).json({ success: false, message: "First and last name must be at least 3 characters." });
@@ -128,9 +128,9 @@ router.post("/voters", isAuthenticated, upload.single("photo"), async (req, res)
     await pool.query("BEGIN");
 
     await pool.query(
-      `INSERT INTO users(id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [votersID, firstname, middlename, lastname, dob, photo, role, election]
+      `INSERT INTO users(id, first_name, middle_name, last_name, DOB, profile_picture, role_id, election_id, gender) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [votersID, firstname, middlename, lastname, dob, photo, role, election, gender]
     );
 
     const authID = uuidv4();
@@ -251,7 +251,7 @@ router.post("/voted/users", isAuthenticated, async (req, res) => {
 
 // ========== Update User ============
 router.post("/update/user", isAuthenticated, async (req, res) => {
-  const { id, first_name, middle_name, last_name, role_id } = req.body;
+  const { id, first_name, middle_name, last_name, gender, role_id } = req.body;
 
   try {
     await pool.query(
@@ -260,8 +260,8 @@ router.post("/update/user", isAuthenticated, async (req, res) => {
     );
 
     await pool.query(
-      `UPDATE users SET first_name = $1, middle_name = $2, last_name = $3, role_id = $4 WHERE id = $5`,
-      [first_name, middle_name, last_name, role_id, id]
+      `UPDATE users SET first_name = $1, middle_name = $2, last_name = $3, gender = $4, role_id = $5 WHERE id = $6`,
+      [first_name, middle_name, last_name, gender, role_id, id]
     );
 
     res.redirect("/voters?success=User updated successfully!");
