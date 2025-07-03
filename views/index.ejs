@@ -84,6 +84,14 @@
   background: #ffdc12;
   margin: 10px auto 0;
 }
+@media screen and (max-width: 375px) {
+   .btn-warning{
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.8rem 0.8rem;
+   }
+}
+
 
   </style>
 </head>
@@ -151,7 +159,7 @@
             <h5 class="text-warning text-uppercase">Real-Time Results</h5>
             <h1 class="display-4 text-white fw-bold">Transparent & Accurate Counting</h1>
             <p class="lead text-white">Stay updated with live voting data.</p>
-            <a href="#features" class="btn btn-warning btn-lg me-2">Explore Features</a>
+            <a href="#features" class="btn btn-warning btn-lg me-2">Explore</a>
             <a href="/login" class="btn btn-outline-light btn-lg">Try Now</a>
           </div>
         </div>
@@ -503,7 +511,7 @@ function startCounting() {
       let target = +counter.getAttribute("data-target");
       let count = 0;
       
-      let speed = Math.max(Math.floor(target / 100), 1); // Ensure at least 1 increment
+      let speed = Math.max(Math.floor(target / 100), 1);
 
       let updateCount = () => {
         if (count < target) {
