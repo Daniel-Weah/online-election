@@ -221,7 +221,6 @@ router.post(
         fullName: `${firstname} ${middlename} ${lastname}`.trim(),
       });
 
-      console.log("📣 Emitting 'user-registered' for election:", election);
 
       res.status(201).json({
         success: true,
@@ -280,7 +279,6 @@ router.post("/delete/users", isAuthenticated, async (req, res) => {
     const io = req.app.get("io");
     if (electionId && io) {
       io.emit("user-deleted", { electionId });
-      console.log("📢 Emitting 'user-deleted' for election:", electionId);
     }
 
     return res.redirect("/voters?success=Voter(s) deleted successfully");

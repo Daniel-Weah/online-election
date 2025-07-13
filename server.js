@@ -25,16 +25,13 @@ app.set("io", io);
 
 // Socket.IO setup
 io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
 
   socket.on("join", (userId) => {
-    console.log(`User ${userId} joined their room`);
     socket.join(userId);
     io.to(userId).emit("unread-notifications-count", 0);
   });
 
   socket.on("disconnect", () => {
-    console.log("A user disconnected:", socket.id);
   });
 });
 
@@ -107,7 +104,6 @@ app.post("/send-email", (req, res) => {
       console.error("Error sending email:", error);
       return res.status(500).json({ success: false, message: "Failed to send email" });
     }
-    console.log("Email sent:", info.response);
     res.status(200).json({ success: true, message: "Email sent successfully" });
   });
 });

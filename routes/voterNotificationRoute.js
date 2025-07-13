@@ -112,43 +112,5 @@ router.get("/notifications", ensureLoggedIn, (req, res) => {
   );
 });
 
-// Socket.IO connection handling
-// io.on("connection", (socket) => {
-//   console.log("A user connected");
-
-//   socket.on("join", (userId) => {
-//     pool.query(
-//       "SELECT username FROM auth WHERE user_id = $1",
-//       [userId],
-//       (err, userResult) => {
-//         if (err || !userResult.rows.length) {
-//           console.error("Error fetching user:", err);
-//           return;
-//         }
-
-//         const username = userResult.rows[0].username;
-//         socket.join(username);
-
-//         pool.query(
-//           "SELECT COUNT(*) AS unreadCount FROM notifications WHERE username = $1 AND is_read = 0",
-//           [username],
-//           (err, countResult) => {
-//             if (err) {
-//               console.error("Error fetching unread notifications count:", err);
-//               return;
-//             }
-
-//             const unreadCount = parseInt(countResult.rows[0].unreadcount, 10) || 0;
-//             io.to(username).emit("unread-notifications-count", unreadCount);
-//           }
-//         );
-//       }
-//     );
-//   });
-
-//   socket.on("disconnect", () => {
-//     console.log("A user disconnected");
-//   });
-// });
 
 module.exports = router;

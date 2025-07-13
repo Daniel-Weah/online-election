@@ -284,13 +284,10 @@
                     
 
                     <%
-                    // Convert start and end to Date objects
                     const startDate = new Date(start);
                     const endDate = new Date(end);
-                    const currentDate = new Date(); // Get the current time
-                  
-                    console.log("Current Date:", currentDate);
-                    console.log("End Date:", endDate);
+                    const currentDate = new Date();
+
                   %>
                   
                   <% if (currentDate > endDate) { %> 

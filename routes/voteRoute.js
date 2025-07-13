@@ -140,7 +140,6 @@ router.post("/local-vote-count", upload.none(), async (req, res) => {
 
       if (electionId) {
         io.emit("vote-updated", { electionId });
-        console.log("📢 Emitting 'vote-updated' for election:", electionId);
       }
     }
 
@@ -156,7 +155,6 @@ router.post("/vote", upload.none(), async (req, res) => {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
 
-  console.log(req.body);
   const userId = req.session.userId;
   const electionID = req.body.electionID;
   const positions = Object.keys(req.body).filter((k) => k !== "electionID");

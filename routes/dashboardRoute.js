@@ -152,7 +152,6 @@ router.get("/dashboard", async (req, res) => {
     ]);
 
     const registrationTiming = electionSettingsResult.rows[0];
-    console.log("Registration Timing:", registrationTiming);
 
     const currentTime = new Date().toLocaleTimeString("en-US", {
       hour12: false,
@@ -174,7 +173,6 @@ router.get("/dashboard", async (req, res) => {
     const electionsQuery = await pool.query("SELECT * FROM elections");
 
     const profilePicture = req.session.profilePicture;
-    console.log("TotalVotes", totalVotes);
     res.render("dashboard", {
       totalUsers,
       candidates,

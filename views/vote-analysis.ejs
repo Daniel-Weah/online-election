@@ -129,8 +129,6 @@
   const socket = io();
 
 socket.on("vote-updated", (data) => {
-  console.log("📊 Vote updated for election:", data.electionId);
-
  fetch('/api/vote-data')
   .then(res => res.json())
   .then(latestData => {

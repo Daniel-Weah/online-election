@@ -21,7 +21,6 @@ router.get("/vote/analysis", ensureLoggedIn, async (req, res) => {
       return res.status(404).send("User not found");
     }
     const currentUser = currentUserResult.rows[0];
-    console.log("Current user data", currentUser.election_id);
 
     // Fetch candidates grouped by position with votes
     const positionsQuery = `

@@ -101,7 +101,6 @@ router.get("/add/position", async (req, res) => {
 
 router.post("/add/position", async (req, res) => {
   try {
-    console.log("Received Data:", req.body); // Debugging
 
     const {
       election,

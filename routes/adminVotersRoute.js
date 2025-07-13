@@ -36,7 +36,6 @@ router.get("/admin/voters", async (req, res) => {
       return res.status(404).send("User not found");
     }
 
-    console.log("Login user data:", user);
     user.profile_picture = user.profile_picture
       ? Buffer.from(user.profile_picture).toString("base64")
       : null;
@@ -130,7 +129,6 @@ router.get("/admin/voters", async (req, res) => {
     ]);
     const userElectionData = userElectionRows[0];
 
-    console.log("User Election Data:", userElectionData);
 
     const electionSettingsSql = `SELECT * FROM election_settings WHERE election_id = $1`;
     const electionSettingsResult = await pool.query(electionSettingsSql, [
@@ -138,7 +136,6 @@ router.get("/admin/voters", async (req, res) => {
     ]);
 
     const registrationTiming = electionSettingsResult.rows[0];
-    console.log("Registration Timing:", registrationTiming);
 
     const currentTime = new Date().toLocaleTimeString("en-US", {
       hour12: false,
@@ -146,8 +143,6 @@ router.get("/admin/voters", async (req, res) => {
     const registrationStartTime = registrationTiming.registration_start_time;
     const registrationEndTime = registrationTiming.registration_end_time;
 
-    console.log("Registration Start time:", registrationStartTime);
-    console.log("Registration End time:", registrationEndTime);
 
     const currentDate = registrationStartTime.split("T")[0];
     const fullCurrentTime = `${currentDate}T${currentTime}`;
@@ -232,7 +227,6 @@ router.post("/admin/delete/users", (req, res) => {
             const io = req.app.get("io");
             if (io && electionId) {
               io.emit("user-deleted", { electionId });
-              console.log("📢 Emitting 'user-deleted' for election:", electionId);
             }
 
             return res.redirect("/admin/voters?success=Voter(s) deleted successfully");

@@ -416,7 +416,6 @@
 
     <script>
         function editPosition(position) {
-        //    console.log('This is the position data:', position); 
            document.getElementById('positionId').value = position.id;
            document.getElementById('positionDescription').value = position.position_description;
            document.getElementById('position_name').value = position.position || '';
@@ -455,7 +454,6 @@
            </script>
 
            <script>
-console.log(document.getElementById("election").value);
 
 document.getElementById("positionForm").addEventListener('submit', (e) => {
     e.preventDefault(); 
@@ -464,7 +462,6 @@ document.getElementById("positionForm").addEventListener('submit', (e) => {
     
     // Debugging: Log form values
     for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
     }
 
     fetch('/add/position', {
@@ -476,7 +473,6 @@ document.getElementById("positionForm").addEventListener('submit', (e) => {
     })
     .then(response => response.json())  // Ensure we get JSON response
     .then(data => {
-        console.log(data);
         if (data.success) {
             Swal.fire({
                 title: 'Position Added Successfully!',
@@ -500,7 +496,6 @@ document.getElementById("positionForm").addEventListener('submit', (e) => {
         }
     })
     .catch(error => {
-        console.log('Fetch error:', error);
         Swal.fire({
             title: 'Error',
             text: 'There was a problem sending your information. Please try again later.',

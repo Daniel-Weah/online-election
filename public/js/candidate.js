@@ -20,10 +20,8 @@
 
 document.getElementById('candidateRegistrationForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    console.log("Form submission triggered");
 
     const formData = new FormData(e.target);
-    console.log("Form data prepared");
 
     fetch('/candidate/registration', {
         method: 'POST',
