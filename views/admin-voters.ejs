@@ -250,6 +250,16 @@
   }
 </style>
 </head>
+
+<%
+  const rawName = `${currentUser.first_name} ${currentUser.middle_name || ''} ${currentUser.last_name}`;
+  const fullNameSlug = rawName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const profileLink = `/profile/${currentUser.id}-${fullNameSlug}`;
+%>
+
 <body>
     <header>
         <!-- Sidebar -->
@@ -291,7 +301,7 @@
                     </span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
-                    <li><a class="dropdown-item" href="/my/profile">
+                    <li><a class="dropdown-item" href="<%= profileLink %>">
                         <i class="fas fa-user me-2"></i>My profile
                     </a></li>
                     <li><a class="dropdown-item" href="/voter/setting">
@@ -311,9 +321,9 @@
         
     </header>
 
-    <div id="notification-box" style="display: none;">
+    <!-- <div id="notification-box" style="display: none;">
         <p id="notification-message"></p>
-      </div>
+      </div> -->
     
       <main style="margin-top: 70px;">
         <div class="container pt-2">
