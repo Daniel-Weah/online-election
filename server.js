@@ -98,8 +98,7 @@ app.use((req, res, next) => {
     }
 
     if (req.path.startsWith('/api/') || req.path.startsWith('/vote')) {
-        const validDomain = 'https://yourdomain.com'; // Change this to your actual production domain
-
+        const validDomain = 'https://votewise.onrender.com';
         if ((!referer && !origin) || (!referer.startsWith(validDomain) && !origin.startsWith(validDomain))) {
             logSecurityEvent(`Blocked invalid referrer/origin from ${req.ip} at ${req.originalUrl}`);
             return res.status(403).send('Access Denied: Invalid Referrer or Origin');
