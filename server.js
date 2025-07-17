@@ -97,8 +97,9 @@ app.use((req, res, next) => {
         return res.status(403).send('Access Denied: Suspicious User-Agent');
     }
 
-    if (req.path.startsWith('/api/') || req.path.startsWith('/vote')) {
-        const validDomain = 'https://votewise.onrender.com';
+    const validDomain = 'https://votewise.onrender.com';
+
+    if ((req.path.startsWith('/api/public/') || req.path.startsWith('/vote')) && !req.session.userId) {
         if ((!referer && !origin) || (!referer.startsWith(validDomain) && !origin.startsWith(validDomain))) {
             logSecurityEvent(`Blocked invalid referrer/origin from ${req.ip} at ${req.originalUrl}`);
             return res.status(403).send('Access Denied: Invalid Referrer or Origin');
